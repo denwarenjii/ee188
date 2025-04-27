@@ -7,16 +7,20 @@
 -- shifting. This entity does not do instruction decoding - the control unit
 -- must provide the correct operand values (which could come from registers or
 -- immediate values) and control signals to produce the correct result (which
--- may then be written back to a register by the control unit). Additionally, 
+-- may then be written back to a register by the control unit). Additionally,
 -- this entity outputs carry, sign, overflow, and zero flags, which can be
 -- used by the control unit to set the T bit in the status register.
+--
+--  Revision History:
+--     26 Apr 25    Zack Huang      copied over from HW 1, prepare for testing
 --
 ------------------------------------------------------------------------------
 
 -- import libraries
+
 library ieee;
-use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_1164.all;
 
 -- Set the SH2 ALU control signals as follows for each instruction:
 -- It is assumed that single-operand instructions operate on OperandB,
@@ -38,125 +42,123 @@ use ieee.numeric_std.all;
 -- ADD(C,V) - Result <= OperandA + OperandB
 --  - FCmd <= FCmd_B
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_NONE
+--  - LoadA <= '1'
 --  - SCmd <= "XX"
 --  - ALUCmd <= ALUCmd_ADDER
 -- SUB(C,V), CMP/XX - Result <= OperandA - OperandB
 --  - FCmd <= FCmd_BNOT
 --  - CinCmd <= CinCmd_ONE
---  - OpASel <= OpA_NONE
+--  - LoadA <= '1'
 --  - SCmd <= "XX"
 --  - ALUCmd <= ALUCmd_ADDER
 -- NEG(C) - Result <= 0 - OperandB
 --  - FCmd <= FCmd_BNOT
 --  - CinCmd <= CinCmd_ONE
---  - OpASel <= OpA_ZERO
+--  - LoadA <= '0'
 --  - SCmd <= "XX"
 --  - ALUCmd <= ALUCmd_ADDER
--- DT - Result <= OperandB - 1
+-- DT - Result <= OperandA - 1
 --  - FCmd <= FCmd_ONES
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd <= "XX"
 --  - ALUCmd <= ALUCmd_ADDER
 -- MOV - Result <= OperandB
 --  - FCmd <= FCmd_B
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd <= "XX"
 --  - ALUCmd <= ALUCmd_FBLOCK
 -- AND/TST - Result <= OperandA & OperandB
 --  - FCmd <= FCmd_AND
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_NONE
+--  - LoadA <= '1'
 --  - SCmd <= "XX"
 --  - ALUCmd <= ALUCmd_FBLOCK
 -- OR - Result <= OperandA | OperandB
 --  - FCmd <= FCmd_OR
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_NONE
+--  - LoadA <= '1'
 --  - SCmd <= "XX"
 --  - ALUCmd <= ALUCmd_FBLOCK
 -- XOR - Result <= OperandA ^ OperandB
 --  - FCmd <= FCmd_XOR
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_NONE
+--  - LoadA <= '1'
 --  - SCmd <= "XX"
 --  - ALUCmd <= ALUCmd_FBLOCK
 -- NOT - Result <= ~OperandB
 --  - FCmd   <= FCmd_BNOT
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= "XX"
+--  - LoadA <= '1'
 --  - SCmd   <= "XX"
 --  - ALUCmd <= ALUCmd_FBLOCK
--- SHAL/SHLL - Result <= OperandB << 1
+-- SHAL/SHLL - Result <= OperandA << 1
 --  - FCmd   <= "XX"
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd   <= SCmd_LSR
 --  - ALUCmd <= ALUCmd_SHIFT
--- SHAR - Result <= OperandB >> 1 (sign-extended)
+-- SHAR - Result <= OperandA >> 1 (sign-extended)
 --  - FCmd   <= "XX"
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd   <= SCmd_ASR
 --  - ALUCmd <= ALUCmd_SHIFT
--- SHLR - Result <= OperandB >> 1
+-- SHLR - Result <= OperandA >> 1
 --  - FCmd   <= "XX"
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd   <= SCmd_LSR
 --  - ALUCmd <= ALUCmd_SHIFT
--- ROTL - Result <= rotate_left(OperandB)
+-- ROTL - Result <= rotate_left(OperandA)
 --  - FCmd   <= "XX"
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd   <= SCmd_ROL
 --  - ALUCmd <= ALUCmd_SHIFT
--- ROTR - Result <= rotate_right(OperandB)
+-- ROTR - Result <= rotate_right(OperandA)
 --  - FCmd   <= "XX"
 --  - CinCmd <= CinCmd_ZERO
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd   <= SCmd_ROR
 --  - ALUCmd <= ALUCmd_SHIFT
--- ROTCL - Result <= rotate_left(OperandB, T)
+-- ROTCL - Result <= rotate_left(OperandA, T)
 --  - FCmd   <= "XX"
 --  - CinCmd <= CinCmd_CIN
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd   <= SCmd_RLC
 --  - ALUCmd <= ALUCmd_SHIFT
--- ROTCR - Result <= rotate_right(OperandB, T)
+-- ROTCR - Result <= rotate_right(OperandA, T)
 --  - FCmd   <= "XX"
 --  - CinCmd <= CinCmd_CIN
---  - OpASel <= OpA_B
+--  - LoadA <= '1'
 --  - SCmd   <= SCmd_RRC
 --  - ALUCmd <= ALUCmd_SHIFT
 
+entity sh2alu is
+    port (
+        OperandA : in    std_logic_vector(31 downto 0); -- first operand
+        OperandB : in    std_logic_vector(31 downto 0); -- second operand
+        TIn      : in    std_logic;                     -- T bit from status register
+        LoadA    : in    std_logic;                     -- determine if OperandA is loaded ('1') or zeroed ('0')
+        FCmd     : in    std_logic_vector(3 downto 0);  -- F-Block operation
+        CinCmd   : in    std_logic_vector(1 downto 0);  -- carry in operation
+        SCmd     : in    std_logic_vector(2 downto 0);  -- shift operation
+        AluCmd   : in    std_logic_vector(1 downto 0);  -- ALU result select
 
-entity  SH2ALU  is
-    port(
-        OperandA : in      std_logic_vector(31 downto 0);   -- first operand
-        OperandB : in      std_logic_vector(31 downto 0);   -- second operand
-        TIn      : in      std_logic;                       -- T bit from status register
-        OpASel   : in      std_logic_vector(1 downto 0);    -- determine how to interpret operand A
-        FCmd     : in      std_logic_vector(3 downto 0);    -- F-Block operation
-        CinCmd   : in      std_logic_vector(1 downto 0);    -- carry in operation
-        SCmd     : in      std_logic_vector(2 downto 0);    -- shift operation
-        ALUCmd   : in      std_logic_vector(1 downto 0);    -- ALU result select
-
-        Result   : buffer  std_logic_vector(32 downto 0);   -- ALU result
-        Cout     : out     std_logic;                       -- carry out
-        Overflow : out     std_logic;                       -- signed overflow
-        Zero     : out     std_logic;                       -- result is zero
-        Sign     : out     std_logic                        -- sign of result
+        Result   : buffer  std_logic_vector(31 downto 0); -- ALU result
+        Cout     : out   std_logic;                       -- carry out
+        Overflow : out   std_logic;                       -- signed overflow
+        Zero     : out   std_logic;                       -- result is zero
+        Sign     : out   std_logic                        -- sign of result
     );
 
-    constant OpA_ZERO     : std_logic_vector(1 downto 0) := "00";   -- clear OperandA before using it in a computation
-    constant OpA_ONE      : std_logic_vector(1 downto 0) := "01";   -- Set OperandA value to 1 
-    constant OpA_B        : std_logic_vector(1 downto 0) := "10";   -- Set OperandA to have the value of OperandB
-    constant OpA_NONE     : std_logic_vector(1 downto 0) := "11";   -- Pass OperandA through
+    constant OpA_Zero     : std_logic_vector(1 downto 0) := "00"; -- clear OperandA before using it in a computation
+    constant OpA_One      : std_logic_vector(1 downto 0) := "01"; -- Set OperandA value to 1
+    constant OpA_B        : std_logic_vector(1 downto 0) := "10"; -- Set OperandA to have the value of OperandB
+    constant OpA_None     : std_logic_vector(1 downto 0) := "11"; -- Pass OperandA through
 
-    
     -- FBlock commands (for convenience)
     constant FCmd_A         : std_logic_vector(3 downto 0) := "1100";
     constant FCmd_B         : std_logic_vector(3 downto 0) := "1010";
@@ -165,73 +167,56 @@ entity  SH2ALU  is
     constant FCmd_AND       : std_logic_vector(3 downto 0) := "1000";
     constant FCmd_OR        : std_logic_vector(3 downto 0) := "1110";
     constant FCmd_XOR       : std_logic_vector(3 downto 0) := "0110";
+end entity sh2alu;
 
-end  SH2ALU;
+architecture structural of sh2alu is
 
-
-architecture  structural  of  SH2ALU  is
-
-    component  ALU  is
+    component ALU is
 
         generic (
-            wordsize : integer := 8      -- default width is 8-bits
+            wordsize : integer := 8
         );
+        port (
+            AluOpA : in    std_logic_vector(wordsize - 1 downto 0);
+            AluOpB : in    std_logic_vector(wordsize - 1 downto 0);
+            Cin    : in    std_logic;
+            FCmd   : in    std_logic_vector(3 downto 0);
+            CinCmd : in    std_logic_vector(1 downto 0);
+            SCmd   : in    std_logic_vector(2 downto 0);
+            AluCmd : in    std_logic_vector(1 downto 0);
 
-        port(
-            ALUOpA   : in      std_logic_vector(wordsize - 1 downto 0);   -- first operand
-            ALUOpB   : in      std_logic_vector(wordsize - 1 downto 0);   -- second operand
-            Cin      : in      std_logic;                                 -- carry in
-            FCmd     : in      std_logic_vector(3 downto 0);              -- F-Block operation
-            CinCmd   : in      std_logic_vector(1 downto 0);              -- carry in operation
-            SCmd     : in      std_logic_vector(2 downto 0);              -- shift operation
-            ALUCmd   : in      std_logic_vector(1 downto 0);              -- ALU result select
-
-            Result   : buffer  std_logic_vector(wordsize - 1 downto 0);   -- ALU result
-            Cout     : out     std_logic;                                 -- carry out
-            HalfCout : out     std_logic;                                 -- half carry out
-            Overflow : out     std_logic;                                 -- signed overflow
-            Zero     : out     std_logic;                                 -- result is zero
-            Sign     : out     std_logic                                  -- sign of result
+            Result   : buffer  std_logic_vector(wordsize - 1 downto 0);
+            Cout     : out   std_logic;
+            HalfCout : out   std_logic;
+            Overflow : out   std_logic;
+            Zero     : out   std_logic;
+            Sign     : out   std_logic
         );
-
-    end  component;
-
-    signal OperandAMux : std_logic_vector(31 downto 0);     -- the input to the internal ALU
-
-    -- Constant values for convenience
-    constant ZEROS : std_logic_vector(31 downto 0) := std_logic_vector(to_unsigned(0, 32));
-    constant ONE   : std_logic_vector(31 downto 0) := std_logic_vector(to_unsigned(1, 32));
+    end component ALU;
 
 begin
-
-    -- By adding this mux, we should be able to support every SH-2 ALU
-    -- operation. This is needed due to the internal structure of the ALU
-    -- entity. In some cases, we need OperandB to be the "first" operand
-    -- in an operation, such as to do DT (which must calculate OperandB - 1).
-    OperandAMux <= OperandA when OpASel = OpA_NONE else
-                   ZEROS    when OpASel = OpA_ZERO else
-                   ONE      when OpASel = OpA_ONE  else
-                   OperandB when OpASel = OpA_B;
 
     -- We use a generic ALU to implement all of the SH-2 ALU operations. We
     -- pass in the T bit in place of a dedicated carry input, and the CPU can
     -- route the correct output flag (carry, sign, zero, overflow) back into
     -- the status register.
-    ALUInternal: ALU
-    generic map (wordsize => 32)
-    port map  (
-        ALUOpA => OperandAMux,
-        ALUOpB => OperandB,
-        Cin => Tin,
-        FCmd => FCmd,
-        SCmd => SCmd,
-        ALUCmd => ALUCmd,
-        CinCmd => CinCmd,
-        Result => Result,
-        Cout => Cout,
-        Overflow => Overflow,
-        Zero => Zero,
-        Sign => Sign
-    );
+    ALUinternal : component ALU
+        generic map (
+            wordsize => 32
+        )
+        port map (
+            AluOpA   => OperandA and LoadA,
+            AluOpB   => OperandB,
+            Cin      => TIn,
+            FCmd     => FCmd,
+            SCmd     => SCmd,
+            AluCmd   => AluCmd,
+            CinCmd   => CinCmd,
+            Result   => Result,
+            Cout     => Cout,
+            Overflow => Overflow,
+            Zero     => Zero,
+            Sign     => Sign
+        );
 
-end  structural;
+end architecture structural;
