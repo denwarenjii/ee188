@@ -16,6 +16,54 @@
 --
 ------------------------------------------------------------------------------
 
+-- Import libraries
+library ieee;
+use ieee.std_logic_1164.all;
+
+package  SH2ALUConstants  is
+
+--  Adder carry in select constants
+   constant CinCmd_ZERO   : std_logic_vector(1 downto 0) := "00";
+   constant CinCmd_ONE    : std_logic_vector(1 downto 0) := "01";
+   constant CinCmd_CIN    : std_logic_vector(1 downto 0) := "10";
+   constant CinCmd_CINBAR : std_logic_vector(1 downto 0) := "11";
+
+
+--  Shifter command constants
+   constant SCmd_LEFT  : std_logic_vector(2 downto 0) := "0--";
+   constant SCmd_LSL   : std_logic_vector(2 downto 0) := "000";
+   constant SCmd_SWAP  : std_logic_vector(2 downto 0) := "001";
+   constant SCmd_ROL   : std_logic_vector(2 downto 0) := "010";
+   constant SCmd_RLC   : std_logic_vector(2 downto 0) := "011";
+   constant SCmd_RIGHT : std_logic_vector(2 downto 0) := "1--";
+   constant SCmd_LSR   : std_logic_vector(2 downto 0) := "100";
+   constant SCmd_ASR   : std_logic_vector(2 downto 0) := "101";
+   constant SCmd_ROR   : std_logic_vector(2 downto 0) := "110";
+   constant SCmd_RRC   : std_logic_vector(2 downto 0) := "111";
+
+
+--  ALU command constants
+   constant ALUCmd_FBLOCK  : std_logic_vector(1 downto 0) := "00";
+   constant ALUCmd_ADDER   : std_logic_vector(1 downto 0) := "01";
+   constant ALUCmd_SHIFT   : std_logic_vector(1 downto 0) := "10";
+
+
+    constant OpA_Zero     : std_logic_vector(1 downto 0) := "00"; -- clear OperandA before using it in a computation
+    constant OpA_One      : std_logic_vector(1 downto 0) := "01"; -- Set OperandA value to 1
+    constant OpA_B        : std_logic_vector(1 downto 0) := "10"; -- Set OperandA to have the value of OperandB
+    constant OpA_None     : std_logic_vector(1 downto 0) := "11"; -- Pass OperandA through
+
+    -- FBlock commands (for convenience)
+    constant FCmd_A         : std_logic_vector(3 downto 0) := "1100";
+    constant FCmd_B         : std_logic_vector(3 downto 0) := "1010";
+    constant FCmd_BNOT      : std_logic_vector(3 downto 0) := "0101";
+    constant FCmd_ONES      : std_logic_vector(3 downto 0) := "1111";
+    constant FCmd_AND       : std_logic_vector(3 downto 0) := "1000";
+    constant FCmd_OR        : std_logic_vector(3 downto 0) := "1110";
+    constant FCmd_XOR       : std_logic_vector(3 downto 0) := "0110";
+
+end package;
+
 -- import libraries
 
 library ieee;
@@ -145,7 +193,7 @@ entity sh2alu is
         FCmd     : in    std_logic_vector(3 downto 0);  -- F-Block operation
         CinCmd   : in    std_logic_vector(1 downto 0);  -- carry in operation
         SCmd     : in    std_logic_vector(2 downto 0);  -- shift operation
-        AluCmd   : in    std_logic_vector(1 downto 0);  -- ALU result select
+        ALUCmd   : in    std_logic_vector(1 downto 0);  -- ALU result select
 
         Result   : buffer  std_logic_vector(31 downto 0); -- ALU result
         Cout     : out   std_logic;                       -- carry out
@@ -153,20 +201,6 @@ entity sh2alu is
         Zero     : out   std_logic;                       -- result is zero
         Sign     : out   std_logic                        -- sign of result
     );
-
-    constant OpA_Zero     : std_logic_vector(1 downto 0) := "00"; -- clear OperandA before using it in a computation
-    constant OpA_One      : std_logic_vector(1 downto 0) := "01"; -- Set OperandA value to 1
-    constant OpA_B        : std_logic_vector(1 downto 0) := "10"; -- Set OperandA to have the value of OperandB
-    constant OpA_None     : std_logic_vector(1 downto 0) := "11"; -- Pass OperandA through
-
-    -- FBlock commands (for convenience)
-    constant FCmd_A         : std_logic_vector(3 downto 0) := "1100";
-    constant FCmd_B         : std_logic_vector(3 downto 0) := "1010";
-    constant FCmd_BNOT      : std_logic_vector(3 downto 0) := "0101";
-    constant FCmd_ONES      : std_logic_vector(3 downto 0) := "1111";
-    constant FCmd_AND       : std_logic_vector(3 downto 0) := "1000";
-    constant FCmd_OR        : std_logic_vector(3 downto 0) := "1110";
-    constant FCmd_XOR       : std_logic_vector(3 downto 0) := "0110";
 end entity sh2alu;
 
 architecture structural of sh2alu is
@@ -194,8 +228,9 @@ architecture structural of sh2alu is
         );
     end component ALU;
 
-begin
+    signal OperandAMux : std_logic_vector(31 downto 0);
 
+begin
     -- We use a generic ALU to implement all of the SH-2 ALU operations. We
     -- pass in the T bit in place of a dedicated carry input, and the CPU can
     -- route the correct output flag (carry, sign, zero, overflow) back into
