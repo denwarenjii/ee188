@@ -17,10 +17,10 @@ use std.textio.all;
 
 use work.SH2ALUConstants.all;
 
-entity sh2alu_tb is
-end sh2alu_tb;
+entity sh2_alu_tb is
+end sh2_alu_tb;
 
-architecture behavioral of sh2alu_tb is
+architecture behavioral of sh2_alu_tb is
     -- Stimulus signals for unit under test
     signal OperandA : std_logic_vector(31 downto 0);   -- first operand
     signal OperandB : std_logic_vector(31 downto 0);   -- second operand

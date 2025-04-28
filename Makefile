@@ -1,5 +1,5 @@
-SOURCES = alu.vhd sh2alu.vhd
-TESTBENCHES = sh2alu_tb.vhd
+SOURCES = alu.vhd sh2_alu.vhd reg.vhd sh2_reg.vhd
+TESTBENCHES = sh2_alu_tb.vhd sh2_reg_tb.vhd
 WAVEFORM = waveform.ghw
 
 BUILDFLAGS = --std=08
