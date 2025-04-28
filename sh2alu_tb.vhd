@@ -4,6 +4,7 @@
 -- 
 --  Revision History:
 --     26 Apr 25    Zack Huang      initial revision
+--     28 Apr 25    Zack Huang      finished ALU tests
 --
 ----------------------------------------------------------------------------
 
