@@ -291,38 +291,27 @@ begin
 
     begin
         -- TODO: test with bin coverage
-        TestADD(-1, 10, 0);
-        TestADD(1, 20, 0);
-        TestADD(30, -10, 1);
-        TestSUB(1, 10, 0);
-        TestSUB(1, 10, 1);
-        TestSUB(100, 23123, 1);
-        TestNEG(10, 10, 0);
-        TestNEG(10, 10, 1);
-        TestDT(10, 20, 0);
-        TestDT(10, 20, 1);
-        TestDT(1, 1, 1);
-        TestDT(0, 0, 0);
-        TestLogic(1, 2, FCmd_AND);
-        TestLogic(11, 39, FCmd_AND);
-        TestLogic(1, 2, FCmd_OR);
-        TestLogic(11, 39, FCmd_OR);
-        TestLogic(1, 2, FCmd_XOR);
-        TestLogic(11, 39, FCmd_XOR);
-        TestLogic(1, 2, FCmd_BNOT);
-        TestLogic(11, 39, FCmd_BNOT);
-        TestShift(11, 39, 0, SCmd_LSR);
-        TestShift(11, 39, 1, SCmd_LSR);
-        TestShift(11, 39, 0, SCmd_ASR);
-        TestShift(11, 39, 1, SCmd_ASR);
-        TestShift(11, 39, 0, SCmd_LSL);
-        TestShift(11, 39, 1, SCmd_LSL);
-        TestShift(11, 39, 0, SCmd_ROL);
-        TestShift(11, 39, 1, SCmd_ROL);
-        TestShift(11, 39, 0, SCmd_RLC);
-        TestShift(11, 39, 1, SCmd_RLC);
-        TestShift(11, 39, 0, SCmd_ROR);
-        TestShift(11, 39, 1, SCmd_ROR);
+        for j in -20 to 20 loop
+            for k in -20 to 20 loop
+                for t in 0 to 1 loop
+                    TestADD(j, k, t);
+                    TestSUB(j, k, t);
+                    TestNEG(j, k, t);
+                    TestDT(j, k, t);
+                    TestLogic(j, k, FCmd_AND);
+                    TestLogic(j, k, FCmd_OR);
+                    TestLogic(j, k, FCmd_XOR);
+                    TestLogic(j, k, FCmd_BNOT);
+                    TestShift(j, k, t, SCmd_LSL);
+                    TestShift(j, k, t, SCmd_LSR);
+                    TestShift(j, k, t, SCmd_ASR);
+                    TestShift(j, k, t, SCmd_ROL);
+                    TestShift(j, k, t, SCmd_ROR);
+                    TestShift(j, k, t, SCmd_RLC);
+                    TestShift(j, k, t, SCmd_RRC);
+                end loop;
+            end loop;
+        end loop;
         -- End simulation
         END_SIM <= TRUE;
         wait;
