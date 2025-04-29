@@ -1,4 +1,4 @@
-SOURCES = alu.vhd sh2_alu.vhd reg.vhd sh2_reg.vhd
+SOURCES = utils.vhd alu.vhd sh2_alu.vhd reg.vhd sh2_reg.vhd
 TESTBENCHES = sh2_alu_tb.vhd sh2_reg_tb.vhd
 WAVEFORM = waveform.ghw
 

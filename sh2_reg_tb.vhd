@@ -7,17 +7,20 @@
 --
 ----------------------------------------------------------------------------
 
--- import libraries
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
 use std.textio.all;
 
+use work.sh2utils.all;
+
 entity sh2_reg_tb is
 end sh2_reg_tb;
 
 architecture behavioral of sh2_reg_tb is
+    -- Stimulus signals for unit under test
     signal DataIn     : std_logic_vector(31 downto 0);    -- data to write to a register
     signal EnableIn   : std_logic;                        -- if data should be written to an input register
     signal RegInSel   : integer  range 15 downto 0;       -- which register to write data to
@@ -29,6 +32,8 @@ architecture behavioral of sh2_reg_tb is
     signal RegA1Sel   : integer  range 15 downto 0;       -- which register to read to address bus 1
     signal RegA2Sel   : integer  range 15 downto 0;       -- which register to read to address bus 2
     signal clock      : std_logic;                        -- system clock
+
+    -- Outputs from unit under test
     signal RegA       : std_logic_vector(31 downto 0);    -- register bus A
     signal RegB       : std_logic_vector(31 downto 0);    -- register bus B
     signal RegA1      : std_logic_vector(31 downto 0);    -- address register bus 1
@@ -36,6 +41,10 @@ architecture behavioral of sh2_reg_tb is
 
     -- Test signals
     signal END_SIM : boolean    := false;   -- if the simulation should end
+
+    signal TempA : std_logic_vector(31 downto 0);
+    signal TempB : std_logic_vector(31 downto 0);
+    signal TempOut : std_logic_vector(31 downto 0);
 
 begin
     -- Instantiate UUT
@@ -59,8 +68,80 @@ begin
     );
 
     process
+
+        procedure Tick is
+        begin
+            clock <= '0';
+            wait for 10 ns;
+            clock <= '1';
+            wait for 10 ns;
+        end procedure;
+
+        procedure Read(
+            rn : integer  range 15 downto 0;
+            rm : integer  range 15 downto 0
+        ) is
+        begin
+            -- Read both Rn and Rm
+            RegASel <= rn;
+            RegBSel <= rm;
+            wait for 5 ns;  -- wait for signal to propagate, no clock tick required
+        end procedure;
+
+        procedure Write(
+            r : integer  range 15 downto 0;
+            Data : std_logic_vector
+        ) is
+        begin
+            -- Write to a register
+            RegInSel <= r;
+            EnableIn <= '1';
+            DataIn <= Data;
+            Tick;               -- clock write op into register array
+            EnableIn <= '0';    -- Don't accidentally write more than expected
+        end procedure;
+
+        type reg_values is array (natural range <>) of std_logic_vector(31 downto 0);
+
+        variable regs : reg_values(0 to 15);
+        variable val  : std_logic_vector(31 downto 0);
+
+        variable random : rng;
     begin
-        report "Hello, world!";
+        -- Write random values to each register
+        for i in 0 to 15 loop
+            Write(i, random.rand_slv(32));
+        end loop;
+
+        -- Write a random value to each register
+        for i in 0 to 15 loop
+            regs(i) := random.rand_slv(32);
+            Write(i, regs(i));
+        end loop;
+
+        -- Read each register to check for the correct values (through RegA)
+        for i in 0 to 15 loop
+            Read(i, 0);
+            assert RegA = regs(i)
+            report "Expected R" & to_string(i) & " = " & to_hstring(regs(i)) & ", found " & to_hstring(RegA)
+            severity error;
+        end loop;
+
+        -- Increment and cycle the registers
+        for i in 0 to 15 loop
+            Read(i, (i + 1) mod 16);
+            regs(i) := std_logic_vector(i + unsigned(regs((i + 1) mod 16)));
+            Write(i, std_logic_vector(i + unsigned(RegB)));
+        end loop;
+
+        -- Check that all of the registers hold the correct values (through RegB)
+        for i in 0 to 15 loop
+            Read(0, i);
+            assert RegB = regs(i)
+            report "Expected R" & to_string(i) & " = " & to_hstring(regs(i)) & ", found " & to_hstring(RegA)
+            severity error;
+        end loop;
+
         END_SIM <= TRUE;
         wait;
     end process;
