@@ -188,7 +188,8 @@ entity SH2Dmau is
     Clk          : in     std_logic;
 
     Address      : out    std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-    AddrSrcOut   : buffer std_logic_vector(SH2_WORDSIZE - 1 downto 0)
+    AddrSrcOut   : buffer std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    GBROut       : out    std_logic_vector(SH2_WORDSIZE - 1 downto 0)
   );
 end SH2Dmau;
 
@@ -239,10 +240,10 @@ architecture structural of SH2Dmau is
     
 
     -- DMAUOffsetSel constants.
-    constant ZERO   : integer := 0;
-    constant OFF4   : integer := 1;
-    constant OFF8   : integer := 2;
-    constant R0     : integer := 3;
+    constant DMAUOffsetSel_ZERO   : integer := 0;
+    constant DMAUOffsetSel_OFF4   : integer := 1;
+    constant DMAUOffsetSel_OFF8   : integer := 2;
+    constant DMAUOffsetSel_R0     : integer := 3;
     signal 	 DMAUOffsetSel        : integer range OFFSETCNT - 1 downto 0;
 
     signal DMAUAddrOff : std_logic_array(OFFSETCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
@@ -308,26 +309,26 @@ begin
 
   
   -- Populate the DMAUAddrOff matrix. 
-  DMAUAddrOff(ZERO) <= (others => '0');
+  DMAUAddrOff(DMAUOffsetSel_ZERO) <= (others => '0');
 
-  DMAUAddrOff(OFF4) <= 
+  DMAUAddrOff(DMAUOffsetSel_OFF4) <= 
     shift_left_slv(Off4ZeroExtended, to_integer(unsigned(OffScalarSel)));
 
-  DMAUAddrOff(OFF8)   <= 
+  DMAUAddrOff(DMAUOffsetSel_OFF8)   <= 
       shift_left_slv(Off8ZeroExtended, to_integer(unsigned(OffScalarSel)));
       
-  DMAUAddrOff(R0) <= R0Src;
+  DMAUAddrOff(DMAUOffsetSel_R0) <= R0Src;
 
 
   -- DMAUOffsetSel  ----------------------------------------------------------
   DMAUOffsetSel <= 
-      ZERO when (IndexSel = IndexSel_NONE) else
+      DMAUOffsetSel_ZERO when (IndexSel = IndexSel_NONE) else
 
-      OFF4 when (IndexSel = IndexSel_OFF4) and 
+      DMAUOffsetSel_OFF4 when (IndexSel = IndexSel_OFF4) else
 
-      OFF8 when (IndexSel = IndexSel_OFF8) else
+      DMAUOffsetSel_OFF8 when (IndexSel = IndexSel_OFF8) else
 
-      R0 when (IndexSel = IndexSel_R0) else
+      DMAUOffsetSel_R0 when (IndexSel = IndexSel_R0) else
   
       DMAUOffsetSel;
       
