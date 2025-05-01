@@ -21,7 +21,6 @@
 library ieee;
 library std;
 library work;
-library osvvm;
 
 use std.env.all;
 use std.textio.all;
@@ -36,11 +35,6 @@ use work.SH2DmauConstants.all;
 use work.utils.all;
 use work.SH2Utils.all;
 use work.all;
-
-use osvvm.RandomPkg.all;
-use osvvm.CoveragePkg.all;
-use osvvm.TranscriptPkg.all;
-context osvvm.OsvvmContext;
 
 entity sh2_dmau_tb is
 end sh2_dmau_tb;
@@ -68,10 +62,6 @@ architecture TestBench of sh2_dmau_tb is
     signal AddrSrcOut_TB   : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
     signal GBROut_TB       : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
 
-
-    -- OSVVM signals.
-    signal SH2Dmau_TBCovID : CoverageIDType := NewID("SH2 DMAU Coverage");
-    signal SH2Dmau_TBLogID : AlertLogIDType := GetAlertLogID("SH2Dmau_TB");
 
     -- constant 
     constant CLK_PERIOD : time := (1 sec) / (1e6);
@@ -299,12 +289,12 @@ begin
       procedure LogInputs is
         variable l : line;
       begin
-        write(l, string'(     HT & "RegSrc_TB: " & HT & "0x" & to_hstring(RegSrc_TB)));
-        write(l, string'(LF & HT & "R0Src_TB: "  & HT & "0x" & to_hstring(R0Src_TB)));
-        write(l, string'(LF & HT & "PCSrc_TB: "  & HT & "0x" & to_hstring(PCSrc_TB)));
-        write(l, string'(LF & HT & "GBRIn_TB: "  & HT & "0x" & to_hstring(GBRIn_TB)));
-        write(l, string'(LF & HT & "Off4_TB: "   & HT & "0x" & to_hstring(Off4_TB)));
-        write(l, string'(LF & HT & "Off8_TB: "   & HT & "0x" & to_hstring(Off8_TB)));
+        write(l, string'(     HT & "RegSrc_TB: "  & HT & "0x" & to_hstring(RegSrc_TB)));
+        write(l, string'(LF & HT & "R0Src_TB: "   & HT & "0x" & to_hstring(R0Src_TB)));
+        write(l, string'(LF & HT & "PCSrc_TB: "   & HT & "0x" & to_hstring(PCSrc_TB)));
+        write(l, string'(LF & HT & "GBROut_TB: "  & HT & "0x" & to_hstring(GBROut_TB)));
+        write(l, string'(LF & HT & "Off4_TB: "    & HT & "0x" & to_hstring(Off4_TB)));
+        write(l, string'(LF & HT & "Off8_TB: "    & HT & "0x" & to_hstring(Off8_TB)));
         writeline(output, l);
       end procedure LogInputs;
 
@@ -325,7 +315,7 @@ begin
 
       procedure CheckResult (
           actual_addr : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-          verbose : boolean := true
+          verbose : boolean := false
       ) is
         variable l : line;
       begin
@@ -364,7 +354,7 @@ begin
       writeline(output, l);
 
       -- Indirect Register Addressing -----------------------------------------
-      -- ExpectedAddr = RegSrc (in `Address`)
+      -- ExpectedAddr = RegSrc (in `Address_TB`)
       --
       write(l, string'("Testing Indirect Regsiter Addressing"));
       writeline(output, l);
@@ -377,10 +367,10 @@ begin
       ExpectedAddr := RegSrc_TB;
       CheckResult(Address_TB);
 
-      -- Post-increment indirect register addressing ----------------------------
-      -- ExpectedAddr = RegSrc + 1/2/4 (in `AddrSrcOut`)
-      --
 
+      -- Post-increment indirect register addressing ----------------------------
+      -- ExpectedAddr = RegSrc + 1/2/4 (in `AddrSrcOut_TB`)
+      --
       write(l, string'("Testing Indirect Regsiter Addressing (Byte Mode)"));
       writeline(output, l);
       RandomizeInputs;
@@ -408,6 +398,8 @@ begin
 
 
       -- Pre-decrement indirect register addressing -----------------------------
+      -- ExpectedAddr = RegSrc_TB - 1/2/4 (in `AddrSrcOut_TB`)
+      --
       write(l, string'("Testing Indirect Regsiter Addressing (Byte Mode)"));
       writeline(output, l);
       RandomizeInputs;
@@ -433,14 +425,144 @@ begin
       CheckResult(AddrSrcOut_TB);
 
       -- Indirect register addressing with displacement -------------------------
-
+      -- ExpectedAddr = RegSrc_TB + (1/2/4)*Off4 (in `Address_TB`)
+      --
       write(l, string'("Indirect register addressing with displacement (Byte Mode)"));
       writeline(output, l);
       RandomizeInputs;
       SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_ONE, IncDecSel_NONE);
       Tick;
-      ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) - to_unsigned(4, SH2_WORDSIZE));
-      CheckResult(AddrSrcOut_TB);
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(RegSrc_TB) + 
+        resize(unsigned(Off4_TB), SH2_WORDSIZE) 
+      );
+
+      CheckResult(Address_TB);
+
+      write(l, string'("Indirect register addressing with displacement (Word Mode)"));
+      writeline(output, l);
+      RandomizeInputs;
+      SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_TWO, IncDecSel_NONE);
+      Tick;
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(RegSrc_TB) + 
+        shift_left(resize(unsigned(Off4_TB), SH2_WORDSIZE), 1)
+      );
+
+      CheckResult(Address_TB);
+
+      write(l, string'("Indirect register addressing with displacement (Long-word Mode)"));
+      writeline(output, l);
+      RandomizeInputs;
+      SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_FOUR, IncDecSel_NONE);
+      Tick;
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(RegSrc_TB) + 
+        shift_left(resize(unsigned(Off4_TB), SH2_WORDSIZE), 2)
+      );
+
+      CheckResult(Address_TB);
+
+      -- Indirect indexed register addressing -----------------------------------
+      -- ExpectedAddr = RegSrc_TB + R0Src_TB (in `Address_TB`)
+      --
+      write(l, string'("Indirect indexed register addressing"));
+      writeline(output, l);
+      RandomizeInputs;
+      SetControlLines('0', BaseSel_REG, IndexSel_R0, OffScalarSel_ONE, IncDecSel_NONE);
+      Tick;
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(RegSrc_TB) + 
+        unsigned(R0Src_TB)
+      );
+
+      CheckResult(Address_TB);
+
+
+      -- Indirect GBR addressing with displacement ------------------------------
+      -- ExpectedAddr = GBR + (1/2/4) * Off8_TB (in `Address_TB`)
+      --
+
+      -- Load GBR (NOTE: The desired GBRIn_TB must propogate to the input before 
+      -- clocking it again).
+      GBRIn_TB <= RV.rand_slv(SH2_WORDSIZE);
+      Tick;
+
+      write(l, string'("Indirect GBR addresing with displacement (Byte Mode)"));
+      writeline(output, l);
+      RandomizeInputs;
+      SetControlLines('1', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_ONE, IncDecSel_NONE);
+      Tick;
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(GBROut_TB) + 
+        resize(unsigned(Off8_TB), SH2_WORDSIZE)
+      );
+
+      CheckResult(Address_TB);
+
+      write(l, string'("Indirect GBR addresing with displacement (Word Mode)"));
+      writeline(output, l);
+      RandomizeInputs;
+      SetControlLines('0', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_TWO, IncDecSel_NONE);
+      Tick;
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(GBROut_TB) + 
+        shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 1)
+      );
+
+      CheckResult(Address_TB);
+
+      write(l, string'("Indirect GBR addresing with displacement (Long-word Mode)"));
+      writeline(output, l);
+      RandomizeInputs;
+      SetControlLines('0', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_FOUR, IncDecSel_NONE);
+      Tick;
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(GBROut_TB) + 
+        shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 2)
+      );
+
+      CheckResult(Address_TB);
+
+      -- PC relative addressing with displacement -------------------------------
+      -- ExpectedAddr = PCSrc_TB + 2*Off8_TB or (PCSrc_TB & 0xFFFFFFFC) + 4*Off8_TB
+      -- (in `Address_TB`)
+      --
+      write(l, string'("PC relative addressing with displacement (word mode)"));
+      writeline(output, l);
+      RandomizeInputs;
+      SetControlLines('0', BaseSel_PC, IndexSel_OFF8, OffScalarSel_TWO, IncDecSel_NONE);
+      Tick;
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(PCSrc_TB) + 
+        shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 1)
+      );
+
+      CheckResult(Address_TB);
+
+      -- NOTE: Long-word mode clears the low two bits of PC before doing the
+      -- calculation.
+      --
+      write(l, string'("PC relative addressing with displacement (Long-word mode)"));
+      writeline(output, l);
+      RandomizeInputs;
+      SetControlLines('0', BaseSel_PC, IndexSel_OFF8, OffScalarSel_FOUR, IncDecSel_NONE);
+      Tick;
+
+      ExpectedAddr := std_logic_vector(
+        unsigned(PCSrc_TB and x"FFFFFFFC") + 
+        shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 2)
+      );
+
+      CheckResult(Address_TB);
 
       stop;
 
