@@ -338,6 +338,8 @@ begin
         wait for CLK_PERIOD;
       end procedure Tick;
 
+      constant NUM_TESTS : integer := 128;
+
     begin
 
       -- Test plan:
@@ -358,43 +360,57 @@ begin
       --
       write(l, string'("Testing Indirect Regsiter Addressing"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_ONE, IncDecSel_NONE);
 
-      Tick;
+      for i in 0 to NUM_TESTS loop
 
-      -- Set ExpectedAddr after the signal propagates.
-      ExpectedAddr := RegSrc_TB;
-      CheckResult(Address_TB);
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_ONE, IncDecSel_NONE);
+        Tick;
 
+        -- Set ExpectedAddr after the signal propagates.
+        ExpectedAddr := RegSrc_TB;
+        CheckResult(Address_TB);
+
+      end loop;
+      
 
       -- Post-increment indirect register addressing ----------------------------
       -- ExpectedAddr = RegSrc + 1/2/4 (in `AddrSrcOut_TB`)
       --
       write(l, string'("Testing Indirect Regsiter Addressing (Byte Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_ONE, IncDecSel_POST_INC);
-      Tick;
-      ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) + to_unsigned(1, SH2_WORDSIZE));
-      CheckResult(AddrSrcOut_TB);
+
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_ONE, IncDecSel_POST_INC);
+        Tick;
+        ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) + to_unsigned(1, SH2_WORDSIZE));
+        CheckResult(AddrSrcOut_TB);
+      end loop;
 
 
       write(l, string'("Testing Indirect Regsiter Addressing (Word Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_TWO, IncDecSel_POST_INC);
-      Tick;
-      ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) + to_unsigned(2, SH2_WORDSIZE));
-      CheckResult(AddrSrcOut_TB);
+
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_TWO, IncDecSel_POST_INC);
+        Tick;
+        ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) + to_unsigned(2, SH2_WORDSIZE));
+        CheckResult(AddrSrcOut_TB);
+      end loop;
+
 
       write(l, string'("Testing Indirect Regsiter Addressing (Long-word Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_FOUR, IncDecSel_POST_INC);
-      Tick;
-      ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) + to_unsigned(4, SH2_WORDSIZE));
-      CheckResult(AddrSrcOut_TB);
+
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_FOUR, IncDecSel_POST_INC);
+        Tick;
+        ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) + to_unsigned(4, SH2_WORDSIZE));
+        CheckResult(AddrSrcOut_TB);
+      end loop;
 
 
       -- Pre-decrement indirect register addressing -----------------------------
@@ -402,85 +418,109 @@ begin
       --
       write(l, string'("Testing Indirect Regsiter Addressing (Byte Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_ONE, IncDecSel_PRE_DEC);
-      Tick;
-      ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) - to_unsigned(1, SH2_WORDSIZE));
-      CheckResult(AddrSrcOut_TB);
+
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_ONE, IncDecSel_PRE_DEC);
+        Tick;
+        ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) - to_unsigned(1, SH2_WORDSIZE));
+        CheckResult(AddrSrcOut_TB);
+      end loop;
 
       write(l, string'("Testing Indirect Regsiter Addressing (Word Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_TWO, IncDecSel_PRE_DEC);
-      Tick;
-      ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) - to_unsigned(2, SH2_WORDSIZE));
-      CheckResult(AddrSrcOut_TB);
+
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_TWO, IncDecSel_PRE_DEC);
+        Tick;
+        ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) - to_unsigned(2, SH2_WORDSIZE));
+        CheckResult(AddrSrcOut_TB);
+      end loop;
 
       write(l, string'("Testing Indirect Regsiter Addressing (Long word Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_FOUR, IncDecSel_PRE_DEC);
-      Tick;
-      ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) - to_unsigned(4, SH2_WORDSIZE));
-      CheckResult(AddrSrcOut_TB);
+      
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_NONE, OffScalarSel_FOUR, IncDecSel_PRE_DEC);
+        Tick;
+        ExpectedAddr := std_logic_vector(unsigned(RegSrc_TB) - to_unsigned(4, SH2_WORDSIZE));
+        CheckResult(AddrSrcOut_TB);
+      end loop;
+
 
       -- Indirect register addressing with displacement -------------------------
       -- ExpectedAddr = RegSrc_TB + (1/2/4)*Off4 (in `Address_TB`)
       --
       write(l, string'("Indirect register addressing with displacement (Byte Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_ONE, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(RegSrc_TB) + 
-        resize(unsigned(Off4_TB), SH2_WORDSIZE) 
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_ONE, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(RegSrc_TB) + 
+          resize(unsigned(Off4_TB), SH2_WORDSIZE) 
+        );
+
+        CheckResult(Address_TB);
+      end loop;
+      
 
       write(l, string'("Indirect register addressing with displacement (Word Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_TWO, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(RegSrc_TB) + 
-        shift_left(resize(unsigned(Off4_TB), SH2_WORDSIZE), 1)
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_TWO, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(RegSrc_TB) + 
+          shift_left(resize(unsigned(Off4_TB), SH2_WORDSIZE), 1)
+        );
+
+        CheckResult(Address_TB);
+      end loop;
 
       write(l, string'("Indirect register addressing with displacement (Long-word Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_FOUR, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(RegSrc_TB) + 
-        shift_left(resize(unsigned(Off4_TB), SH2_WORDSIZE), 2)
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_OFF4, OffScalarSel_FOUR, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(RegSrc_TB) + 
+          shift_left(resize(unsigned(Off4_TB), SH2_WORDSIZE), 2)
+        );
+
+        CheckResult(Address_TB);
+      end loop;
+
 
       -- Indirect indexed register addressing -----------------------------------
       -- ExpectedAddr = RegSrc_TB + R0Src_TB (in `Address_TB`)
       --
       write(l, string'("Indirect indexed register addressing"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_REG, IndexSel_R0, OffScalarSel_ONE, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(RegSrc_TB) + 
-        unsigned(R0Src_TB)
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_REG, IndexSel_R0, OffScalarSel_ONE, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(RegSrc_TB) + 
+          unsigned(R0Src_TB)
+        );
+
+        CheckResult(Address_TB);
+      end loop;
 
 
       -- Indirect GBR addressing with displacement ------------------------------
@@ -494,42 +534,53 @@ begin
 
       write(l, string'("Indirect GBR addresing with displacement (Byte Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('1', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_ONE, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(GBROut_TB) + 
-        resize(unsigned(Off8_TB), SH2_WORDSIZE)
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('1', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_ONE, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(GBROut_TB) + 
+          resize(unsigned(Off8_TB), SH2_WORDSIZE)
+        );
+
+        CheckResult(Address_TB);
+      end loop;
 
       write(l, string'("Indirect GBR addresing with displacement (Word Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_TWO, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(GBROut_TB) + 
-        shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 1)
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_TWO, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(GBROut_TB) + 
+          shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 1)
+        );
+
+        CheckResult(Address_TB);
+      end loop;
+
 
       write(l, string'("Indirect GBR addresing with displacement (Long-word Mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_FOUR, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(GBROut_TB) + 
-        shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 2)
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_GBR, IndexSel_OFF8, OffScalarSel_FOUR, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(GBROut_TB) + 
+          shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 2)
+        );
+
+        CheckResult(Address_TB);
+      end loop;
+
 
       -- PC relative addressing with displacement -------------------------------
       -- ExpectedAddr = PCSrc_TB + 2*Off8_TB or (PCSrc_TB & 0xFFFFFFFC) + 4*Off8_TB
@@ -537,32 +588,39 @@ begin
       --
       write(l, string'("PC relative addressing with displacement (word mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_PC, IndexSel_OFF8, OffScalarSel_TWO, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(PCSrc_TB) + 
-        shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 1)
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_PC, IndexSel_OFF8, OffScalarSel_TWO, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(PCSrc_TB) + 
+          shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 1)
+        );
+
+        CheckResult(Address_TB);
+      end loop;
+
 
       -- NOTE: Long-word mode clears the low two bits of PC before doing the
       -- calculation.
       --
       write(l, string'("PC relative addressing with displacement (Long-word mode)"));
       writeline(output, l);
-      RandomizeInputs;
-      SetControlLines('0', BaseSel_PC, IndexSel_OFF8, OffScalarSel_FOUR, IncDecSel_NONE);
-      Tick;
 
-      ExpectedAddr := std_logic_vector(
-        unsigned(PCSrc_TB and x"FFFFFFFC") + 
-        shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 2)
-      );
+      for i in 0 to NUM_TESTS loop
+        RandomizeInputs;
+        SetControlLines('0', BaseSel_PC, IndexSel_OFF8, OffScalarSel_FOUR, IncDecSel_NONE);
+        Tick;
 
-      CheckResult(Address_TB);
+        ExpectedAddr := std_logic_vector(
+          unsigned(PCSrc_TB and x"FFFFFFFC") + 
+          shift_left(resize(unsigned(Off8_TB), SH2_WORDSIZE), 2)
+        );
+
+        CheckResult(Address_TB);
+      end loop;
 
       stop;
 
