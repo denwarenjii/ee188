@@ -17,6 +17,7 @@
 --                           
 ----------------------------------------------------------------------------
 
+
 library ieee;
 library std;
 library work;
@@ -39,10 +40,10 @@ use osvvm.CoveragePkg.all;
 use osvvm.TranscriptPkg.all;
 context osvvm.OsvvmContext;
 
-entity SH2Dmau_TB is
-end SH2Dmau_TB;
+entity sh2_dmau_tb is
+end sh2_dmau_tb;
 
-architecture TestBench of SH2Dmau_TB is
+architecture TestBench of sh2_dmau_tb is
 
     -- UUT Inputs:
     --
@@ -112,7 +113,40 @@ begin
 
     RunTests : process(Clk_TB)
     begin
-      RegSrc_TB <= ()
+      RegSrc_TB     <= int_to_slv(8, SH2_WORDSIZE);
+      R0Src_TB      <= int_to_slv(9, SH2_WORDSIZE);
+      PCSrc_TB      <= int_to_slv(10, SH2_WORDSIZE);
+      GBRIn_TB      <= int_to_slv(11, SH2_WORDSIZE);
+      GBRWriteEn_TB <= '0';
+      Off4_TB       <= "0001";
+      Off8_TB       <= "00000001";
+
+      -- constant BaseSel_REG : std_logic_vector(1 downto 0)  := "00"; -- 0
+      -- constant BaseSel_GBR : std_logic_vector(1 downto 0)  := "01"; -- 1
+      -- constant BaseSel_PC  : std_logic_vector(1 downto 0)  := "10"; -- 2
+      BaseSel_TB <= BaseSel_REG;
+
+      -- constant IndexSel_NONE   : std_logic_vector(1 downto 0) := "00";   -- 0
+      -- constant IndexSel_OFF4   : std_logic_vector(1 downto 0) := "01";   -- 1
+      -- constant IndexSel_OFF8   : std_logic_vector(1 downto 0) := "10";   -- 2
+      -- constant IndexSel_R0     : std_logic_vector(1 downto 0) := "11";   -- 3
+      IndexSel_TB <= IndexSel_NONE;
+
+      -- constant OffScalarSel_ONE : 	std_logic_vector(1 downto 0) := "00"; -- 0
+      -- constant OffScalarSel_TWO :  	std_logic_vector(1 downto 0) := "01"; -- 1
+      -- constant OffScalarSel_FOUR : 	std_logic_vector(1 downto 0) := "10"; -- 2
+      OffScalarSel_TB <= OffScalarSel_ONE;
+
+
+      -- constant IncDecSel_NONE     : std_logic_vector(1 downto 0) := "00";
+      -- constant IncDecSel_PRE_DEC  : std_logic_vector(1 downto 0) := "01";
+      -- constant IncDecSel_POST_INC : std_logic_vector(1 downto 0) := "10";
+      IncDecSel_TB <= IncDecSel_NONE;
+
+      wait for DELTA;
+
+      stop;
+
     end process RunTests;
     
 end TestBench;

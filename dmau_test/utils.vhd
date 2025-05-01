@@ -63,10 +63,18 @@ end package Utils;
 package body Utils is
 
   function int_to_slv (i : integer; width : natural) return std_logic_vector is
+    variable max_int : signed(width - 1 downto 0);
+    variable min_int : signed(width - 1 downto 0); 
   begin
 
-    assert ((width <= 32) and (i <= integer'high) and (i >= integer'low) and 
-            (i <= 2**(width - 1) - 1) and (i >= -2**(width - 1)))
+    max_int := (others => '1');
+    max_int(max_int'high) := '0';
+
+    min_int := (others => '0');
+    min_int(max_int'high) := '1';
+
+    assert ((width <= 32) and (to_signed(i, width) <= MAX_INT) and 
+            (to_signed(i, width) >= MIN_INT))
       report "signed integer " & to_string(i) & " cannot be converted to a " &
              "std_logic_vector of width " & to_string(width)
       severity ERROR;
@@ -78,8 +86,7 @@ package body Utils is
   function uint_to_slv (i : natural; width : natural)  return std_logic_vector is
   begin
 
-    assert ((width <= 32) and (i <= integer'high) and (i >= integer'low) and 
-            (i <= 2**(width - 1) - 1))
+    assert ((width <= 32) and (i <= 2**(width - 1) - 1))
       report "signed integer " & to_string(i) & " cannot be converted to a " &
              "std_logic_vector of width " & to_string(width)
       severity ERROR;
