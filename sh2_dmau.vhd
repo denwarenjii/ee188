@@ -50,7 +50,6 @@
 
 library ieee;
 library std;
-library work;
 
 use ieee.std_logic_1164.all;
 
@@ -89,12 +88,10 @@ end package SH2DmauConstants;
 
 library ieee;
 library std;
-library work;
 
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.all;
 use work.MemUnitConstants.all; -- memory access unit constants for pre/post inc/dec.
 use work.SH2Constants.all;     -- global SH-2 constants.
 use work.array_type_pkg.all;   -- 2D Array of std_logic (VHDL-2008 only).
@@ -363,7 +360,7 @@ begin
     '0'            when others;
 
 
-  SH2Dmau_Instance : entity MemUnit
+  SH2Dmau_Instance : entity work.MemUnit
     generic map (
       srcCnt        => SRCCNT,
       offsetCnt     => OFFSETCNT,

@@ -64,6 +64,7 @@ end package;
 
 
 
+-- NOTE: Implementation is found in alu.vhd
 --
 --  AdderBit
 --
@@ -79,29 +80,29 @@ end package;
 --    Co - carry out for this bit
 --
 
-library ieee;
-use ieee.std_logic_1164.all;
-
-entity  AdderBit  is
-
-    port(
-        A  : in   std_logic;        -- first operand
-        B  : in   std_logic;        -- second operand
-        Ci : in   std_logic;        -- carry in from previous bit
-        S  : out  std_logic;        -- sum (result)
-        Co : out  std_logic         -- carry out to next bit
-    );
-
-end  AdderBit;
-
-
-architecture  dataflow  of  AdderBit  is
-begin
-
-    S  <=  A  xor  B  xor  Ci;
-    Co <=  (A  and  B)  or  (A  and Ci)  or  (B  and  Ci);
-
-end  dataflow;
+-- library ieee;
+-- use ieee.std_logic_1164.all;
+--
+-- entity  AdderBit  is
+--
+--     port(
+--         A  : in   std_logic;        -- first operand
+--         B  : in   std_logic;        -- second operand
+--         Ci : in   std_logic;        -- carry in from previous bit
+--         S  : out  std_logic;        -- sum (result)
+--         Co : out  std_logic         -- carry out to next bit
+--     );
+--
+-- end  AdderBit;
+--
+--
+-- architecture  dataflow  of  AdderBit  is
+-- begin
+--
+--     S  <=  A  xor  B  xor  Ci;
+--     Co <=  (A  and  B)  or  (A  and Ci)  or  (B  and  Ci);
+--
+-- end  dataflow;
 
 
 
