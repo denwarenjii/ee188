@@ -194,7 +194,6 @@ architecture  dataflow  of  MemUnit  is
 
 		signal AddrOffMux : std_logic_vector(wordsize - 1 downto 0);
 
-    signal AddrSrcSrcSel : std_logic_vector(wordsize - 1 downto 0);
 begin
 
     -- compute the input for the incrementer/decrementer
@@ -246,9 +245,6 @@ begin
 					idcarry(i + 1));
     end generate;
 
-
-    -- TODO: Remove.
-    AddrSrcSrcSel <= AddrSrc(SrcSel);
 
     -- input to the offset adder is either the original source or the
     --    incremented/decremented source, depending on whether doing pre- or

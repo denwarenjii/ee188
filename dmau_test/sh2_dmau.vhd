@@ -40,6 +40,10 @@
 --    23 April 25   Chris M. Removed 12-bit offset input and OffExtendSel 
 --                           because 12-bit offsets and sign-extension is not
 --                           used for memory accesses, only for relative jumps.
+--    
+--    1 April 25    Chris M. Changed PrePostSel in MAU to be POST when
+--                           IncDecSel is none (only worked before because
+--                           Pre/Post logic in MAU was inverted).
 --
 -- [TODO]:
 --    - Don't allow inputs that don't correspond to addressing modes.
@@ -357,10 +361,14 @@ begin
                    0;
   
   -- DMAUPrePostSel -----------------------------------------------------------
+
+  -- Note that we must pick between either PRE or POST inc/dec. If we
+  -- select PRE when we don't care, the output address will always be pre
+  -- incremented or decremented.
   with IncDecSel select DMAUPrePostSel <=
     DMAU_PRE       when IncDecSel_PRE_DEC,
     DMAU_POST      when IncDecSel_POST_INC,
-    '0'            when others;
+    DMAU_POST      when others;
 
 
   SH2Dmau_Instance : entity MemUnit
