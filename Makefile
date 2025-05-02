@@ -1,5 +1,5 @@
 SOURCES = utils.vhd mau.vhd sh2_constants.vhd sh2_dmau.vhd sh2_pmau.vhd alu.vhd sh2_alu.vhd reg.vhd sh2_reg.vhd memory.vhd sh2_cpu.vhd
-TESTBENCHES = sh2_alu_tb.vhd sh2_reg_tb.vhd sh2_cpu_tb.vhd
+TESTBENCHES = sh2_alu_tb.vhd sh2_reg_tb.vhd sh2_cpu_tb.vhd memory_tb.vhd
 WAVEFORM = waveform.ghw
 
 BUILDFLAGS = --std=08 -fsynopsys

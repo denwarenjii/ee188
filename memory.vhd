@@ -52,7 +52,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
@@ -99,7 +98,10 @@ architecture  behavioral  of  MEMORY32x32  is
     signal  WE  :  std_logic;
 
     -- data read from memory
-    signal  MemData  :  std_logic_vector(31 downto 0);
+    signal  Curr_RAM  :  RAMtype;
+    signal  RamAddr   :  integer;
+    signal  MemData   :  std_logic_vector(31 downto 0);
+    signal  ToWrite   :  std_logic_vector(31 downto 0);
 
 
 begin
@@ -110,31 +112,47 @@ begin
     WE  <=  WE0  and  WE1  and  WE2  and  WE3;
 
 
-    process
+    ram_access: process (RE, RE0, RE1, RE2, RE3, WE, WE0, WE1, WE2, WE2, MemAB) is
+    begin
+        if not is_x(MemAB) then
+            if ((to_integer(unsigned(MemAB)) >= START_ADDR0) and
+                (to_integer(unsigned(MemAB) - START_ADDR0) < (4 * MEMSIZE))) then
+                    Curr_RAM <= RAMBits0;
+                    RamAddr <= to_integer(unsigned(MemAB(31 downto 2))) - START_ADDR0 / 4;
+            elsif ((to_integer(unsigned(MemAB)) >= START_ADDR1) and
+                   (to_integer(unsigned(MemAB) - START_ADDR1) < (4 * MEMSIZE))) then
+                    Curr_RAM <= RAMBits1;
+                    RamAddr <= to_integer(unsigned(MemAB(31 downto 2))) - START_ADDR1 / 4;
+            elsif ((to_integer(unsigned(MemAB)) >= START_ADDR2) and
+                   (to_integer(unsigned(MemAB) - START_ADDR2) < (4 * MEMSIZE))) then
+                    Curr_RAM <= RAMBits2;
+                    RamAddr <= to_integer(unsigned(MemAB(31 downto 2))) - START_ADDR2 / 4;
+            elsif ((to_integer(unsigned(MemAB)) >= START_ADDR3) and
+                   (to_integer(unsigned(MemAB) - START_ADDR3) < (4 * MEMSIZE))) then
+                    Curr_RAM <= RAMBits3;
+                    RamAddr <= to_integer(unsigned(MemAB(31 downto 2))) - START_ADDR3 / 4;
+            else
+                Curr_RAM <= (others => (others => 'X'));
+                RamAddr <= -1;
+                -- outside of any allowable address range - generate an error
+                assert (false)
+                    report  "Attempt to write to a non-existant address"
+                    severity  ERROR;
+            end if;
+        end if;
+    end process;
+
+
+    -- Get the 32 bits from the address being read from/written to
+    MemData <= Curr_RAM(RamAddr) when RamAddr >= 0 and RamAddr < MEMSIZE else (others => 'X');
+
+
+    read_proc: process (RE, RE0, RE1, RE2, RE3, MemData) is
     begin
 
-        -- wait for an input to change
-        wait on  RE, RE0, RE1, RE2, RE3, WE, WE0, WE1, WE2, WE3, MemAB;
-
         -- first check if reading
-        if  (RE = '0')  then
-            -- reading, put the data out (check the address)
-            if  ((CONV_INTEGER(MemAB) >= START_ADDR0) and
-                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * MEMSIZE)))  then
-                MemDB <= RAMbits0(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR0 / 4));
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR1) and
-                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * MEMSIZE)))  then
-                MemDB <= RAMbits1(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR1 / 4));
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR2) and
-                 (CONV_INTEGER(MemAB - START_ADDR2) < (4 * MEMSIZE)))  then
-                MemDB <= RAMbits2(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR2 / 4));
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR3) and
-                 (CONV_INTEGER(MemAB - START_ADDR3) < (4 * MEMSIZE)))  then
-                MemDB <= RAMbits3(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR3 / 4));
-            else
-                -- outside of any allowable address range - set output to X
-                MemDB <= (others => 'X');
-            end if;
+        if  (RE = '0' and not IS_X(MemAB))  then
+            MemDB <= MemData;
 
             -- only set the bytes that are being read
             if  RE0 /= '0'  then
@@ -151,67 +169,45 @@ begin
             end if;
 
         else
-
             -- not reading, send data bus to hi-Z
             MemDB <= (others => 'Z');
         end if;
 
-        -- now check if writing
-        if  (WE'event and (WE = '1'))  then
+    end process;
+
+
+    -- Use the write mask to override the previous value in memory
+    ToWrite(7 downto 0)   <= MemDB(7 downto 0)   when WE0 = '0' else MemData(7 downto 0);
+    ToWrite(15 downto 8)  <= MemDB(15 downto 8)  when WE1 = '0' else MemData(15 downto 8);
+    ToWrite(23 downto 16) <= MemDB(23 downto 16) when WE2 = '0' else MemData(23 downto 16);
+    ToWrite(31 downto 24) <= MemDB(31 downto 24) when WE3 = '0' else MemData(31 downto 24);
+
+    write_proc: process (WE, WE0, WE1, WE2, WE3, MemAB) is
+    begin
+
+        -- check if writing
+        if  (WE'event and (WE = '0') and not (is_x(MemAB)))  then
             -- rising edge of write - write the data (check which address range)
-            -- first get current value of the byte
-            if  ((CONV_INTEGER(MemAB) >= START_ADDR0) and
-                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * MEMSIZE)))  then
-                MemData <= RAMbits0(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR0 / 4));
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR1) and
-                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * MEMSIZE)))  then
-                MemData <= RAMbits1(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR1 / 4));
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR2) and
-                    (CONV_INTEGER(MemAB - START_ADDR2) < (4 * MEMSIZE)))  then
-                MemData <= RAMbits2(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR2 / 4));
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR3) and
-                    (CONV_INTEGER(MemAB - START_ADDR3) < (4 * MEMSIZE)))  then
-                MemData <= RAMbits3(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR3 / 4));
-            else
-                MemData <= (others => 'X');
 
-            -- now update the data based on the write enable signals
-            -- set any byte being written to its new value
-            if  WE0 = '0'  then
-                MemData(7 downto 0) <= MemDB(7 downto 0);
-            end if;
-            if  WE1 = '0'  then
-                MemData(15 downto 8) <= MemDB(15 downto 8);
-            end if;
-            if  WE2 = '0'  then
-                MemData(23 downto 16) <= MemDB(23 downto 16);
-            end if;
-            if  WE3 = '0'  then
-                MemData(31 downto 24) <= MemDB(31 downto 24);
-            end if;
-
-            -- finally write the updated value to memory
-            if  ((CONV_INTEGER(MemAB) >= START_ADDR0) and
-                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * MEMSIZE)))  then
-                RAMbits0(CONV_INTEGER(MemAB(31 downto 2)) - START_ADDR0 / 4) <= MemData;
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR1) and
-                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * MEMSIZE)))  then
-                RAMbits1(CONV_INTEGER(MemAB(31 downto 2)) - START_ADDR1 / 4) <= MemData;
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR2) and
-                    (CONV_INTEGER(MemAB - START_ADDR2) < (4 * MEMSIZE)))  then
-                RAMbits2(CONV_INTEGER(MemAB(31 downto 2)) - START_ADDR2 / 4) <= MemData;
-            elsif  ((CONV_INTEGER(MemAB) >= START_ADDR3) and
-                    (CONV_INTEGER(MemAB - START_ADDR3) < (4 * MEMSIZE)))  then
-                RAMbits3(CONV_INTEGER(MemAB(31 downto 2)) - START_ADDR3 / 4) <= MemData;
+            -- write the updated value to memory (computed combinatorially above)
+            if  ((to_integer(unsigned(MemAB)) >= START_ADDR0) and
+                 (to_integer(unsigned(MemAB) - START_ADDR0) < (4 * MEMSIZE)))  then
+                RAMbits0(to_integer(unsigned(MemAB(31 downto 2))) - START_ADDR0 / 4) <= ToWrite;
+            elsif  ((to_integer(unsigned(MemAB)) >= START_ADDR1) and
+                    (to_integer(unsigned(MemAB) - START_ADDR1) < (4 * MEMSIZE)))  then
+                RAMbits1(to_integer(unsigned(MemAB(31 downto 2))) - START_ADDR1 / 4) <= ToWrite;
+            elsif  ((to_integer(unsigned(MemAB)) >= START_ADDR2) and
+                    (to_integer(unsigned(MemAB) - START_ADDR2) < (4 * MEMSIZE)))  then
+                RAMbits2(to_integer(unsigned(MemAB(31 downto 2))) - START_ADDR2 / 4) <= ToWrite;
+            elsif  ((to_integer(unsigned(MemAB)) >= START_ADDR3) and
+                    (to_integer(unsigned(MemAB) - START_ADDR3) < (4 * MEMSIZE)))  then
+                RAMbits3(to_integer(unsigned(MemAB(31 downto 2))) - START_ADDR3 / 4) <= ToWrite;
             else
                 -- outside of any allowable address range - generate an error
                 assert (false)
                     report  "Attempt to write to a non-existant address"
                     severity  ERROR;
             end if;
-
-            -- wait for the update to happen
-            wait for 0 ns;
 
         end if;
 
@@ -220,7 +216,6 @@ begin
             -- output error message
             REPORT "Glitch on Memory Address bus"
             SEVERITY  ERROR;
-            end if;
         end if;
 
     end process;
