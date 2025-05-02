@@ -32,6 +32,7 @@ architecture behavioral of sh2_reg_tb is
     signal RegA1Sel   : integer  range 15 downto 0;       -- which register to read to address bus 1
     signal RegA2Sel   : integer  range 15 downto 0;       -- which register to read to address bus 2
     signal clock      : std_logic;                        -- system clock
+    signal reset      : std_logic;                        -- system reset (async, active low)
 
     -- Outputs from unit under test
     signal RegA       : std_logic_vector(31 downto 0);    -- register bus A
@@ -41,10 +42,6 @@ architecture behavioral of sh2_reg_tb is
 
     -- Test signals
     signal END_SIM : boolean    := false;   -- if the simulation should end
-
-    signal TempA : std_logic_vector(31 downto 0);
-    signal TempB : std_logic_vector(31 downto 0);
-    signal TempOut : std_logic_vector(31 downto 0);
 
 begin
     -- Instantiate UUT
@@ -61,6 +58,7 @@ begin
         RegA1Sel => RegA1Sel,
         RegA2Sel => RegA2Sel,
         clock => clock,
+        reset => reset,
         RegA => RegA,
         RegB => RegB,
         RegA1 => RegA1,
@@ -108,6 +106,10 @@ begin
 
         variable random : rng;
     begin
+        reset <= '0';   -- start system reset
+        Tick;           -- propagate signal
+        reset <= '1';   -- finished system reset
+
         -- Write random values to each register
         for i in 0 to 15 loop
             Write(i, random.rand_slv(32));

@@ -31,6 +31,7 @@ entity SH2Regs is
         RegA1Sel   : in   integer  range 15 downto 0;       -- which register to read to address bus 1
         RegA2Sel   : in   integer  range 15 downto 0;       -- which register to read to address bus 2
         clock      : in   std_logic;                        -- system clock
+        reset      : in   std_logic;                        -- system reset (async, active low)
         RegA       : out  std_logic_vector(31 downto 0);    -- register bus A
         RegB       : out  std_logic_vector(31 downto 0);    -- register bus B
         RegA1      : out  std_logic_vector(31 downto 0);    -- address register bus 1
@@ -63,6 +64,7 @@ architecture structural of SH2Regs is
             RegDStore  : in   std_logic;                                    -- actually write to a double register
             RegDSel    : in   integer  range regcnt/2 - 1 downto 0;         -- register to read onto double width bus D (log regcnt bits)
             clock      : in   std_logic;                                    -- the system clock
+            reset      : in   std_logic;                                    -- system reset (async, active low)
             RegA       : out  std_logic_vector(wordsize - 1 downto 0);      -- register value for bus A
             RegB       : out  std_logic_vector(wordsize - 1 downto 0);      -- register value for bus B
             RegA1      : out  std_logic_vector(wordsize - 1 downto 0);      -- register value for address bus 1
@@ -89,6 +91,7 @@ begin
     )
     port map(
         clock => clock,
+        reset => reset,
         -- dual register access for ALU operations
         RegIn => DataIn,
         RegInSel => RegInSel,

@@ -24,11 +24,9 @@
 
 library ieee;
 library std;
-library work;
 
 use work.SH2Constants.all;
 use ieee.std_logic_1164.all;
-use work.all;
 
 -- SH2Pmau
 --
@@ -87,15 +85,12 @@ end package SH2PmauConstants;
 
 library ieee;
 library std;
-library work;
 
 use ieee.std_logic_1164.all;
 use work.SH2PmauConstants.all;
 use work.SH2Constants.all;
 use work.MemUnitConstants.all;
 use work.array_type_pkg.all;
-
-use work.all;
 
 architecture structural of SH2Pmau is
 
@@ -106,6 +101,7 @@ architecture structural of SH2Pmau is
   begin
     result := (others => slv(slv'left));
     result(slv'range)  := slv;
+    return result;
   end function;
 
   -- Possible sources are PC, PR, and Rm.
@@ -208,7 +204,7 @@ begin
   -- PMAUPrePostSel ------------------------------------------------------------
   PMAUPrePostSel <= MemUnit_POST;
 
-  SH2Pmau_Instance : entity MemUnit
+  SH2Pmau_Instance : entity work.MemUnit
     generic map (
       srcCnt        => SRCCNT,
       offsetCnt     => OFFSETCNT,

@@ -49,6 +49,7 @@
 --    RegDStore  - actually write to a double register
 --    RegDSel    - register to read onto double width bus D (log regcnt bits)
 --    clock      - the system clock
+--    reset      - the system clock (async, active low)
 --
 --  Outputs:
 --    RegA       - register value for bus A
@@ -84,6 +85,7 @@ entity  RegArray  is
         RegDStore  : in   std_logic;
         RegDSel    : in   integer  range regcnt/2 - 1 downto 0;
         clock      : in   std_logic;
+        reset      : in   std_logic;
         RegA       : out  std_logic_vector(wordsize - 1 downto 0);
         RegB       : out  std_logic_vector(wordsize - 1 downto 0);
         RegA1      : out  std_logic_vector(wordsize - 1 downto 0);
@@ -117,15 +119,14 @@ begin
     RegD   <=  Registers(2 * RegDSel + 1) & Registers(2 * RegDSel);
 
 
-    -- only write registers on the clock
-    process(clock)
+    -- only write registers on the clock, plus async reset (active low)
+    process(clock, reset)
     begin
-
-        -- by default leave all registers with their current value
-        Registers  <=  Registers;
-
-        -- if storing, update that register on the clock
-        if  rising_edge(clock)  then
+        if (reset = '0') then
+            -- set all registers to 0 on async reset
+            Registers  <=  (others => (others => '0'));
+        elsif  rising_edge(clock)  then
+            -- update registers on clock rising edge
 
             -- handle double word stores
             if (RegDStore = '1')  then
@@ -143,6 +144,9 @@ begin
             if (RegStore = '1')  then
                 Registers(RegInSel)  <=  RegIn;
             end if;
+        else
+            -- have registers retain their value
+            Registers  <=  Registers;
         end if;
 
     end process;

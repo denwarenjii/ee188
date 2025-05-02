@@ -12,6 +12,7 @@
 --     29 Apr 25  Glen George       Fixed some syntax errors.
 --     29 Apr 25  Glen George       Fixed inconsistencies in byte vs word
 --                                  addressing.
+--     01 May 25  Zack Huang        Fixed compile errors
 --
 ----------------------------------------------------------------------------
 
@@ -119,40 +120,40 @@ begin
         if  (RE = '0')  then
             -- reading, put the data out (check the address)
             if  ((CONV_INTEGER(MemAB) >= START_ADDR0) and
-                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * RAM_SIZE)))  then
-                MemDB <= RAMbits0(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR0 / 4);
+                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * MEMSIZE)))  then
+                MemDB <= RAMbits0(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR0 / 4));
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR1) and
-                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * RAM_SIZE)))  then
-                MemDB <= RAMbits1(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR1 / 4);
+                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * MEMSIZE)))  then
+                MemDB <= RAMbits1(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR1 / 4));
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR2) and
-                 (CONV_INTEGER(MemAB - START_ADDR2) < (4 * RAM_SIZE)))  then
-                MemDB <= RAMbits2(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR2 / 4);
+                 (CONV_INTEGER(MemAB - START_ADDR2) < (4 * MEMSIZE)))  then
+                MemDB <= RAMbits2(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR2 / 4));
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR3) and
-                 (CONV_INTEGER(MemAB - START_ADDR3) < (4 * RAM_SIZE)))  then
-                MemDB <= RAMbits3(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR3 / 4);
+                 (CONV_INTEGER(MemAB - START_ADDR3) < (4 * MEMSIZE)))  then
+                MemDB <= RAMbits3(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR3 / 4));
             else
                 -- outside of any allowable address range - set output to X
-                MemDB <= others => 'X';
+                MemDB <= (others => 'X');
             end if;
 
             -- only set the bytes that are being read
             if  RE0 /= '0'  then
-                MemDB(7 downto 0) <= others => 'Z';
+                MemDB(7 downto 0) <= (others => 'Z');
             end if;
             if  RE1 /= '0'  then
-                MemDB(15 downto 8) <= others => 'Z';
+                MemDB(15 downto 8) <= (others => 'Z');
             end if;
             if  RE2 /= '0'  then
-                MemDB(23 downto 16) <= others => 'Z';
+                MemDB(23 downto 16) <= (others => 'Z');
             end if;
             if  RE3 /= '0'  then
-                MemDB(31 downto 24) <= others => 'Z';
+                MemDB(31 downto 24) <= (others => 'Z');
             end if;
 
         else
 
             -- not reading, send data bus to hi-Z
-            MemDB <= others => 'Z';
+            MemDB <= (others => 'Z');
         end if;
 
         -- now check if writing
@@ -160,19 +161,19 @@ begin
             -- rising edge of write - write the data (check which address range)
             -- first get current value of the byte
             if  ((CONV_INTEGER(MemAB) >= START_ADDR0) and
-                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * RAM_SIZE)))  then
-                MemData <= RAMbits0(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR0 / 4);
+                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * MEMSIZE)))  then
+                MemData <= RAMbits0(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR0 / 4));
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR1) and
-                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * RAM_SIZE)))  then
-                MemData <= RAMbits1(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR1 / 4);
+                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * MEMSIZE)))  then
+                MemData <= RAMbits1(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR1 / 4));
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR2) and
-                    (CONV_INTEGER(MemAB - START_ADDR2) < (4 * RAM_SIZE)))  then
-                MemData <= RAMbits2(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR2 / 4);
+                    (CONV_INTEGER(MemAB - START_ADDR2) < (4 * MEMSIZE)))  then
+                MemData <= RAMbits2(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR2 / 4));
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR3) and
-                    (CONV_INTEGER(MemAB - START_ADDR3) < (4 * RAM_SIZE)))  then
-                MemData <= RAMbits3(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR3 / 4);
+                    (CONV_INTEGER(MemAB - START_ADDR3) < (4 * MEMSIZE)))  then
+                MemData <= RAMbits3(CONV_INTEGER(MemAB(31 downto 2) - START_ADDR3 / 4));
             else
-                MemData <= others => 'X';
+                MemData <= (others => 'X');
 
             -- now update the data based on the write enable signals
             -- set any byte being written to its new value
@@ -191,16 +192,16 @@ begin
 
             -- finally write the updated value to memory
             if  ((CONV_INTEGER(MemAB) >= START_ADDR0) and
-                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * RAM_SIZE)))  then
+                 (CONV_INTEGER(MemAB - START_ADDR0) < (4 * MEMSIZE)))  then
                 RAMbits0(CONV_INTEGER(MemAB(31 downto 2)) - START_ADDR0 / 4) <= MemData;
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR1) and
-                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * RAM_SIZE)))  then
+                    (CONV_INTEGER(MemAB - START_ADDR1) < (4 * MEMSIZE)))  then
                 RAMbits1(CONV_INTEGER(MemAB(31 downto 2)) - START_ADDR1 / 4) <= MemData;
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR2) and
-                    (CONV_INTEGER(MemAB - START_ADDR2) < (4 * RAM_SIZE)))  then
+                    (CONV_INTEGER(MemAB - START_ADDR2) < (4 * MEMSIZE)))  then
                 RAMbits2(CONV_INTEGER(MemAB(31 downto 2)) - START_ADDR2 / 4) <= MemData;
             elsif  ((CONV_INTEGER(MemAB) >= START_ADDR3) and
-                    (CONV_INTEGER(MemAB - START_ADDR3) < (4 * RAM_SIZE)))  then
+                    (CONV_INTEGER(MemAB - START_ADDR3) < (4 * MEMSIZE)))  then
                 RAMbits3(CONV_INTEGER(MemAB(31 downto 2)) - START_ADDR3 / 4) <= MemData;
             else
                 -- outside of any allowable address range - generate an error
