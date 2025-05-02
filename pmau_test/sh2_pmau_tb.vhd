@@ -11,6 +11,7 @@
 --  
 --  Revision History:
 --    1 May 2025  Chris M.   Initial revision.
+
 ----------------------------------------------------------------------------
 
 
@@ -64,16 +65,6 @@ architecture TestBench of sh2_pmau_tb is
     result := std_logic_vector(resize(signed(slv), SH2_WORDSIZE));
     return result;
   end function;
-
-
-  -- shift_left is defined for unsigned/signed types only; wrap for slv.
-  --
-  pure function shift_left_slv(slv : std_logic_vector; 
-                               k   : natural) return std_logic_vector is
-  begin
-    return std_logic_vector(shift_left(unsigned(slv), k));
-  end function;
-
 
 
 begin
@@ -132,6 +123,14 @@ begin
       variable ExpectedPC : std_logic_vector(SH2_WORDSIZE - 1 downto 0) :=
         (others => '0');
 
+      variable PrevPCOut_TB : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+
+      variable l : line;
+
+      constant NUM_TESTS : integer := 128;
+
+
+      -- Randomize the test bench inputs, but not the control signals.
       procedure RandomizeInputs is
       begin
         RegIn_TB <= RV.rand_slv(RegIn_TB'length);
@@ -140,21 +139,25 @@ begin
         Off12_TB <= RV.rand_slv(Off12_TB'length);
       end procedure RandomizeInputs;
 
+
+      -- Log the test bench inputs.
       procedure LogInputs is
-        variable l : line;
+        variable l_1 : line;
       begin
-        write(l, string'(HT & "RegIn_TB: "  & HT & "0x" & to_hstring(RegIn_TB)));
-        write(l, string'(LF & HT & "PRIn_TB: "   & HT & "0x" & to_hstring(PRIn_TB)));
-        write(l, string'(LF & HT & "Off8_TB: "   & HT & "0x" & to_hstring(Off8_TB)));
-        write(l, string'(LF & HT & "Off12_TB: "  & HT & "0x" & to_hstring(Off12_TB)));
-        writeline(output, l);
+        write(l_1, string'(HT & "RegIn_TB: "  & HT & "0x" & to_hstring(RegIn_TB)));
+        write(l_1, string'(LF & HT & "PRIn_TB: "   & HT & "0x" & to_hstring(PRIn_TB)));
+        write(l_1, string'(LF & HT & "Off8_TB: "   & HT & "0x" & to_hstring(Off8_TB)));
+        write(l_1, string'(LF & HT & "Off12_TB: "  & HT & "0x" & to_hstring(Off12_TB)));
+        writeline(output, l_1);
       end procedure LogInputs;
 
+
+      -- Compare the actual and expected PC.
       procedure CheckResult (
           actual_pc : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-          verbose : boolean := true
+          verbose : boolean := false
       ) is
-        variable l : line;
+        variable l_2 : line;
       begin
         assert (ExpectedPC = actual_pc)
         report "ExpectedPC (0x" & to_hstring(ExpectedPC) & ") is not equal " &
@@ -163,21 +166,19 @@ begin
 
         if (verbose) then
           LogInputs;
-          write(l, string'(HT & "ExpectedPC:" & HT & "0x" & to_hstring(ExpectedPC) & LF));
-          write(l, string'(HT & "actual_pc:"  & HT & "0x" & to_hstring(actual_pc)));
-          writeline(output, l);
+          write(l_2, string'(HT & "ExpectedPC:" & HT & "0x" & to_hstring(ExpectedPC) & LF));
+          write(l_2, string'(HT & "actual_pc:"  & HT & "0x" & to_hstring(actual_pc)));
+          writeline(output, l_2);
         end if;
       end procedure CheckResult;
 
+
+      -- Advance the clock to the next rising edge.
       procedure Tick is
       begin
         wait until rising_edge(Clk_TB);
       end procedure Tick;
 
-
-      variable l : line;
-
-      constant NUM_TESTS : integer := 128;
 
       procedure LogNow is
       begin
@@ -185,10 +186,6 @@ begin
         write(l, now);
         write(l, string'(": "));
       end procedure LogNow;
-
-      variable PrevPCOut_TB : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-
-
 
     begin
       
@@ -199,171 +196,180 @@ begin
       --    - PC relative 12 (PC + 2*disp:12)
       --    - Register relative (PC + Rm)
       --    - Post increment (PC <- PC + 2)
-
-
       PRWriteEn_TB <= '0';
-      -- PCAddrMode_TB <= PCAddrMode_REG_DIRECT;
-      -- RandomizeInputs;
 
-      wait for DELTA;
 
       --  Register direct (PC <- Rm)
       --
       LogNow;
-
       write(l, string'("Testing Register Direct Addressing"));
       writeline(output, l);
+      
       PCAddrMode_TB <= PCAddrMode_REG_DIRECT;
-      RandomizeInputs;
 
-      Tick;
+      for i in 0 to NUM_TESTS loop
 
-      LogNow;
+        RandomizeInputs;
 
-      write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
-      writeline(output, l);
+        Tick;
 
-      ExpectedPC := RegIn_TB;
-      CheckResult(PCOut_TB);
+        -- LogNow;
+        -- write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
+        -- writeline(output, l);
+
+        ExpectedPC := RegIn_TB;
+        CheckResult(PCOut_TB);
+
+      end loop;
 
 
       -- PR direct (PC <- PR)
       --
-      write(l, string'(to_string(LF)));
-
-      -- Load PR first.
-      PRWriteEn_TB <= '1';
-
-      Tick;
-
-      PRWriteEn_TB <= '0';
-
       LogNow;
       write(l, string'("Testing PR Direct Addressing"));
       writeline(output, l);
 
-
-      ExpectedPC := PRIn_TB;
-
       PCAddrMode_TB <= PCAddrMode_PR_DIRECT;
-      RandomizeInputs;
+      PRWriteEn_TB <= '1';
 
-      Tick;
 
-      LogNow;
-      write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
-      writeline(output, l);
+      for i in 0 to NUM_TESTS loop
 
-      CheckResult(PCOut_TB);
+        RandomizeInputs;
+
+        Tick;
+
+        ExpectedPC := PRIn_TB;
+
+        Tick;
+
+        -- LogNow;
+        -- write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
+        -- writeline(output, l);
+
+        CheckResult(PCOut_TB);
+
+      end loop;
+
+      PRWriteEn_TB <= '0';
 
 
       -- PC relative 8 (PC + 2*disp:8)
       --
-      write(l, string'(to_string(LF)));
       LogNow;
       write(l, string'("Testing PC Relative (8-Bit) addressing."));
       writeline(output, l);
 
       PCAddrMode_TB <= PCAddrMode_RELATIVE_8;
 
-      PrevPCOut_TB := PCOut_TB;
+      for i in 0 to NUM_TESTS loop
 
-      RandomizeInputs;
+        PrevPCOut_TB := PCOut_TB;
 
-      Tick;
+        RandomizeInputs;
 
-      ExpectedPC := std_logic_vector(
-        unsigned(PrevPCOut_TB) +
-        shift_left(unsigned(SignExtend(Off8_TB)), 1)
-      );
+        Tick;
 
-      write(l, string'("@"));
-      write(l, now);
-      write(l, string'(": "));
-      write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
-      writeline(output, l);
+        ExpectedPC := std_logic_vector(
+          unsigned(PrevPCOut_TB) +
+          shift_left(unsigned(SignExtend(Off8_TB)), 1)
+        );
 
-      CheckResult(PCOut_TB);
+        -- LogNow;
+        -- write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
+        -- writeline(output, l);
 
+        CheckResult(PCOut_TB);
+
+      end loop;
 
 
       -- PC relative 12 (PC + 2*disp:12)
       --
-      write(l, string'(to_string(LF)));
       LogNow;
       write(l, string'("Testing PC Relative (12-Bit) addressing."));
       writeline(output, l);
 
       PCAddrMode_TB <= PCAddrMode_RELATIVE_12;
 
-      PrevPCOut_TB := PCOut_TB;
+      for i in 0 to NUM_TESTS loop
 
-      RandomizeInputs;
+        PrevPCOut_TB := PCOut_TB;
 
-      Tick;
+        RandomizeInputs;
 
-      ExpectedPC := std_logic_vector(
-        unsigned(PrevPCOut_TB) +
-        shift_left(unsigned(SignExtend(Off12_TB)), 1)
-      );
+        Tick;
 
-      LogNow;
-      write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
-      writeline(output, l);
+        ExpectedPC := std_logic_vector(
+          unsigned(PrevPCOut_TB) +
+          shift_left(unsigned(SignExtend(Off12_TB)), 1)
+        );
 
-      CheckResult(PCOut_TB);
+        -- LogNow;
+        -- write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
+        -- writeline(output, l);
 
+        CheckResult(PCOut_TB);
+
+      end loop;
 
       -- Register relative (PC + Rm)
       --
-      write(l, string'(to_string(LF)));
       LogNow;
       write(l, string'("Testing Register Relative addressing."));
       writeline(output, l);
 
       PCAddrMode_TB <= PCAddrMode_REG_DIRECT_RELATIVE;
 
-      PrevPCOut_TB := PCOut_TB;
+      for i in 0 to NUM_TESTS loop
 
-      RandomizeInputs;
+        PrevPCOut_TB := PCOut_TB;
 
-      Tick;
+        RandomizeInputs;
 
-      ExpectedPC := std_logic_vector (
-        unsigned(PrevPCOut_TB) +
-        unsigned(RegIn_TB)
-      );
+        Tick;
 
-      LogNow;
-      write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
-      writeline(output, l);
+        ExpectedPC := std_logic_vector (
+          unsigned(PrevPCOut_TB) +
+          unsigned(RegIn_TB)
+        );
 
-      CheckResult(PCOut_TB);
-      
+        -- LogNow;
+        -- write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
+        -- writeline(output, l);
+
+        CheckResult(PCOut_TB);
+
+      end loop;
+    
+
       -- Post increment (PC <- PC + 2)
       --
-      write(l, string'(to_string(LF)));
       LogNow;
       write(l, string'("Testing Post Incremented addressing."));
       writeline(output, l);
 
       PCAddrMode_TB <= PCAddrMode_INC;
 
-      PrevPCOut_TB := PCOut_TB;
+      for i in 0 to NUM_TESTS loop
 
+        PrevPCOut_TB := PCOut_TB;
 
-      Tick;
+        Tick;
 
-      ExpectedPC := std_logic_vector (
-        unsigned(PrevPCOut_TB) +
-        to_unsigned(2, SH2_WORDSIZE)
-      );
+        ExpectedPC := std_logic_vector (
+          unsigned(PrevPCOut_TB) +
+          to_unsigned(2, SH2_WORDSIZE)
+        );
 
-      LogNow;
-      write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
-      writeline(output, l);
+        -- LogNow;
+        -- write(l, string'("PCOut_TB is 0x" & to_hstring(PCOut_TB)));
+        -- writeline(output, l);
 
-      CheckResult(PCOut_TB);
+        CheckResult(PCOut_TB);
+
+      end loop;
+
 
       stop;
 
