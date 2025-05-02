@@ -98,7 +98,7 @@ architecture structural of sh2cpu is
     signal ALUCmd   : std_logic_vector(1 downto 0);  -- ALU result select
 
     -- ALU outputs
-    signal Result   : std_logic_vector(31 downto 0); -- ALU result
+    signal Result   : std_logic_vector(31 downto 0);   -- ALU result
     signal Cout     : std_logic;                       -- carry out
     signal Overflow : std_logic;                       -- signed overflow
     signal Zero     : std_logic;                       -- result is zero
@@ -138,6 +138,7 @@ begin
     registers : entity work.SH2Regs
     port map (
         clock => clock,
+        reset => reset,
         DataIn => DataIn,
         EnableIn => EnableIn,
         RegInSel => RegInSel,
