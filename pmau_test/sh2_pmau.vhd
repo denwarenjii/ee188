@@ -20,7 +20,7 @@
 --		16 April 25		Chris M. Initial reivision.
 --    01 May   25   Chris M. Added PRWriteEn and seperate offset signals. Made
 --                           PrePostSel in MAU be POST when we don't care.
---    02 May   25   Chris M. Change SignExtend function to wrap numeric_std
+--    02 May   25   Chris M. Changed SignExtend function to wrap numeric_std
 --                           conversion.
 ----------------------------------------------------------------------------
 
@@ -115,12 +115,9 @@ architecture structural of SH2Pmau is
   pure function SignExtend(slv : std_logic_vector) return std_logic_vector is
     variable result : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
   begin
-    -- slv -> signed, resize to sign-extend, then conver to slv. 
+    -- slv -> signed, resize to sign-extend, then convert to slv. 
     result := std_logic_vector(resize(signed(slv), SH2_WORDSIZE));
     return result;
-    -- result := (others => slv(slv'left));
-    -- result(slv'range)  := slv;
-    -- return result;
   end function;
 
   -- shift_left is defined for unsigned/signed types only; wrap for slv.
