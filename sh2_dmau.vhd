@@ -146,31 +146,31 @@ use work.SH2DmauConstants.all;
 -- zero extended and then scaled by 1, 2, or 4, R0, or Rn.
 --
 -- Inputs:
---  RegSrc       -   Input register. One of three possible base sources.
---  R0Src        -   R0 Register input.
---  PCSrc        -   Program Counter Source.
---  GBRIn        -   GBR input.
---  GBRWriteEn   -   GBR write enable. Active high.
---  Off4         -   4-Bit Offset.
---  Off8         -   8-Bit Offset.
---  BaseSel      -   Which base register source to select.
---  IndexSel     -   Which index source to select (None, Off4, Off8, Rn,
---                   or R0). Note that Off4, Off8 are zero extended before 
---                   being added to the base.
+--   RegSrc       -   Input register. One of three possible base sources.
+--   R0Src        -   R0 Register input.
+--   PCSrc        -   Program Counter Source.
+--   GBRIn        -   GBR input.
+--   GBRWriteEn   -   GBR write enable. Active high.
+--   Off4         -   4-Bit Offset.
+--   Off8         -   8-Bit Offset.
+--   BaseSel      -   Which base register source to select.
+--   IndexSel     -   Which index source to select (None, Off4, Off8, Rn,
+--                    or R0). Note that Off4, Off8 are zero extended before 
+--                    being added to the base.
 --
---  OffScalar    -   What to scale the offset by (1, 2, 4)
---  IncDecSel    -   Post Increment or PreDecrement the base. Note that the
---                   amount added or subtracted is scaled ny OffScalar. Note 
---                   that even when this is set to NONE, an 
---                   incremented/decremented value is output to AddrSrcOut as a
---                   result of the generic memory access unit design.
---  Clk          -   Clk input.
+--   OffScalar    -   What to scale the offset by (1, 2, 4)
+--   IncDecSel    -   Post Increment or PreDecrement the base. Note that the
+--                    amount added or subtracted is scaled ny OffScalar. Note 
+--                    that even when this is set to NONE, an 
+--                    incremented/decremented value is output to AddrSrcOut as a
+--                    result of the generic memory access unit design.
+--   Clk          -   Clk input.
 --  
 -- Outputs:
 --
--- Addr       - output address
--- AddrSrcOut - incremented/decremented address (for storing back into register).
--- GBROut     - GBR output.
+--   Addr       - output address
+--   AddrSrcOut - incremented/decremented address (for storing back into register).
+--   GBROut     - GBR output.
 --
 entity SH2Dmau is
   port (
@@ -182,7 +182,7 @@ entity SH2Dmau is
     Off4         : in     std_logic_vector(3 downto 0);
     Off8         : in     std_logic_vector(7 downto 0);
     BaseSel      : in     std_logic_vector(1 downto 0);
-    IndexSel     : in     std_logic_vector(2 downto 0);
+    IndexSel     : in     std_logic_vector(1 downto 0);
     OffScalarSel : in     std_logic_vector(1 downto 0);
     IncDecSel    : in     std_logic_vector(1 downto 0);
     Clk          : in     std_logic;
@@ -202,6 +202,7 @@ architecture structural of SH2Dmau is
     begin
       result := (others => '0');
       result(slv'range) := slv;
+      return result;
     end function;
 
 
@@ -338,7 +339,7 @@ begin
   with IncDecSel select DMAUIncDecSel <=
     DMAU_INC      when  IncDecSel_POST_INC,
     DMAU_DEC      when  IncDecSel_PRE_DEC,
-    DMAUIncDecSel when  others;
+    '0'           when  others;
 
   -- DMAUIncDecBit ------------------------------------------------------------
 
@@ -359,7 +360,7 @@ begin
   with IncDecSel select DMAUPrePostSel <=
     DMAU_PRE       when IncDecSel_PRE_DEC,
     DMAU_POST      when IncDecSel_POST_INC,
-    DMAUPrePostSel when others;
+    '0'            when others;
 
 
   SH2Dmau_Instance : entity MemUnit
