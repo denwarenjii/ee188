@@ -2,7 +2,7 @@ SOURCES = utils.vhd alu.vhd sh2_alu.vhd reg.vhd sh2_reg.vhd
 TESTBENCHES = sh2_alu_tb.vhd sh2_reg_tb.vhd
 WAVEFORM = waveform.ghw
 
-BUILDFLAGS = --std=08
+BUILDFLAGS = --std=08 -fsynopsys
 # BUILDFLAGS =
 RUNFLAGS = --ieee-asserts=disable --wave=$(WAVEFORM)
 
