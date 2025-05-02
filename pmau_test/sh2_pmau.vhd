@@ -18,7 +18,8 @@
 --
 --  Revision History:
 --		16 April 25		Chris M. Initial reivision.
---    01 May   25   Chris M. Added PRWriteEn and seperate offset signals.
+--    01 May   25   Chris M. Added PRWriteEn and seperate offset signals. Made
+--                           PrePostSel in MAU be POST when we don't care.
 --
 ----------------------------------------------------------------------------
 
@@ -158,12 +159,13 @@ architecture structural of SH2Pmau is
   -- signal PCMux : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
 
   signal PRReg : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+
   signal PCReg : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
   signal PCMux : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
   
 begin
 
-  PCOut <= PCReg;
+  PCOut <= PCMux;
   PROut <= PRReg;
 
   with PCAddrMode select PCMux <=
@@ -180,6 +182,8 @@ begin
       PCReg <= PCMux;
       if (PRWriteEn = '1') then
         PRReg <= PRIn;
+      else
+        PRReg <= PRReg;
       end if;
     end if;
   end process;
