@@ -64,7 +64,6 @@ end package;
 
 
 
--- NOTE: Implementation is found in alu.vhd
 --
 --  AdderBit
 --
@@ -80,29 +79,29 @@ end package;
 --    Co - carry out for this bit
 --
 
--- library ieee;
--- use ieee.std_logic_1164.all;
---
--- entity  AdderBit  is
---
---     port(
---         A  : in   std_logic;        -- first operand
---         B  : in   std_logic;        -- second operand
---         Ci : in   std_logic;        -- carry in from previous bit
---         S  : out  std_logic;        -- sum (result)
---         Co : out  std_logic         -- carry out to next bit
---     );
---
--- end  AdderBit;
---
---
--- architecture  dataflow  of  AdderBit  is
--- begin
---
---     S  <=  A  xor  B  xor  Ci;
---     Co <=  (A  and  B)  or  (A  and Ci)  or  (B  and  Ci);
---
--- end  dataflow;
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity  AdderBit  is
+
+    port(
+        A  : in   std_logic;        -- first operand
+        B  : in   std_logic;        -- second operand
+        Ci : in   std_logic;        -- carry in from previous bit
+        S  : out  std_logic;        -- sum (result)
+        Co : out  std_logic         -- carry out to next bit
+    );
+
+end  AdderBit;
+
+
+architecture  dataflow  of  AdderBit  is
+begin
+
+    S  <=  A  xor  B  xor  Ci;
+    Co <=  (A  and  B)  or  (A  and Ci)  or  (B  and  Ci);
+
+end  dataflow;
 
 
 
@@ -195,7 +194,6 @@ architecture  dataflow  of  MemUnit  is
 
 		signal AddrOffMux : std_logic_vector(wordsize - 1 downto 0);
 
-    signal AddrSrcSrcSel : std_logic_vector(wordsize - 1 downto 0);
 begin
 
     -- compute the input for the incrementer/decrementer
@@ -247,9 +245,6 @@ begin
 					idcarry(i + 1));
     end generate;
 
-
-    -- TODO: Remove.
-    AddrSrcSrcSel <= AddrSrc(SrcSel);
 
     -- input to the offset adder is either the original source or the
     --    incremented/decremented source, depending on whether doing pre- or
