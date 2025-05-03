@@ -114,7 +114,8 @@ begin
 
     ram_access: process (RE, RE0, RE1, RE2, RE3, WE, WE0, WE1, WE2, WE2, MemAB) is
     begin
-        if not is_x(MemAB) then
+        -- Check that MemAB is a valid value and is within the range of the integer type
+        if not is_x(MemAB) and unsigned(MemAB) <= to_unsigned(integer'high, 32) then
             if ((to_integer(unsigned(MemAB)) >= START_ADDR0) and
                 (to_integer(unsigned(MemAB) - START_ADDR0) < (4 * MEMSIZE))) then
                     Curr_RAM <= RAMBits0;
