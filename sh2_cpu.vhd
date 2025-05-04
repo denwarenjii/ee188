@@ -132,8 +132,10 @@ architecture structural of sh2cpu is
     -- PMAU outputs
     signal PCOut       : std_logic_vector(31 downto 0);
     signal PROut       : std_logic_vector(31 downto 0);
+
+    -- CPU system/control registers
 begin
-    
+
     -- Route control signals and data into register array
     registers : entity work.SH2Regs
     port map (
@@ -199,8 +201,19 @@ begin
         Disp => Disp,
         PCAddrMode => PCAddrMode,
         Clk => clock,
+        reset => reset,
         PCOut => PCOut,
         PROut => PROut
     );
+
+    -- proc_name: process(clock, reset)
+    -- begin
+    --     -- asyncronous low reset
+    --     if reset = '1' then
+    --
+    --     elsif rising_edge(clk) then
+    --
+    --     end if;
+    -- end process proc_name;
     
 end architecture structural;
