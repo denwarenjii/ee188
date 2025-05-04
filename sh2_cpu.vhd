@@ -7,6 +7,7 @@
 --
 --  Revision History:
 --     28 Apr 25  Glen George       Initial revision.
+--     01 May 25  Zack Huang        Declare all sub-unit entities
 --
 ----------------------------------------------------------------------------
 

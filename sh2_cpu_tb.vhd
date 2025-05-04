@@ -4,6 +4,7 @@
 -- 
 --  Revision History:
 --     01 May 25    Zack Huang      initial revision
+--     03 May 25    Zack Huang      working with data/program memory units
 --
 ----------------------------------------------------------------------------
 
@@ -51,10 +52,6 @@ architecture behavioral of sh2_cpu_tb is
     signal TEST_WE3     :  std_logic;                       -- fourth byte active low write enable
     signal TEST_DB      :  std_logic_vector(31 downto 0);   -- memory data bus
     signal TEST_MEMSEL  :  std_logic;                       -- if should access data memory (0) or program memory (1)
-
-    -- Memory I/O
-    signal MEM_AB  :  std_logic_vector(31 downto 0);   -- program memory address bus
-    signal MEM_DB  :  std_logic_vector(31 downto 0);   -- program memory address bus
 
     -- Memory control signals
     signal RAM_RE0     :  std_logic;                       -- first byte active low read enable
