@@ -381,7 +381,7 @@ begin
         Tick;
 
         CPU_ACTIVE <= false;
-        TEST_MEMSEL <= '0';
+        TEST_MEMSEL <= '1';
         ReadMemory(0, 8);
 
         END_SIM <= TRUE;

@@ -10,20 +10,23 @@
 --
 --    - PC <- PC + 2*disp:8  (relative)
 --    - PC <- PC + 2*disp:12 (relative)
---    - PC <- PC + @(Rm)     (register indirect relative)
+--    - PC <- PC + Rm        (register relative)
 --    - PC <- PR             (PR direct)
---    - PC <- PC + 1         (increment)
+--    - PC <- PC + 2         (increment)
 --    - PC <- Rm             (register direct)
 --
 --
 --  Revision History:
 --		16 April 25		Chris M. Initial reivision.
---
--- - Add signal for PR.
+--    01 May   25   Chris M. Added PRWriteEn and seperate offset signals. Made
+--                           PrePostSel in MAU be POST when we don't care.
+--    02 May   25   Chris M. Changed SignExtend function to wrap numeric_std
+--                           conversion.
 ----------------------------------------------------------------------------
 
 library ieee;
 library std;
+library work;
 
 use work.SH2Constants.all;
 use ieee.std_logic_1164.all;
@@ -35,9 +38,9 @@ use ieee.std_logic_1164.all;
 --
 --    PC <- PC + 2*disp:8  (relative)
 --    PC <- PC + 2*disp:12 (relative)
---    PC <- PC + @(Rm)     (register indirect relative)
+--    PC <- PC + Rm        (register relative)
 --    PC <- PR             (PR direct)
---    PC <- PC + 1         (increment)
+--    PC <- PC + 2         (increment)
 --    PC <- Rm             (register direct)
 --
 -- Note that the possible adresses sources to the general memory access unit
@@ -47,25 +50,31 @@ use ieee.std_logic_1164.all;
 -- unit.
 --
 -- Inputs:
---    PCSrc      - Program Counter source.
---    PRSrc      - Procedure Register source.
---    AddrOffset - Address offset source.
---    Disp       - Signed 12-bit immediate displacement.
---    PCAddrMode - Which addressing mode to select.
+--   RegIn         : Register source input.
+--   PRIn          : PR Register input (for writing to PR).
+--   PRWriteEn     : Enable writing to PR (active high).
+--   Off8          : 8-bit signed offset input.
+--   Off12         : 12-bit signed offset input.
+--   PCAddrMode    : Program address mode select signal.
+--   Clk           : Clock.
+--   reset         : system reset (active low, async).
 --    
 -- Outputs:
---    PCOut - The updated PC based on the addressing mode.
+--   PCOut         : PC (Program Counter) output.
+--   PROut         : PR (Procedure Register) output.
 --
 entity SH2Pmau is
   port (
-    RegIn       : in std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-    PRIn        : in std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-    AddrOffset  : in std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-    Disp        : in std_logic_vector(11 downto 0);
-    PCAddrMode  : in std_logic_vector(2 downto 0);
-    Clk         : in std_logic;
-    PCOut       : out std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-    PROut       : out std_logic_vector(SH2_WORDSIZE - 1 downto 0)
+    RegIn         : in std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    PRIn          : in std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    PRWriteEn     : in std_logic;
+    Off8          : in std_logic_vector(7 downto 0);
+    Off12         : in std_logic_vector(11 downto 0);
+    PCAddrMode    : in std_logic_vector(2 downto 0);
+    Clk           : in std_logic;
+    reset         : in std_logic;
+    PCOut         : out std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    PROut         : out std_logic_vector(SH2_WORDSIZE - 1 downto 0)
   );
 end entity SH2Pmau;
 
@@ -75,18 +84,25 @@ use ieee.std_logic_1164.all;
 
 package SH2PmauConstants is
 
-  constant PCAddrMode_INC                   : std_logic_vector(2 downto 0) := "000"; -- PC <- PC + 2
-  constant PCAddrMode_RELATIVE              : std_logic_vector(2 downto 0) := "001"; -- PC <- PC + disp
-  constant PCAddrMode_REG_INDIRECT_RELATIVE : std_logic_vector(2 downto 0) := "010"; -- PC <- PC +@[Rm]
-  constant PCAddrMode_REG_DIRECT            : std_logic_vector(2 downto 0) := "011"; -- PC <- Rm
-  constant PCAddrMode_PR_DIRECT             : std_logic_vector(2 downto 0) := "100"; -- PC <- PR
+  constant PCAddrMode_INC                     : std_logic_vector(2 downto 0) := "000";  -- PC <- PC + 2
+  constant PCAddrMode_RELATIVE_8              : std_logic_vector(2 downto 0) := "001";  -- PC <- PC + disp:8
+  constant PCAddrMode_RELATIVE_12             : std_logic_vector(2 downto 0) := "010";  -- PC <- PC + disp:12
+  constant PCAddrMode_REG_DIRECT_RELATIVE     : std_logic_vector(2 downto 0) := "011";  -- PC <- PC + Rm
+  constant PCAddrMode_REG_DIRECT              : std_logic_vector(2 downto 0) := "100";  -- PC <- Rm
+  constant PCAddrMode_PR_DIRECT               : std_logic_vector(2 downto 0) := "101";  -- PC <- PR
+  constant PCAddrMode_HOLD                    : std_logic_vector(2 downto 0) := "110";  -- PC <- PC
 
 end package SH2PmauConstants;
 
 library ieee;
 library std;
+library work;
 
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+use std.textio.all;
+
 use work.SH2PmauConstants.all;
 use work.SH2Constants.all;
 use work.MemUnitConstants.all;
@@ -99,16 +115,24 @@ architecture structural of SH2Pmau is
   pure function SignExtend(slv : std_logic_vector) return std_logic_vector is
     variable result : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
   begin
-    result := (others => slv(slv'left));
-    result(slv'range)  := slv;
+    -- slv -> signed, resize to sign-extend, then convert to slv. 
+    result := std_logic_vector(resize(signed(slv), SH2_WORDSIZE));
     return result;
   end function;
 
-  -- Possible sources are PC, PR, and Rm.
-  constant SRCCNT       : integer := 3;
+  -- shift_left is defined for unsigned/signed types only; wrap for slv.
+  --
+  pure function shift_left_slv(slv : std_logic_vector; 
+                               k   : natural) return std_logic_vector is
+  begin
+    return std_logic_vector(shift_left(unsigned(slv), k));
+  end function;
 
-  -- Possible offfsets are None, Disp, or the contents at some address.
-  constant OFFSETCNT    : integer := 3;
+  -- Possible sources are PC, PR, and Rm.
+  constant SRCCNT : integer := 3;
+
+  -- Possible offfsets are None, Off8, Off12, or Rm.
+  constant OFFSETCNT : integer := 4;
 
   -- Adding two is the same as incrementing bit 1 of the PC.
   constant MAXINCDECBIT : integer := 1;
@@ -119,81 +143,104 @@ architecture structural of SH2Pmau is
   signal PMAUAddrSrc : std_logic_array(SRCCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
   signal PMAUSrcSel  : integer range SRCCNT - 1 downto 0;
 
-  constant PMAUAddrOff_NONE : integer := 0;
-  constant PMAUAddrOff_DISP : integer := 1;
-  constant PMAUAddrOff_REG  : integer := 2;
+  constant PMAUAddrOff_NONE   : integer := 0;
+  constant PMAUAddrOff_OFF8   : integer := 1;
+  constant PMAUAddrOff_OFF12  : integer := 2;
+  constant PMAUAddrOff_REG    : integer := 3;
   signal PMAUAddrOff : std_logic_array(OFFSETCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
   signal PMAUOffsetSel : integer range OFFSETCNT - 1 downto 0;
 
   
-  -- constant MemUnit_PRE  : std_logic := '0';            -- pre- inc/dec
-  -- constant MemUnit_POST : std_logic := '1';            -- post- inc/dec
   -- constant MemUnit_INC  : std_logic := '0';            -- pre/post increment
-  -- constant MemUnit_DEC  : std_logic := '1';            -- pre/post decrement
-
   signal PMAUIncDecSel  : std_logic;
+
+  -- MAXINCDECBIT := 1
   signal PMAUIncDecBit  : integer range 0 to 1;
+
+  -- constant MemUnit_POST : std_logic := '1';            -- post- inc/dec
   signal PMAUPrePostSel : std_logic;
 
   signal CalculatedPC  : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
   signal IncrementedPC : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
 
-  signal PC : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-  signal PR : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+  -- signal PC : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+  -- signal PR : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
 
+  -- signal PCMux : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+
+  signal PRReg : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+
+  signal PCReg : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+  signal PCMux : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+  
 begin
 
-  UpdateRegisters : process(Clk)
+  PCOut <= PCMux;
+  PROut <= PRReg;
+
+  with PCAddrMode select PCMux <=
+    IncrementedPC   when PCAddrMode_INC,
+    CalculatedPC    when PCAddrMode_RELATIVE_8 | PCAddrMode_RELATIVE_12,
+    CalculatedPC    when PCAddrMode_REG_DIRECT_RELATIVE,
+    CalculatedPC    when PCAddrMode_REG_DIRECT,
+    PRReg           when PCAddrMode_PR_DIRECT,
+    PCReg           when PCAddrMode_HOLD,
+    (others => '0') when others;
+
+  UpdateRegisters : process(Clk, reset)
   begin
-
-    if rising_edge(Clk) then
-      case PCAddrMode is
-        when PCAddrMode_INC =>
-          PC <= IncrementedPC;
-        when PCAddrMode_RELATIVE =>
-          PC <= CalculatedPC;
-        when PCAddrMode_REG_INDIRECT_RELATIVE =>
-          PC <= CalculatedPC;
-        when PCAddrMode_REG_DIRECT =>
-          PC <= CalculatedPC;
-        when PCAddrMode_PR_DIRECT =>
-          PC <= PR;
-        when others =>
-          PC <= PC;
-      end case;
-
-      PR <= PRIn;
-
+    if reset = '0' then
+      PCReg <= (others => '0');
+      PRReg <= (others => '0');
+    elsif rising_edge(Clk) then
+      PCReg <= PCMux;
+      if (PRWriteEn = '1') then
+        PRReg <= PRIn;
+      else
+        PRReg <= PRReg;
+      end if;
     end if;
   end process;
 
+
   -- PMAUAddrSrc --------------------------------------------------------------
 
-  PMAUAddrSrc(PMAUAddrSrc_PC) <= PC;
-  PMAUAddrSrc(PMAUAddrSrc_PR) <= PR;
+  PMAUAddrSrc(PMAUAddrSrc_PC) <= PCReg;
+  PMAUAddrSrc(PMAUAddrSrc_PR) <= PRReg;
   PMAUAddrSrc(PMAUAddrSrc_Rm) <= RegIn; 
 
   -- PMAUSrcSel ---------------------------------------------------------------
 
   with PCAddrMode select PMAUSrcSel <=
-    PMAUAddrSrc_PR when PCAddrMode_INC | PCAddrMode_RELATIVE | PCAddrMode_REG_INDIRECT_RELATIVE,
-    PMAUAddrSrc_PR when PCAddrMode_PR_DIRECT,
-    PMAUAddrSrc_Rm when PCAddrMode_REG_DIRECT,
-    PMAUSrcSel when others;
+
+    PMAUAddrSrc_PC  when   PCAddrMode_INC | PCAddrMode_RELATIVE_8 | PCAddrMode_RELATIVE_12 | 
+                           PCAddrMode_REG_DIRECT_RELATIVE,
+    PMAUAddrSrc_PR  when   PCAddrMode_PR_DIRECT,
+    PMAUAddrSrc_Rm  when   PCAddrMode_REG_DIRECT,
+    0               when   others;
+
 
   -- PMAUAddrOff --------------------------------------------------------------
 
-  PMAUAddrOff(PMAUAddrOff_NONE) <= (others => '0');
-  PMAUAddrOff(PMAUAddrOff_DISP) <= SignExtend(Disp);
-  PMAUAddrOff(PMAUAddrOff_REG) <= RegIn;
+  PMAUAddrOff(PMAUAddrOff_NONE)   <=   (others => '0');
+
+  -- 2 * SignExtend(Off8) (*2 is shift left by 1)
+  PMAUAddrOff(PMAUAddrOff_OFF8)   <=   shift_left_slv(SignExtend(Off8), 1);
+
+  -- 2 * SignExtend(Off12)
+  PMAUAddrOff(PMAUAddrOff_OFF12)  <=   shift_left_slv(SignExtend(Off12), 1);
+
+  PMAUAddrOff(PMAUAddrOff_REG)    <=   RegIn;
 
   -- PMAUOffsetSel -----------------------------------------------------------
 
   with PCAddrMode select PMAUOffsetSel <=
-    PMAUAddrOff_NONE when PCAddrMode_REG_DIRECT | PCAddrMode_PR_DIRECT | PCAddrMode_INC,
-    PMAUAddrOff_DISP when PCAddrMode_RELATIVE,
-    PMAUAddrOff_REG  when PCAddrMode_REG_INDIRECT_RELATIVE,
-    PMAUOffsetSel when others;
+
+    PMAUAddrOff_NONE   when   PCAddrMode_REG_DIRECT | PCAddrMode_PR_DIRECT | PCAddrMode_INC,
+    PMAUAddrOff_OFF8   when   PCAddrMode_RELATIVE_8,
+    PMAUAddrOff_OFF12  when   PCAddrMode_RELATIVE_12,
+    PMAUAddrOff_REG    when   PCAddrMode_REG_DIRECT_RELATIVE,
+    0                  when    others;
 
   -- PMAUIncDecSel ------------------------------------------------------------
   PMAUIncDecSel <= MemUnit_INC;

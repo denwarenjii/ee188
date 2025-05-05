@@ -113,8 +113,8 @@ architecture structural of sh2cpu is
     signal PCSrc        : std_logic_vector(31 downto 0);
     signal GBRIn        : std_logic_vector(31 downto 0);
     signal GBRWriteEn   : std_logic;
-    signal Off4         : std_logic_vector(3 downto 0);
-    signal Off8         : std_logic_vector(7 downto 0);
+    signal DMAUOff4         : std_logic_vector(3 downto 0);
+    signal DMAUOff8         : std_logic_vector(7 downto 0);
     signal BaseSel      : std_logic_vector(1 downto 0);
     signal IndexSel     : std_logic_vector(1 downto 0);
     signal OffScalarSel : std_logic_vector(1 downto 0);
@@ -129,8 +129,10 @@ architecture structural of sh2cpu is
     signal RegIn       : std_logic_vector(31 downto 0);
     signal PRIn        : std_logic_vector(31 downto 0);
     signal AddrOffset  : std_logic_vector(31 downto 0);
-    signal Disp        : std_logic_vector(11 downto 0);
     signal PCAddrMode  : std_logic_vector(2 downto 0);
+    signal PRWriteEn   : std_logic;
+    signal PMAUOff8        : std_logic_vector(7 downto 0);
+    signal PMAUOff12       : std_logic_vector(11 downto 0);
 
     -- PMAU outputs
     signal PCOut       : std_logic_vector(31 downto 0);
@@ -151,8 +153,9 @@ architecture structural of sh2cpu is
 
 begin
 
-    PCAddrMode <= PCAddrMode_INC when state = execute else PCAddRMode_HOLD;
+    PCAddrMode <= PCAddrMode_INC when state = execute else PCAddrMode_HOLD;
 
+    -- outputs based on the current CPU state
     output_proc: process(clock, state)
     begin
         if state = fetch then
@@ -195,17 +198,17 @@ begin
     end process output_proc;
 
 
-    test_proc: process (clock, reset)
+    -- Register updates done on clock edges
+    state_proc: process (clock, reset)
     begin
         if reset = '0' then
             state <= fetch;
         elsif rising_edge(clock) then
-            report "State : " & to_string(state);
             if state = fetch then
-                report "DB fetch : " & to_hstring(DB);
                 state <= decode;
+                IR <= DB;  -- clock output of ROM read into IR
             elsif state = decode then
-                report "DB Decode : " & to_hstring(DB);
+                report "Decoding instruction: " & to_hstring(IR);
                 state <= execute;
             elsif state = execute then
                 state <= fetch;
@@ -213,7 +216,7 @@ begin
                 state <= state;
             end if;
         end if;
-    end process test_proc;
+    end process state_proc;
 
     -- Route control signals and data into register array
     registers : entity work.SH2Regs
@@ -260,8 +263,8 @@ begin
         PCSrc => PCSrc,
         GBRIn => GBRIn,
         GBRWriteEn => GBRWriteEn,
-        Off4 => Off4,
-        Off8 => Off8,
+        Off4 => DMAUOff4,
+        Off8 => DMAUOff8,
         BaseSel => BaseSel,
         IndexSel => IndexSel,
         OffScalarSel => OffScalarSel,
@@ -276,23 +279,14 @@ begin
     port map (
         RegIn => RegIn,
         PRIn => PRIn,
-        AddrOffset => AddrOffset,
-        Disp => Disp,
+        PRWriteEn => PRWriteEn,
+        Off8 => PMAUOff8,
+        Off12 => PMAUOff12,
         PCAddrMode => PCAddrMode,
         Clk => clock,
         reset => reset,
         PCOut => PCOut,
         PROut => PROut
     );
-
-    -- proc_name: process(clock, reset)
-    -- begin
-    --     -- asyncronous low reset
-    --     if reset = '1' then
-    --
-    --     elsif rising_edge(clk) then
-    --
-    --     end if;
-    -- end process proc_name;
     
 end architecture structural;
