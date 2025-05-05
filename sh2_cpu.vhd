@@ -41,8 +41,9 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
 use ieee.numeric_std.all;
+
+use work.SH2PmauConstants.all;
 
 --library opcodes;
 --use opcodes.opcodes.all;
@@ -56,6 +57,7 @@ entity  SH2CPU  is
         INT     :  in     std_logic;                       -- maskable interrupt signal (active low)
         clock   :  in     std_logic;                       -- system clock
         AB      :  out    std_logic_vector(31 downto 0);   -- memory address bus
+        memsel  :  out    std_logic;                       -- whether to access data memory (0) or program memory (1)
         RE0     :  out    std_logic;                       -- first byte active low read enable
         RE1     :  out    std_logic;                       -- second byte active low read enable
         RE2     :  out    std_logic;                       -- third byte active low read enable
@@ -135,7 +137,83 @@ architecture structural of sh2cpu is
     signal PROut       : std_logic_vector(31 downto 0);
 
     -- CPU system/control registers
+
+    -- Testing basic CPU functionality
+    type state_t is (
+        fetch,
+        decode,
+        execute
+    );
+
+    signal state : state_t;
+
+    signal IR : std_logic_vector(31 downto 0);
+
 begin
+
+    PCAddrMode <= PCAddrMode_INC when state = execute else PCAddRMode_HOLD;
+
+    output_proc: process(clock, state)
+    begin
+        if state = fetch then
+            AB <= std_logic_vector(PCOut);
+            DB <= (others => 'Z');
+            RE0 <= '0' when (not clock) else '1';
+            RE1 <= '0' when (not clock) else '1';
+            RE2 <= '0' when (not clock) else '1';
+            RE3 <= '0' when (not clock) else '1';
+            WE0 <= '1' when (not clock) else '1';
+            WE1 <= '1' when (not clock) else '1';
+            WE2 <= '1' when (not clock) else '1';
+            WE3 <= '1' when (not clock) else '1';
+            memsel <= '1';
+        elsif state = decode then
+            AB <= std_logic_vector(PCOut);
+            DB <= (others => '0');
+            RE0 <= '1' when (not clock) else '1';
+            RE1 <= '1' when (not clock) else '1';
+            RE2 <= '1' when (not clock) else '1';
+            RE3 <= '1' when (not clock) else '1';
+            WE0 <= '1' when (not clock) else '1';
+            WE1 <= '1' when (not clock) else '1';
+            WE2 <= '1' when (not clock) else '1';
+            WE3 <= '1' when (not clock) else '1';
+            memsel <= '0';
+        elsif state = execute then
+            AB <= std_logic_vector(PCOut);
+            DB <= (others => '0');
+            RE0 <= '1' when (not clock) else '1';
+            RE1 <= '1' when (not clock) else '1';
+            RE2 <= '1' when (not clock) else '1';
+            RE3 <= '1' when (not clock) else '1';
+            WE0 <= '1' when (not clock) else '1';
+            WE1 <= '1' when (not clock) else '1';
+            WE2 <= '1' when (not clock) else '1';
+            WE3 <= '1' when (not clock) else '1';
+            memsel <= '0';
+        end if;
+    end process output_proc;
+
+
+    test_proc: process (clock, reset)
+    begin
+        if reset = '0' then
+            state <= fetch;
+        elsif rising_edge(clock) then
+            report "State : " & to_string(state);
+            if state = fetch then
+                report "DB fetch : " & to_hstring(DB);
+                state <= decode;
+            elsif state = decode then
+                report "DB Decode : " & to_hstring(DB);
+                state <= execute;
+            elsif state = execute then
+                state <= fetch;
+            else
+                state <= state;
+            end if;
+        end if;
+    end process test_proc;
 
     -- Route control signals and data into register array
     registers : entity work.SH2Regs

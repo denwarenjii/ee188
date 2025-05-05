@@ -153,6 +153,7 @@ begin
 
         -- first check if reading
         if  (RE = '0' and not IS_X(MemAB))  then
+            -- report "Reading " & to_hstring(MemAB) & ", got " & to_hstring(MemData);
             MemDB <= MemData;
 
             -- only set the bytes that are being read
@@ -183,6 +184,7 @@ begin
         -- check if writing
         if  (WE'event and (WE = '0') and not (is_x(MemAB)))  then
             -- rising edge of write - write the data (check which address range)
+            -- report "Writing to " & to_hstring(MemAB) & " with: " & to_hstring(MemDB);
 
             -- write the updated value to memory (computed combinatorially above)
             if  ((to_integer(unsigned(MemAB)) >= START_ADDR0) and

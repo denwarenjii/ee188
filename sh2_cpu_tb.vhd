@@ -194,7 +194,8 @@ begin
         WE1 => CPU_WE1,
         WE2 => CPU_WE2,
         WE3 => CPU_WE3,
-        DB => CPU_DB
+        DB => CPU_DB,
+        memsel => CPU_MEMSEL
     );
 
     ram : entity work.MEMORY32x32
@@ -367,7 +368,20 @@ begin
         reset <= '0';
         Tick;
 
-        -- See that memory cannot be read by test
+        report "Starting CPU...";
+        reset <= '1';
+        Tick;
+        Tick;
+        Tick;
+        Tick;
+        Tick;
+        Tick;
+        Tick;
+        Tick;
+        Tick;
+
+        CPU_ACTIVE <= false;
+        TEST_MEMSEL <= '0';
         ReadMemory(0, 8);
 
         END_SIM <= TRUE;
