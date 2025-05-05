@@ -101,7 +101,6 @@ architecture  behavioral  of  MEMORY32x32  is
     signal  Curr_RAM  :  RAMtype;
     signal  RamAddr   :  integer;
     signal  MemData   :  std_logic_vector(31 downto 0);
-    signal  ToWrite   :  std_logic_vector(31 downto 0);
 
 
 begin
@@ -182,7 +181,8 @@ begin
     begin
 
         -- check if writing
-        if  (WE'event and (WE = '0') and not (is_x(MemAB)))  then
+        if  (WE'event and (WE = '0') and not (is_x(MemAB)) and
+             unsigned(MemAB) <= to_unsigned(integer'high, 32))  then
             -- rising edge of write - write the data (check which address range)
             -- report "Writing to " & to_hstring(MemAB) & " with: " & to_hstring(MemDB);
 

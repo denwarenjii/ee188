@@ -350,7 +350,6 @@ begin
         end procedure;
 
     begin
-        report "Hello, world!";
         CPU_ACTIVE <= false;
 
         -- Write program into ROM
@@ -379,9 +378,13 @@ begin
         Tick;
         Tick;
         Tick;
+        Tick;
+        Tick;
+        Tick;
+        Tick;
 
         CPU_ACTIVE <= false;
-        TEST_MEMSEL <= '1';
+        TEST_MEMSEL <= '0';
         ReadMemory(0, 8);
 
         END_SIM <= TRUE;
