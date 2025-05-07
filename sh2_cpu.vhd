@@ -9,170 +9,10 @@
 --     28 Apr 25  Glen George       Initial revision.
 --     01 May 25  Zack Huang        Declare all sub-unit entities
 --     03 May 25  Zack Huang        Add state machine, test basic I/O
---     04 May 25  Zack Huang        Implement memory interface for byte,
---                                  word, and longword read/writes.
+--     04 May 25  Zack Huang        Integrate memory interface
 --
 ----------------------------------------------------------------------------
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
-package MemoryInterfaceConstants is
-
-  constant ByteMode         : std_logic_vector(1 downto 0) := "00";
-  constant WordMode         : std_logic_vector(1 downto 0) := "10";
-  constant LongwordMode     : std_logic_vector(1 downto 0) := "11";
-
-end package MemoryInterfaceConstants;
-
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-use work.MemoryInterfaceConstants.all;
-
--- Outputs the necessary flags and data bits to read/write a byte, word, or longword to memory.
-entity MemoryInterfaceTx is
-    port (
-        ReadWrite :  in     std_logic;                          -- memory read (0) or write (1)
-        MemMode   :  in     STD_LOGIC_VECTOR(1 downto 0);       -- memory access mode (byte, word, or longword)
-        Address   :  in     unsigned(31 downto 0);              -- memory address bus
-        data_in   :  in     std_logic_vector(31 downto 0);      -- the input to write to memory
-        RE        :  out    std_logic_vector(3 downto 0);       -- read enable mask (active low)
-        WE        :  out    std_logic_vector(3 downto 0);       -- write enable mask (active low)
-        DB        :  out    std_logic_vector(31 downto 0)       -- memory data bus
-    );
-end entity;
-
-
-architecture structural of MemoryInterfaceTx is
-begin
-    output_proc: process(ReadWrite, MemMode, Address, data_in)
-    begin
-        if ReadWrite = '0' then
-            -- Disable writing
-            WE(3 downto 0) <= (others => '1');
-            DB <= (others => 'Z');
-
-            -- Enable specific bytes based on type of read
-            case MemMode is
-                when ByteMode =>
-                    RE(0) <= '0' when address mod 4 = 0 else '1';
-                    RE(1) <= '0' when address mod 4 = 1 else '1';
-                    RE(2) <= '0' when address mod 4 = 2 else '1';
-                    RE(3) <= '0' when address mod 4 = 3 else '1';
-
-                when WordMode =>
-                    RE(0) <= '0' when address mod 4 = 0 else '1';
-                    RE(1) <= '0' when address mod 4 = 0 else '1';
-                    RE(2) <= '0' when address mod 4 = 2 else '1';
-                    RE(3) <= '0' when address mod 4 = 2 else '1';
-
-                when LongwordMode =>
-                    RE(3 downto 0) <= (others => '0');
-
-                when others =>
-                    assert (false)
-                    report "Memory interface Tx: Invalid memory mode for read"
-                    severity error;
-            end case;
-
-        elsif ReadWrite = '1' then
-            -- Disable reading
-            RE(3 downto 0) <= (others => '1');
-
-            -- Enable specific bytes based on type of read
-            case MemMode is
-                when ByteMode =>
-                    WE(0) <= '0' when address mod 4 = 0 else '1';
-                    WE(1) <= '0' when address mod 4 = 1 else '1';
-                    WE(2) <= '0' when address mod 4 = 2 else '1';
-                    WE(3) <= '0' when address mod 4 = 3 else '1';
-                    -- TODO: may not synthesize efficiently, use conditionals instead?
-                    DB <= std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)));
-
-                when WordMode =>
-                    WE(0) <= '0' when address mod 4 = 0 else '1';
-                    WE(1) <= '0' when address mod 4 = 0 else '1';
-                    WE(2) <= '0' when address mod 4 = 2 else '1';
-                    WE(3) <= '0' when address mod 4 = 2 else '1';
-                    -- TODO: may not synthesize efficiently, use conditionals instead?
-                    DB <= std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)));
-
-                when LongwordMode =>
-                    WE(3 downto 0) <= (others => '0');
-                    DB <= data_in;
-
-                when others =>
-                    assert (false)
-                    report "Memory interface Tx: Invalid memory mode for write"
-                    severity error;
-            end case;
-
-        end if;
-
-    end process output_proc;
-end architecture;
-
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-use work.MemoryInterfaceConstants.all;
-
--- Performs shifting to read a byte, word, or longword from a data bus, sign-extended if necessary.
-entity MemoryInterfaceRx is
-    port (
-        MemMode :  in     std_logic_vector(1 downto 0);     -- memory access mode (byte, word, or longword)
-        Address :  in     unsigned(31 downto 0);            -- memory address bus
-        DB      :  in     std_logic_vector(31 downto 0);    -- memory data bus
-        data    :  out    std_logic_vector(31 downto 0)     -- data read from memory
-    );
-end entity;
-
-architecture structural of MemoryInterfaceRx is
-begin
-    output_proc: process(MemMode, Address, DB)
-    begin
-        -- Shift and sign-extend based on the mode
-        case MemMode is
-            when ByteMode =>
-                if (Address mod 4 = 0) then
-                    data(7 downto 0) <= DB(7 downto 0);
-                    data(31 downto 8) <= (others => DB(7));
-                elsif (Address mod 4 = 1) then
-                    data(7 downto 0) <= DB(15 downto 8);
-                    data(31 downto 8) <= (others => DB(15));
-                elsif (Address mod 4 = 2) then
-                    data(7 downto 0) <= DB(23 downto 16);
-                    data(31 downto 8) <= (others => DB(23));
-                elsif (Address mod 4 = 3) then
-                    data(7 downto 0) <= DB(31 downto 24);
-                    data(31 downto 8) <= (others => DB(31));
-                end if;
-                    
-            when WordMode =>
-                if (Address mod 4 = 0) then
-                    data(15 downto 0) <= DB(15 downto 0);
-                    data(31 downto 16) <= (others => DB(15));
-                elsif (Address mod 4 = 2) then
-                    data(15 downto 0) <= DB(31 downto 16);
-                    data(31 downto 16) <= (others => DB(31));
-                end if;
-
-            when LongwordMode =>
-                data <= DB;
-
-            when others =>
-                assert (false)
-                report "Memory interface Rx: Invalid memory mode for read"
-                severity error;
-        end case;
-
-    end process output_proc;
-end architecture;
 
 --
 --  SH2_CPU
@@ -284,7 +124,7 @@ architecture structural of sh2cpu is
     signal IncDecSel    : std_logic_vector(1 downto 0);
 
     -- DMAU outputs
-    signal DataAddress      : std_logic_vector(31 downto 0);
+    signal DataAddress  : std_logic_vector(31 downto 0);
     signal AddrSrcOut   : std_logic_vector(31 downto 0);
     signal GBROut       : std_logic_vector(31 downto 0);
 
@@ -311,21 +151,21 @@ architecture structural of sh2cpu is
     signal MemDataIn   : std_logic_vector(31 downto 0);
 
     -- CPU system/control registers
+    signal MemOutSel        : std_logic_vector(2 downto 0);
+    signal Disp             : std_logic_vector(11 downto 0);
+    signal TSel             : std_logic_vector(2 downto 0);
+    signal DataRegIdx       : integer  range 15 downto 0; 
+    signal ProgRegIdx       : integer  range 15 downto 0; 
 
-    -- Testing basic CPU functionality
-    type state_t is (
-        fetch,
-        decode,
-        execute
-    );
+    signal SR               : std_logic_vector(31 downto 0);
+    signal GBR              : std_logic_vector(31 downto 0);
+    signal VBR              : std_logic_vector(31 downto 0);
 
-    signal state : state_t;
-
-    signal IR : std_logic_vector(15 downto 0);
+    -- Not implemented
+    -- signal MACL             : std_logic_vector(31 downto 0);
+    -- signal MACH             : std_logic_vector(31 downto 0);
 
 begin
-
-    PCAddrMode <= PCAddrMode_INC when state = execute else PCAddrMode_HOLD;
 
     RE0 <= ReadMask(0) when MemEnable and (not clock) else '1';
     RE1 <= ReadMask(1) when MemEnable and (not clock) else '1';
@@ -337,49 +177,18 @@ begin
     WE2 <= WriteMask(2) when MemEnable and (not clock) else '1';
     WE3 <= WriteMask(3) when MemEnable and (not clock) else '1';
 
+    MemAddress <= PCOut when MemSel = '1' else PCOut;
+
     AB <= MemAddress;
 
-    -- outputs based on the current CPU state
-    output_proc: process(clock, state)
-    begin
-        if state = fetch then
-            -- Fetch an instruction word from ROM
-            MemEnable <= '1';
-            memsel <= '1';
-            MemAddress <= PCOut;
-            ReadWrite <= '0';
-            MemMode <= WordMode;
-        elsif state = decode then
-            -- Testing if writing to memory works
-            MemEnable <= '1';
-            memsel <= '0';
-            MemAddress <= PCOut;
-            ReadWrite <= '1';
-            MemMode <= WordMode;
-            MemDataOut <= PCOut;
-        elsif state = execute then
-            MemEnable <= '0';
-        end if;
-    end process output_proc;
-
-
-    -- Register updates done on clock edges
-    state_proc: process (clock, reset)
-    begin
-        if reset = '0' then
-            state <= fetch;
-        elsif rising_edge(clock) then
-            if state = fetch then
-                state <= decode;
-                IR <= MemDataIn(15 downto 0); -- latch in instruction from memory
-            elsif state = decode then
-                report "Decoding instruction: " & to_hstring(IR);
-                state <= execute;
-            elsif state = execute then
-                state <= fetch;
-            end if;
-        end if;
-    end process state_proc;
+    MemDataOut <= RegA  when MemOutSel = "000" else
+                  RegB  when MemOutSel = "001" else
+                  SR    when MemOutSel = "010" else
+                  GBR   when MemOutSel = "011" else
+                  VBR   when MemOutSel = "100" else
+                  PROut when MemOutSel = "101" else
+                  PCOut when MemOutSel = "110" else
+                  (others => 'X');
 
     -- Route control signals and data into register array
     registers : entity work.SH2Regs
@@ -470,5 +279,49 @@ begin
         DB => DB,
         data => MemDataIn
     );
-    
+
+    control_unit : entity work.SH2Control
+    port map (
+        DB => MemDataIn,
+        clock => clock,
+        reset => reset,
+        MemEnable => MemEnable,
+        ReadWrite => ReadWrite,
+        MemMode => MemMode,
+        MemOutSel => MemOutSel,
+        Disp => Disp,
+        MemSel => MemSel,
+        OperandA => OperandA,
+        OperandB => OperandB,
+        TIn => TIn,
+        LoadA => LoadA,
+        FCmd => FCmd,
+        CinCmd => CinCmd,
+        SCmd => SCmd,
+        ALUCmd => ALUCmd,
+        TSel => TSel,
+        DataIn => DataIn,
+        EnableIn => EnableIn,
+        RegInSel => RegInSel,
+        RegASel => RegASel,
+        RegBSel => RegBSel,
+        RegAxIn => RegAxIn,
+        RegAxInSel => RegAxInSel,
+        RegAxStore => RegAxStore,
+        RegA1Sel => RegA1Sel,
+        RegA2Sel => RegA2Sel,
+        DataRegIdx => DataRegIdx,
+        ProgRegIdx => ProgRegIdx,
+        GBRWriteEn => GBRWriteEn,
+        DMAUOff4 => DMAUOff4,
+        DMAUOff8 => DMAUOff8,
+        BaseSel => BaseSel,
+        IndexSel => IndexSel,
+        OffScalarSel => OffScalarSel,
+        IncDecSel => IncDecSel,
+        PCAddrMode => PCAddrMode,
+        PRWriteEn => PRWriteEn,
+        PMAUOff8 => PMAUOff8,
+        PMAUOff12 => PMAUOff12
+    );
 end architecture structural;
