@@ -41,9 +41,9 @@
 --                           because 12-bit offsets and sign-extension is not
 --                           used for memory accesses, only for relative jumps.
 --    
---    1 April 25    Chris M. Changed PrePostSel in MAU to be POST when
---                           IncDecSel is none (only worked before because
---                           Pre/Post logic in MAU was inverted).
+--    1 May 25    Chris M. Changed PrePostSel in MAU to be POST when
+--                         IncDecSel is none (only worked before because
+--                         Pre/Post logic in MAU was inverted).
 --
 -- [TODO]:
 --    - Don't allow inputs that don't correspond to addressing modes.

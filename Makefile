@@ -19,6 +19,6 @@ view:
 	gtkwave $(WAVEFORM)
 
 clean:
-	rm -rf *.cf
+	rm -rf *.cf *.o work/*
 
 .PHONY: test clean build view

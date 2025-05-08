@@ -22,6 +22,8 @@
 --                           PrePostSel in MAU be POST when we don't care.
 --    02 May   25   Chris M. Changed SignExtend function to wrap numeric_std
 --                           conversion.
+--    07 May   25   Chris M. Add reset signal and logic.
+--
 ----------------------------------------------------------------------------
 
 library ieee;
@@ -57,7 +59,7 @@ use ieee.std_logic_1164.all;
 --   Off12         : 12-bit signed offset input.
 --   PCAddrMode    : Program address mode select signal.
 --   Clk           : Clock.
---   reset         : system reset (active low, async).
+--   Reset         : system reset (active low).
 --    
 -- Outputs:
 --   PCOut         : PC (Program Counter) output.
@@ -72,7 +74,7 @@ entity SH2Pmau is
     Off12         : in std_logic_vector(11 downto 0);
     PCAddrMode    : in std_logic_vector(2 downto 0);
     Clk           : in std_logic;
-    reset         : in std_logic;
+    Reset         : in std_logic;
     PCOut         : out std_logic_vector(SH2_WORDSIZE - 1 downto 0);
     PROut         : out std_logic_vector(SH2_WORDSIZE - 1 downto 0)
   );
@@ -172,11 +174,16 @@ architecture structural of SH2Pmau is
 
   signal PCReg : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
   signal PCMux : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
-  
+
+  constant ZERO_32 : std_logic_vector(SH2_WORDSIZE - 1 downto 0) := (others => '0');
+
 begin
 
-  PCOut <= PCMux;
-  PROut <= PRReg;
+  PCOut <= (ZERO_32) when (Reset = '0') else
+           PCMux;
+
+  PROut <= (ZERO_32) when (Reset = '0') else
+           PRReg;
 
   with PCAddrMode select PCMux <=
     IncrementedPC   when PCAddrMode_INC,
@@ -205,9 +212,14 @@ begin
 
   -- PMAUAddrSrc --------------------------------------------------------------
 
-  PMAUAddrSrc(PMAUAddrSrc_PC) <= PCReg;
-  PMAUAddrSrc(PMAUAddrSrc_PR) <= PRReg;
-  PMAUAddrSrc(PMAUAddrSrc_Rm) <= RegIn; 
+  PMAUAddrSrc(PMAUAddrSrc_PC) <= (ZERO_32) when (Reset = '0') else
+                                 PCReg;
+
+  PMAUAddrSrc(PMAUAddrSrc_PR) <= (ZERO_32) when (Reset = '0') else 
+                                 PRReg;
+
+  PMAUAddrSrc(PMAUAddrSrc_Rm) <= (ZERO_32) when (Reset = '0') else
+                                 RegIn; 
 
   -- PMAUSrcSel ---------------------------------------------------------------
 
@@ -225,13 +237,16 @@ begin
   PMAUAddrOff(PMAUAddrOff_NONE)   <=   (others => '0');
 
   -- 2 * SignExtend(Off8) (*2 is shift left by 1)
-  PMAUAddrOff(PMAUAddrOff_OFF8)   <=   shift_left_slv(SignExtend(Off8), 1);
+  PMAUAddrOff(PMAUAddrOff_OFF8)   <=   (ZERO_32) when (Reset = '0') else
+                                       shift_left_slv(SignExtend(Off8), 1);
 
   -- 2 * SignExtend(Off12)
-  PMAUAddrOff(PMAUAddrOff_OFF12)  <=   shift_left_slv(SignExtend(Off12), 1);
+  PMAUAddrOff(PMAUAddrOff_OFF12)  <=   (ZERO_32) when (Reset = '0') else
+                                       shift_left_slv(SignExtend(Off12), 1);
 
-  PMAUAddrOff(PMAUAddrOff_REG)    <=   RegIn;
-
+  PMAUAddrOff(PMAUAddrOff_REG)    <=   (ZERO_32) when (Reset = '0') else
+                                       RegIn;
+                                        
   -- PMAUOffsetSel -----------------------------------------------------------
 
   with PCAddrMode select PMAUOffsetSel <=
