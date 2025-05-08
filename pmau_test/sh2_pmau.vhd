@@ -21,7 +21,8 @@
 --    01 May   25   Chris M. Added PRWriteEn and seperate offset signals. Made
 --                           PrePostSel in MAU be POST when we don't care.
 --    02 May   25   Chris M. Changed SignExtend function to wrap numeric_std
---                           conversion.
+--                           conversion. Added Reset signal.
+
 ----------------------------------------------------------------------------
 
 library ieee;
@@ -57,6 +58,7 @@ use work.all;
 --   Off8          : 8-bit signed offset input.
 --   Off12         : 12-bit signed offset input.
 --   PCAddrMode    : Program address mode select signal.
+--   Reset         : Active low.
 --   Clk           : Clock.
 --    
 -- Outputs:
@@ -71,6 +73,7 @@ entity SH2Pmau is
     Off8          : in std_logic_vector(7 downto 0);
     Off12         : in std_logic_vector(11 downto 0);
     PCAddrMode    : in std_logic_vector(2 downto 0);
+    Reset         : in std_logic;
     Clk           : in std_logic;
     PCOut         : out std_logic_vector(SH2_WORDSIZE - 1 downto 0);
     PROut         : out std_logic_vector(SH2_WORDSIZE - 1 downto 0)
@@ -175,8 +178,11 @@ architecture structural of SH2Pmau is
   
 begin
 
-  PCOut <= PCMux;
-  PROut <= PRReg;
+  PCOut <= (others => '0') when (Reset = '0') else
+            PCMux;
+
+  PROut <= (others => '0') when (Reset = '0') else 
+            PRReg;
 
   with PCAddrMode select PCMux <=
     IncrementedPC   when PCAddrMode_INC,
@@ -189,21 +195,34 @@ begin
   UpdateRegisters : process(Clk)
   begin
     if rising_edge(Clk) then
-      PCReg <= PCMux;
-      if (PRWriteEn = '1') then
-        PRReg <= PRIn;
+      if (Reset = '0') then
+        PCReg <= (others => '0');
+        PRReg <= (others => '0');
       else
-        PRReg <= PRReg;
+        PCReg <= PCMux;
+
+        if (PRWriteEn = '1') then
+          PRReg <= PRIn;
+        else
+          PRReg <= PRReg;
+        end if;
+
       end if;
+
     end if;
   end process;
 
 
   -- PMAUAddrSrc --------------------------------------------------------------
 
-  PMAUAddrSrc(PMAUAddrSrc_PC) <= PCReg;
-  PMAUAddrSrc(PMAUAddrSrc_PR) <= PRReg;
-  PMAUAddrSrc(PMAUAddrSrc_Rm) <= RegIn; 
+  PMAUAddrSrc(PMAUAddrSrc_PC) <= (others => '0') when (Reset = '0') else
+                                 PCReg;
+
+  PMAUAddrSrc(PMAUAddrSrc_PR) <= (others => '0') when (Reset = '0') else
+                                 PRReg;
+
+  PMAUAddrSrc(PMAUAddrSrc_Rm) <= (others => '0') when (Reset = '0') else
+                                 RegIn; 
 
   -- PMAUSrcSel ---------------------------------------------------------------
 
@@ -221,12 +240,15 @@ begin
   PMAUAddrOff(PMAUAddrOff_NONE)   <=   (others => '0');
 
   -- 2 * SignExtend(Off8) (*2 is shift left by 1)
-  PMAUAddrOff(PMAUAddrOff_OFF8)   <=   shift_left_slv(SignExtend(Off8), 1);
+  PMAUAddrOff(PMAUAddrOff_OFF8)   <=  (others => '0') when (Reset = '0') else
+                                       shift_left_slv(SignExtend(Off8), 1);
 
   -- 2 * SignExtend(Off12)
-  PMAUAddrOff(PMAUAddrOff_OFF12)  <=   shift_left_slv(SignExtend(Off12), 1);
+  PMAUAddrOff(PMAUAddrOff_OFF12)  <=  (others => '0') when (Reset = '0') else 
+                                      shift_left_slv(SignExtend(Off12), 1);
 
-  PMAUAddrOff(PMAUAddrOff_REG)    <=   RegIn;
+  PMAUAddrOff(PMAUAddrOff_REG)    <=  (others => '0') when (Reset = '0') else 
+                                      RegIn;
 
   -- PMAUOffsetSel -----------------------------------------------------------
 

@@ -125,7 +125,7 @@ use work.SH2DmauConstants.all;
 -- | -                                                    | Addr = @(Rn + zero_extend(Off4) * 2)                |
 -- | -                                                    | Addr = @(Rn + zero_extend(Off4) * 4)                |
 -- +------------------------------------------------------+-----------------------------------------------------+
--- | 5. Indirect indexed register addressing              | Addr = @(Rn + R0), Rn =/= R0                        |
+-- | 5.  Indirect indexed register addressing              | Addr = @(Rn + R0), Rn =/= R0                        |
 -- +------------------------------------------------------+-----------------------------------------------------+
 -- | 6.  Indirect GBR addressing with displacement        | Addr = @(GBR + zero_extend(Off8))                   |
 -- | -                                                    | Addr = @(GBR + zero_extend(Off8) * 2)               |
