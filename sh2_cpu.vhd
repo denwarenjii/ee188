@@ -10,6 +10,7 @@
 --     01 May 25  Zack Huang        Declare all sub-unit entities
 --     03 May 25  Zack Huang        Add state machine, test basic I/O
 --     04 May 25  Zack Huang        Integrate memory interface
+--     07 May 25  Chris Miranda     Change code formatting.
 --
 ----------------------------------------------------------------------------
 
@@ -75,6 +76,7 @@ entity  SH2CPU  is
 end  SH2CPU;
 
 architecture structural of sh2cpu is
+
     -- Register array inputs
     signal DataIn     : std_logic_vector(31 downto 0);    -- data to write to a register
     signal EnableIn   : std_logic;                        -- if data should be written to an input register
@@ -94,14 +96,14 @@ architecture structural of sh2cpu is
     signal RegA2      : std_logic_vector(31 downto 0);    -- address register bus 2
     
     -- ALU inputs
-    signal OperandA : std_logic_vector(31 downto 0); -- first operand
-    signal OperandB : std_logic_vector(31 downto 0); -- second operand
-    signal TIn      : std_logic;                     -- T bit from status register
-    signal LoadA    : std_logic;                     -- determine if OperandA is loaded ('1') or zeroed ('0')
-    signal FCmd     : std_logic_vector(3 downto 0);  -- F-Block operation
-    signal CinCmd   : std_logic_vector(1 downto 0);  -- carry in operation
-    signal SCmd     : std_logic_vector(2 downto 0);  -- shift operation
-    signal ALUCmd   : std_logic_vector(1 downto 0);  -- ALU result select
+    signal OperandA : std_logic_vector(31 downto 0);    -- first operand
+    signal OperandB : std_logic_vector(31 downto 0);    -- second operand
+    signal TIn      : std_logic;                        -- T bit from status register
+    signal LoadA    : std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
+    signal FCmd     : std_logic_vector(3 downto 0);     -- F-Block operation
+    signal CinCmd   : std_logic_vector(1 downto 0);     -- carry in operation
+    signal SCmd     : std_logic_vector(2 downto 0);     -- shift operation
+    signal ALUCmd   : std_logic_vector(1 downto 0);     -- ALU result select
 
     -- ALU outputs
     signal Result   : std_logic_vector(31 downto 0);   -- ALU result
@@ -165,6 +167,7 @@ architecture structural of sh2cpu is
     -- signal MACL             : std_logic_vector(31 downto 0);
     -- signal MACH             : std_logic_vector(31 downto 0);
 
+
 begin
 
     RE0 <= ReadMask(0) when MemEnable and (not clock) else '1';
@@ -193,80 +196,91 @@ begin
     -- Route control signals and data into register array
     registers : entity work.SH2Regs
     port map (
-        clock => clock,
-        reset => reset,
-        DataIn => DataIn,
-        EnableIn => EnableIn,
-        RegInSel => RegInSel,
-        RegASel => RegASel,
-        RegBSel => RegBSel,
-        RegAxIn => RegAxIn,
-        RegAxInSel => RegAxInSel,
-        RegAxStore => RegAxStore,
-        RegA1Sel => RegA1Sel,
-        RegA2Sel => RegA2Sel,
-        RegA => RegA,
-        RegB => RegB,
-        RegA1 => RegA1,
-        RegA2 => RegA2
+        -- Inputs:
+        clock       => clock,
+        reset       => reset,
+        DataIn      => DataIn,
+        EnableIn    => EnableIn,
+        RegInSel    => RegInSel,
+        RegASel     => RegASel,
+        RegBSel     => RegBSel,
+        RegAxIn     => RegAxIn,
+        RegAxInSel  => RegAxInSel,
+        RegAxStore  => RegAxStore,
+        RegA1Sel    => RegA1Sel,
+        RegA2Sel    => RegA2Sel,
+        -- Outputs:
+        RegA    => RegA,
+        RegB    => RegB,
+        RegA1   => RegA1,
+        RegA2   => RegA2
     );
 
     alu : entity work.sh2alu
     port map (
+        -- Inputs:
         OperandA => OperandA,
         OperandB => OperandB,
-        TIn => TIn,
-        LoadA => LoadA,
-        FCmd => FCmd,
-        CinCmd => CinCmd,
-        SCmd => SCmd,
-        ALUCmd => ALUCmd,
-        Result => Result,
-        Cout => Cout,
+        TIn      => TIn,
+        LoadA    => LoadA,
+        FCmd     => FCmd,
+        CinCmd   => CinCmd,
+        SCmd     => SCmd,
+        ALUCmd   => ALUCmd,
+        -- Outputs:
+        Result   => Result,
+        Cout     => Cout,
         Overflow => Overflow,
-        Zero => Zero,
-        Sign => Sign
+        Zero     => Zero,
+        Sign     => Sign
     );
 
     dmau : entity work.sh2dmau
     port map (
-        RegSrc => RegSrc,
-        R0Src => R0Src,
-        PCSrc => PCSrc,
-        GBRIn => GBRIn,
-        GBRWriteEn => GBRWriteEn,
-        Off4 => DMAUOff4,
-        Off8 => DMAUOff8,
-        BaseSel => BaseSel,
-        IndexSel => IndexSel,
+        -- Inputs:
+        RegSrc       => RegSrc,
+        R0Src        => R0Src,
+        PCSrc        => PCSrc,
+        GBRIn        => GBRIn,
+        GBRWriteEn   => GBRWriteEn,
+        Off4         => DMAUOff4,
+        Off8         => DMAUOff8,
+        BaseSel      => BaseSel,
+        IndexSel     => IndexSel,
         OffScalarSel => OffScalarSel,
-        IncDecSel => IncDecSel,
-        Clk => clock,
-        Address => DataAddress,
+        IncDecSel    => IncDecSel,
+        Clk          => clock,
+
+        -- Outputs:
+        Address    => DataAddress,
         AddrSrcOut => AddrSrcOut,
-        GBROut => GBROut
+        GBROut     => GBROut
     );
 
     pmau : entity work.sh2pmau
     port map (
-        RegIn => RegIn,
-        PRIn => PRIn,
-        PRWriteEn => PRWriteEn,
-        Off8 => PMAUOff8,
-        Off12 => PMAUOff12,
+        -- Inputs:
+        RegIn      => RegIn,
+        PRIn       => PRIn,
+        PRWriteEn  => PRWriteEn,
+        Off8       => PMAUOff8,
+        Off12      => PMAUOff12,
         PCAddrMode => PCAddrMode,
-        Clk => clock,
-        reset => reset,
+        Clk        => clock,
+        Reset      => Reset,
+        -- Outputs:
         PCOut => PCOut,
         PROut => PROut
     );
 
     memory_tx : entity work.MemoryInterfaceTx
     port map (
+        -- Inputs:
         ReadWrite => ReadWrite,
-        MemMode => MemMode,
-        Address => unsigned(MemAddress),
-        data_in => MemDataOut,
+        MemMode   => MemMode,
+        Address   => unsigned(MemAddress),
+        data_in   => MemDataOut,
+        -- Outputs:
         RE => ReadMask,
         WE => WriteMask,
         DB => DB
@@ -274,54 +288,70 @@ begin
 
     memory_rx : entity work.MemoryInterfaceRx
     port map (
+        -- Inputs:
         MemMode => MemMode,
         Address => unsigned(MemAddress),
-        DB => DB,
+        DB      => DB,
+        -- Outputs:
         data => MemDataIn
     );
 
     control_unit : entity work.SH2Control
     port map (
-        DB => MemDataIn,
+        -- Inputs:
+        DB    => MemDataIn,
         clock => clock,
         reset => reset,
-        MemEnable => MemEnable,
-        ReadWrite => ReadWrite,
-        MemMode => MemMode,
-        MemOutSel => MemOutSel,
-        Disp => Disp,
-        MemSel => MemSel,
-        OperandA => OperandA,
-        OperandB => OperandB,
-        TIn => TIn,
-        LoadA => LoadA,
-        FCmd => FCmd,
-        CinCmd => CinCmd,
-        SCmd => SCmd,
-        ALUCmd => ALUCmd,
-        TSel => TSel,
-        DataIn => DataIn,
-        EnableIn => EnableIn,
-        RegInSel => RegInSel,
-        RegASel => RegASel,
-        RegBSel => RegBSel,
-        RegAxIn => RegAxIn,
-        RegAxInSel => RegAxInSel,
-        RegAxStore => RegAxStore,
-        RegA1Sel => RegA1Sel,
-        RegA2Sel => RegA2Sel,
-        DataRegIdx => DataRegIdx,
-        ProgRegIdx => ProgRegIdx,
-        GBRWriteEn => GBRWriteEn,
-        DMAUOff4 => DMAUOff4,
-        DMAUOff8 => DMAUOff8,
-        BaseSel => BaseSel,
-        IndexSel => IndexSel,
+
+        -- Outputs:
+
+        -- Memory interface control signals:
+        MemEnable    => MemEnable,
+        ReadWrite    => ReadWrite,
+        MemMode      => MemMode,
+        Disp         => Disp,
+        MemSel       => MemSel,
+        MemOutSel    => MemOutSel,
+
+        -- ALU control signals:
+        OperandA     => OperandA,
+        OperandB     => OperandB,
+        TIn          => TIn,
+        LoadA        => LoadA,
+        FCmd         => FCmd,
+        CinCmd       => CinCmd,
+        SCmd         => SCmd,
+        ALUCmd       => ALUCmd,
+        TSel         => TSel,
+
+        -- Register Array control signals:
+        DataIn       => DataIn,
+        EnableIn     => EnableIn,
+        RegInSel     => RegInSel,
+        RegASel      => RegASel,
+        RegBSel      => RegBSel,
+        RegAxIn      => RegAxIn,
+        RegAxInSel   => RegAxInSel,
+        RegAxStore   => RegAxStore,
+        RegA1Sel     => RegA1Sel,
+        RegA2Sel     => RegA2Sel,
+
+        -- DMAU control signals:
+        DataRegIdx   => DataRegIdx,
+        GBRWriteEn   => GBRWriteEn,
+        DMAUOff4     => DMAUOff4,
+        DMAUOff8     => DMAUOff8,
+        BaseSel      => BaseSel,
+        IndexSel     => IndexSel,
         OffScalarSel => OffScalarSel,
-        IncDecSel => IncDecSel,
-        PCAddrMode => PCAddrMode,
-        PRWriteEn => PRWriteEn,
-        PMAUOff8 => PMAUOff8,
-        PMAUOff12 => PMAUOff12
+        IncDecSel    => IncDecSel,
+
+        -- PMAU control signals:
+        ProgRegIdx   => ProgRegIdx,
+        PCAddrMode   => PCAddrMode,
+        PRWriteEn    => PRWriteEn,
+        PMAUOff8     => PMAUOff8,
+        PMAUOff12    => PMAUOff12
     );
+
 end architecture structural;

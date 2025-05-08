@@ -5,7 +5,8 @@
 --
 --  Revision History:
 --     06 May 25  Zack Huang        Initial revision
---
+--     07 May 25  Chris Miranda     Initial implentation of MOV and branch 
+--                                  instruction decoding.
 ----------------------------------------------------------------------------
 
 library ieee;
@@ -84,7 +85,61 @@ architecture dataflow of sh2control is
 
     signal state : state_t;
 
-    signal IR : std_logic_vector(15 downto 0);
+
+  -- The instruction register.
+  signal IR : std_logic_vector(15 downto 0);
+
+  -- Aliases for instruction arguments. 
+  -- There are 13 instruction formats, shown below:
+  --
+  -- Key:
+  --  xxxx: instruction code
+  --  mmmm: Source register
+  --  nnnn: Destination register
+  --  iiii: immediate data
+  --  dddd: displacment
+
+  -- 0 format:   xxxx xxxx xxxx xxxx
+  -- n format:   xxxx nnnn xxxx xxxx
+  -- m format:   xxxx mmmm xxxx xxxx
+  -- nm format:  xxxx nnnn mmmm xxxx
+  -- md format:  xxxx xxxx mmmm dddd
+  -- nd4 format: xxxx xxxx nnnn dddd
+  -- nmd format: xxxx nnnn mmmm dddd
+  -- d format:   xxxx xxxx dddd dddd
+  -- d12 format: xxxx dddd dddd dddd
+  -- nd8 format: xxxx nnnn dddd dddd
+  -- i format:   xxxx xxxx iiii iiii
+  -- ni format:  xxxx nnnn iiii iiii
+  --
+  alias n_format_n : std_logic_vector(3 downto 0) is IR(7 downto 4);
+
+  alias m_format_m : std_logic_vector(3 downto 0) is IR(11 downto 8);
+
+  alias nm_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
+  alias nm_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
+
+  alias md_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
+  alias md_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
+
+  alias nd4_format_n : std_logic_vector(3 downto 0) is IR(7 downto 4);
+  alias nd4_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
+
+  alias nmd_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
+  alias nmd_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
+  alias nmd_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
+
+  alias d_format_d : std_logic_vector(7 downto 0) is IR(7 downto 0);
+
+  alias d12_format_d : std_logic_vector(11 downto 0) is IR(11 downto 0);
+
+  alias nd8_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
+  alias nd8_format_d : std_logic_vector(7 downto 0) is IR(7 downto 0);
+
+  alias i_format_i : std_logic_vector(7 downto 0) is IR(7 downto 0);
+
+  alias ni_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
+  alias ni_format_i : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
 begin
 
