@@ -43,8 +43,8 @@ package SH2ControlConstants is
     constant RegDataIn_RegA      : std_logic_vector(1 downto 0) := "10";
     constant RegDataIn_RegB      : std_logic_vector(1 downto 0) := "11";
 
-    constant ReadWrite_READ : std_logic := '0';
-    constant ReadWrite_WRITE : std_logic := '1';
+    constant ReadWrite_READ     : std_logic := '0';
+    constant ReadWrite_WRITE    : std_logic := '1';
 
     constant MemOut_RegA    : std_logic_vector(2 downto 0) := "000";
     constant MemOut_RegB    : std_logic_vector(2 downto 0) := "001";
