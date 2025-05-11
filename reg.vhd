@@ -127,6 +127,10 @@ begin
             Registers  <=  (others => (others => '0'));
         elsif  rising_edge(clock)  then
             -- update registers on clock rising edge
+            -- report "R0: " & to_hstring(Registers(0));
+            -- report "R1: " & to_hstring(Registers(1));
+            -- report "R2: " & to_hstring(Registers(2));
+            -- report "R3: " & to_hstring(Registers(3));
 
             -- handle double word stores
             if (RegDStore = '1')  then

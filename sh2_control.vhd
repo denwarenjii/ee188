@@ -197,6 +197,8 @@ begin
     decode_proc: process (IR)
     begin
         if std_match(IR, NOP) then
+            report "Instruction: NOP";
+
             -- Does not access memory
             Instruction_MemEnable <= '0';
             Instruction_ReadWrite <= 'X';
@@ -206,6 +208,8 @@ begin
             -- PMAU signals
             Instruction_PCAddrMode <= PCAddrMode_INC;
         elsif std_match(IR, ADD_RM_RN) then
+            report "Instruction: ADD";
+
             -- Does not access memory
             Instruction_MemEnable <= '0';
             Instruction_ReadWrite <= 'X';

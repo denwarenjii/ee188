@@ -44,8 +44,18 @@ end entity;
 
 
 architecture structural of MemoryInterfaceTx is
+
+    signal data_in_BE : std_logic_vector(31 downto 0);
+
 begin
-    output_proc: process(ReadWrite, MemMode, Address, data_in)
+
+    -- Re-order bytes since CPU is big-endian but registers are little-endian internally
+    data_in_BE(7 downto 0) <= data_in(15 downto 8);
+    data_in_BE(15 downto 8) <= data_in(7 downto 0);
+    data_in_BE(23 downto 16) <= data_in(31 downto 24);
+    data_in_BE(31 downto 24) <= data_in(23 downto 16);
+
+    output_proc: process(ReadWrite, MemMode, Address, data_in_BE)
     begin
         if ReadWrite = '0' then
             -- Disable writing
@@ -55,6 +65,7 @@ begin
             -- Enable specific bytes based on type of read
             case MemMode is
                 when ByteMode =>
+                    -- Reversed for big-endian
                     RE(0) <= '0' when address mod 4 = 0 else '1';
                     RE(1) <= '0' when address mod 4 = 1 else '1';
                     RE(2) <= '0' when address mod 4 = 2 else '1';
@@ -70,9 +81,8 @@ begin
                     RE(3 downto 0) <= (others => '0');
 
                 when others =>
-                    assert (false)
-                    report "Memory interface Tx: Invalid memory mode for read"
-                    severity error;
+                    -- When unrecognized mode, don't read/write anything
+                    RE <= (others => '1');
             end case;
 
         elsif ReadWrite = '1' then
@@ -87,7 +97,7 @@ begin
                     WE(2) <= '0' when address mod 4 = 2 else '1';
                     WE(3) <= '0' when address mod 4 = 3 else '1';
                     -- TODO: may not synthesize efficiently, use conditionals instead?
-                    DB <= std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)));
+                    DB <= std_logic_vector(unsigned(data_in_BE) sll to_integer(8 * (address mod 4)));
 
                 when WordMode =>
                     WE(0) <= '0' when address mod 4 = 0 else '1';
@@ -95,11 +105,11 @@ begin
                     WE(2) <= '0' when address mod 4 = 2 else '1';
                     WE(3) <= '0' when address mod 4 = 2 else '1';
                     -- TODO: may not synthesize efficiently, use conditionals instead?
-                    DB <= std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)));
+                    DB <= std_logic_vector(unsigned(data_in_BE) sll to_integer(8 * (address mod 4)));
 
                 when LongwordMode =>
                     WE(3 downto 0) <= (others => '0');
-                    DB <= data_in;
+                    DB <= data_in_BE;
 
                 when others =>
                     assert (false)
@@ -130,6 +140,7 @@ entity MemoryInterfaceRx is
 end entity;
 
 architecture structural of MemoryInterfaceRx is
+    signal data_BE : std_logic_vector(31 downto 0);
 begin
     output_proc: process(MemMode, Address, DB)
     begin
@@ -137,36 +148,42 @@ begin
         case MemMode is
             when ByteMode =>
                 if (Address mod 4 = 0) then
-                    data(7 downto 0) <= DB(7 downto 0);
-                    data(31 downto 8) <= (others => DB(7));
+                    data_BE(7 downto 0) <= DB(7 downto 0);
+                    data_BE(31 downto 8) <= (others => DB(7));
                 elsif (Address mod 4 = 1) then
-                    data(7 downto 0) <= DB(15 downto 8);
-                    data(31 downto 8) <= (others => DB(15));
+                    data_BE(7 downto 0) <= DB(15 downto 8);
+                    data_BE(31 downto 8) <= (others => DB(15));
                 elsif (Address mod 4 = 2) then
-                    data(7 downto 0) <= DB(23 downto 16);
-                    data(31 downto 8) <= (others => DB(23));
+                    data_BE(7 downto 0) <= DB(23 downto 16);
+                    data_BE(31 downto 8) <= (others => DB(23));
                 elsif (Address mod 4 = 3) then
-                    data(7 downto 0) <= DB(31 downto 24);
-                    data(31 downto 8) <= (others => DB(31));
+                    data_BE(7 downto 0) <= DB(31 downto 24);
+                    data_BE(31 downto 8) <= (others => DB(31));
                 end if;
                     
             when WordMode =>
                 if (Address mod 4 = 0) then
-                    data(15 downto 0) <= DB(15 downto 0);
-                    data(31 downto 16) <= (others => DB(15));
+                    data_BE(15 downto 0) <= DB(15 downto 0);
+                    data_BE(31 downto 16) <= (others => DB(15));
                 elsif (Address mod 4 = 2) then
-                    data(15 downto 0) <= DB(31 downto 16);
-                    data(31 downto 16) <= (others => DB(31));
+                    data_BE(15 downto 0) <= DB(31 downto 16);
+                    data_BE(31 downto 16) <= (others => DB(31));
                 end if;
 
             when LongwordMode =>
-                data <= DB;
+                data_BE <= DB;
 
             when others =>
-                assert (false)
-                report "Memory interface Rx: Invalid memory mode for read"
-                severity error;
+                -- When invalid memory mode, don't read anything
+                data_BE <= (others => 'X');
         end case;
 
     end process output_proc;
+
+    -- Re-order bytes since CPU is big-endian but registers are little-endian internally
+    data(7 downto 0) <= data_BE(15 downto 8);
+    data(15 downto 8) <= data_BE(7 downto 0);
+    data(23 downto 16) <= data_BE(31 downto 24);
+    data(31 downto 24) <= data_BE(23 downto 16);
+
 end architecture;
