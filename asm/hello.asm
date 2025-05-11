@@ -1,6 +1,6 @@
 ProgramStart:
     NOP;
-    MOV #15, R0;
-    MOV R0, R1;
-    MOV #4, R1;
-    MOV R1, R0;
+    MOV #1, R0;
+    MOV #2, R1;
+    ADD #10, R0;
+    NOP;

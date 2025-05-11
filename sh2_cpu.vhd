@@ -163,6 +163,7 @@ architecture structural of sh2cpu is
 
     signal Immediate        : std_logic_vector(7 downto 0);     -- immediate value from instruction
     signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
+    signal ALUOpBSel        : std_logic;
 
     signal SR               : std_logic_vector(31 downto 0);
     signal GBR              : std_logic_vector(31 downto 0);
@@ -233,7 +234,11 @@ begin
 
     -- ALU Input mux
     OperandA <= RegA;
-    OperandB <= RegB;
+
+    OperandB <= RegB            when ALUOpBSel = ALUOpB_RegB else
+                ImmediateExt    when ALUOpBSel = ALUOpB_Imm  else
+                (others => 'X');
+
     TIn <= SR(0);
 
     alu : entity work.sh2alu
@@ -338,6 +343,7 @@ begin
         MemOutSel    => MemOutSel,
 
         -- ALU control signals:
+        ALUOpBSel    => ALUOpBSel,
         LoadA        => LoadA,
         FCmd         => FCmd,
         CinCmd       => CinCmd,
