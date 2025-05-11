@@ -40,6 +40,8 @@ package SH2ControlConstants is
     -- Internal control signals for controlling muxes within the CPU
     constant RegDataIn_ALUResult : std_logic_vector(1 downto 0) := "00";
     constant RegDataIn_Immediate : std_logic_vector(1 downto 0) := "01";
+    constant RegDataIn_RegA      : std_logic_vector(1 downto 0) := "10";
+    constant RegDataIn_RegB      : std_logic_vector(1 downto 0) := "11";
 
     constant ReadWrite_READ : std_logic := '0';
     constant ReadWrite_WRITE : std_logic := '1';
@@ -244,6 +246,16 @@ begin
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
+
+            -- PMAU signals
+            Instruction_PCAddrMode <= PCAddrMode_INC;
+
+        elsif std_match(IR, MOV_RM_RN) then
+
+            RegBSel <= to_integer(unsigned(nm_format_m));
+            RegInSel <= to_integer(unsigned(nm_format_n));
+            RegDataInSel <= RegDataIn_RegB;
+            Instruction_EnableIn <= '1';
 
             -- PMAU signals
             Instruction_PCAddrMode <= PCAddrMode_INC;

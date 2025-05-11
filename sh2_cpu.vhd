@@ -203,6 +203,8 @@ begin
 
     RegDataIn <= Result when RegDataInSel = RegDataIn_ALUResult else
                  ImmediateExt when RegDataInSel = RegDataIn_Immediate else
+                 RegA when RegDataInSel = RegDataIn_RegA else
+                 RegB when RegDataInSel = RegDataIn_RegB else
                  (others => 'X');
 
     -- Route control signals and data into register array
