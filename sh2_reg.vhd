@@ -20,7 +20,7 @@ use ieee.numeric_std.all;
 
 entity SH2Regs is
     port (
-        DataIn     : in   std_logic_vector(31 downto 0);    -- data to write to a register
+        RegDataIn  : in   std_logic_vector(31 downto 0);    -- data to write to a register
         EnableIn   : in   std_logic;                        -- if data should be written to an input register
         RegInSel   : in   integer  range 15 downto 0;       -- which register to write data to
         RegASel    : in   integer  range 15 downto 0;       -- which register to read to bus A
@@ -93,7 +93,7 @@ begin
         clock => clock,
         reset => reset,
         -- dual register access for ALU operations
-        RegIn => DataIn,
+        RegIn => RegDataIn,
         RegInSel => RegInSel,
         RegStore => EnableIn,
         RegASel => RegASel,

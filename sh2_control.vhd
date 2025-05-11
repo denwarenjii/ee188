@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------
+
 --
 --  Control Unit
 --
@@ -12,9 +12,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
-use work.SH2PmauConstants.all;
-use work.MemoryInterfaceConstants.all;
 
 package SH2InstructionEncodings is
 
@@ -30,8 +27,32 @@ package SH2InstructionEncodings is
   -- Shift Instruction:
   -- Branch Instructions:
   -- System Control:
+  constant NOP : std_logic_vector(15 downto 0) := "0000000000001001";
 
 end package SH2InstructionEncodings;
+
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+package SH2ControlConstants is
+    -- Internal control signals for controlling muxes within the CPU
+    constant RegDataIn_ALUResult : std_logic_vector(1 downto 0) := "00";
+
+end package SH2ControlConstants;
+
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+use work.SH2PmauConstants.all;
+use work.MemoryInterfaceConstants.all;
+use work.SH2InstructionEncodings.all;
+use work.SH2ControlConstants.all;
+use work.SH2ALUConstants.all;
+
 
 entity  SH2Control  is
 
@@ -62,6 +83,7 @@ entity  SH2Control  is
         TSel        : out std_logic_vector(2 downto 0);     -- if T should be updated to a new value (T/C/V/0/1)
 
         -- register array control signals
+        RegDataInSel: out std_logic_vector(1 downto 0);     -- source for register input data
         DataIn      : out std_logic_vector(31 downto 0);    -- data to write to a register
         EnableIn    : out std_logic;                        -- if data should be written to an input register
         RegInSel    : out integer  range 15 downto 0;       -- which register to write data to
@@ -159,34 +181,60 @@ architecture dataflow of sh2control is
   alias ni_format_i : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
   -- Internal signals computed combinatorially to memory signals can
-  -- be output with the correct timing (read/write).
+  -- be output on the correct clock.
   signal Instruction_MemEnable : std_logic;
   signal Instruction_ReadWrite : std_logic;
+  signal Instruction_WordMode : std_logic_vector(1 downto 0);
+
+  signal Instruction_EnableIn  : std_logic;
+  signal Instruction_PCAddrMode : std_logic_vector(2 downto 0);
 
 begin
 
-    PCAddrMode <= PCAddrMode_INC when state = writeback else PCAddrMode_HOLD;
+    -- Only update PC before next fetch cycle
+    PCAddrMode <= Instruction_PCAddrMode when state = writeback else PCAddrMode_HOLD;
 
     decode_proc: process (IR)
     begin
-        if std_match(IR, ADD_INSTRUCTION) then
+        if std_match(IR, NOP) then
             -- Does not access memory
             Instruction_MemEnable <= '0';
             Instruction_ReadWrite <= 'X';
             Instruction_WordMode <= "XX";
             MemOutSel <= "XXX";
 
-            RegASel <= to_integer(nm_format_n);
-            RegBSel <= to_integer(nm_format_m);
+            -- PMAU signals
+            Instruction_PCAddrMode <= PCAddrMode_INC;
+        elsif std_match(IR, ADD_RM_RN) then
+            -- Does not access memory
+            Instruction_MemEnable <= '0';
+            Instruction_ReadWrite <= 'X';
+            Instruction_WordMode <= "XX";
+            MemOutSel <= "XXX";
 
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            RegInSel <= to_integer(unsigned(nm_format_n));
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            -- ALU signals
             LoadA <= '1';
             FCmd <= FCmd_B;
             CinCmd <= CinCmd_ZERO;
-            SCmd <= "XX";
+            SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
-        elsif std_match(IR, MOV_IMM_INSTRUCTION) then
+            -- PMAU signals
+            Instruction_PCAddrMode <= PCAddrMode_INC;
+
+        elsif std_match(IR, MOV_IMM_RN) then
             null;
+        else
+            Instruction_PCAddrMode <= PCAddrMode_INC;
+            report "Unrecognized instruction: " & to_hstring(IR);
         end if;
     end process;
 

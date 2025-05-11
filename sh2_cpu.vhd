@@ -48,6 +48,7 @@ use ieee.numeric_std.all;
 
 use work.SH2PmauConstants.all;
 use work.MemoryInterfaceConstants.all;
+use work.SH2ControlConstants.all;
 
 --library opcodes;
 --use opcodes.opcodes.all;
@@ -78,7 +79,7 @@ end  SH2CPU;
 architecture structural of sh2cpu is
 
     -- Register array inputs
-    signal DataIn     : std_logic_vector(31 downto 0);    -- data to write to a register
+    signal RegDataIn     : std_logic_vector(31 downto 0);    -- data to write to a register
     signal EnableIn   : std_logic;                        -- if data should be written to an input register
     signal RegInSel   : integer  range 15 downto 0;       -- which register to write data to
     signal RegASel    : integer  range 15 downto 0;       -- which register to read to bus A
@@ -158,6 +159,7 @@ architecture structural of sh2cpu is
     signal TSel             : std_logic_vector(2 downto 0);
     signal DataRegIdx       : integer  range 15 downto 0; 
     signal ProgRegIdx       : integer  range 15 downto 0; 
+    signal RegDataInSel     : std_logic_vector(1 downto 0);     -- source for register input data
 
     signal SR               : std_logic_vector(31 downto 0);
     signal GBR              : std_logic_vector(31 downto 0);
@@ -193,13 +195,16 @@ begin
                   PCOut when MemOutSel = "110" else
                   (others => 'X');
 
+    RegDataIn <= Result when RegDataInSel = RegDataIn_ALUResult else
+                 (others => 'X');
+
     -- Route control signals and data into register array
     registers : entity work.SH2Regs
     port map (
         -- Inputs:
         clock       => clock,
         reset       => reset,
-        DataIn      => DataIn,
+        RegDataIn   => RegDataIn,
         EnableIn    => EnableIn,
         RegInSel    => RegInSel,
         RegASel     => RegASel,
@@ -215,6 +220,12 @@ begin
         RegA1   => RegA1,
         RegA2   => RegA2
     );
+
+
+    -- ALU Input mux
+    OperandA <= RegA;
+    OperandB <= RegB;
+    TIn <= SR(0);
 
     alu : entity work.sh2alu
     port map (
@@ -314,9 +325,6 @@ begin
         MemOutSel    => MemOutSel,
 
         -- ALU control signals:
-        OperandA     => OperandA,
-        OperandB     => OperandB,
-        TIn          => TIn,
         LoadA        => LoadA,
         FCmd         => FCmd,
         CinCmd       => CinCmd,
@@ -325,7 +333,7 @@ begin
         TSel         => TSel,
 
         -- Register Array control signals:
-        DataIn       => DataIn,
+        RegDataInSel => RegDataInSel,
         EnableIn     => EnableIn,
         RegInSel     => RegInSel,
         RegASel      => RegASel,
@@ -353,5 +361,16 @@ begin
         PMAUOff8     => PMAUOff8,
         PMAUOff12    => PMAUOff12
     );
+
+    register_proc: process(clock, reset)
+    begin
+        if reset = '0' then
+            SR <=  (others => '0');
+            GBR <=  (others => '0');
+            VBR <=  (others => '0');
+        elsif rising_edge(clock) then
+            null;
+        end if;
+    end process register_proc;
 
 end architecture structural;

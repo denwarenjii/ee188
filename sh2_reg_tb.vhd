@@ -21,7 +21,7 @@ end sh2_reg_tb;
 
 architecture behavioral of sh2_reg_tb is
     -- Stimulus signals for unit under test
-    signal DataIn     : std_logic_vector(31 downto 0);    -- data to write to a register
+    signal RegDataIn  : std_logic_vector(31 downto 0);    -- data to write to a register
     signal EnableIn   : std_logic;                        -- if data should be written to an input register
     signal RegInSel   : integer  range 15 downto 0;       -- which register to write data to
     signal RegASel    : integer  range 15 downto 0;       -- which register to read to bus A
@@ -47,7 +47,7 @@ begin
     -- Instantiate UUT
     UUT: entity work.sh2regs
     port map(
-        DataIn => DataIn,
+        RegDataIn => RegDataIn,
         EnableIn => EnableIn,
         RegInSel => RegInSel,
         RegASel => RegASel,
@@ -94,7 +94,7 @@ begin
             -- Write to a register
             RegInSel <= r;
             EnableIn <= '1';
-            DataIn <= Data;
+            RegDataIn <= Data;
             Tick;               -- clock write op into register array
             EnableIn <= '0';    -- Don't accidentally write more than expected
         end procedure;
