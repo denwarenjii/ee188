@@ -24,6 +24,9 @@ package SH2InstructionEncodings is
   constant ADD_RM_RN    : std_logic_vector(15 downto 0) := "0011--------1100";
   constant ADD_IMM_RN   : std_logic_vector(15 downto 0) := "0111------------";
 
+  constant AND_RM_RN    : std_logic_vector(15 downto 0) := "0010--------1001";
+
+
   -- Logical Operations:
   -- Shift Instruction:
   -- Branch Instructions:
@@ -267,6 +270,34 @@ begin
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
+
+            -- PMAU signals
+            Instruction_PCAddrMode <= PCAddrMode_INC;
+
+        elsif std_match(IR, AND_RM_RN) then
+            report "Instruction: AND Rm, Rn";
+
+            -- Does not access memory
+            Instruction_MemEnable <= '0';
+            Instruction_ReadWrite <= 'X';
+            Instruction_WordMode <= "XX";
+            MemOutSel <= "XXX";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            RegInSel <= to_integer(unsigned(nm_format_n));
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_RegB;
+            LoadA <= '1';
+            FCmd <= FCmd_AND;
+            CinCmd <= CinCmd_ZERO;
+            SCmd <= "XXX";
+            ALUCmd <= ALUCmd_FBLOCK;
 
             -- PMAU signals
             Instruction_PCAddrMode <= PCAddrMode_INC;
