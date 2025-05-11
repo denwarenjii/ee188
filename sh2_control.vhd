@@ -141,9 +141,37 @@ architecture dataflow of sh2control is
   alias ni_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
   alias ni_format_i : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
+  -- Internal signals computed combinatorially to memory signals can
+  -- be output with the correct timing (read/write).
+  signal Instruction_MemEnable : std_logic;
+  signal Instruction_ReadWrite : std_logic;
+
 begin
 
     PCAddrMode <= PCAddrMode_INC when state = writeback else PCAddrMode_HOLD;
+
+    decode_proc: process (IR)
+    begin
+        if std_match(IR, ADD_INSTRUCTION) then
+            -- Does not access memory
+            Instruction_MemEnable <= '0';
+            Instruction_ReadWrite <= 'X';
+            Instruction_WordMode <= "XX";
+            MemOutSel <= "XXX";
+
+            RegASel <= to_integer(nm_format_n);
+            RegBSel <= to_integer(nm_format_m);
+
+            LoadA <= '1';
+            FCmd <= FCmd_B;
+            CinCmd <= CinCmd_ZERO;
+            SCmd <= "XX";
+            ALUCmd <= ALUCmd_ADDER;
+
+        elsif std_match(IR, MOV_IMM_INSTRUCTION) then
+            null;
+        end if;
+    end process;
 
     -- outputs based on the current CPU state
     output_proc: process(state, clock)
@@ -156,14 +184,15 @@ begin
             ReadWrite <= '0';       -- read
             MemMode <= WordMode;    -- word
         elsif state = execute then
-            -- Testing if writing to memory works
-            MemEnable <= '1';
             MemSel <= '0';          -- RAM
-            ReadWrite <= '1';       -- Write
-            MemMode <= WordMode;    -- word
-            MemOutSel <= "110";
+            MemEnable <= Instruction_MemEnable;
+            ReadWrite <= Instruction_ReadWrite;
+            MemMode <= Instruction_WordMode;
         elsif state = writeback then
+            -- disable memory
             MemEnable <= '0';
+            ReadWrite <= 'X';
+            MemMode <= "XX";
         end if;
     end process output_proc;
 
