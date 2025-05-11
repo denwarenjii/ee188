@@ -16,6 +16,23 @@ use ieee.numeric_std.all;
 use work.SH2PmauConstants.all;
 use work.MemoryInterfaceConstants.all;
 
+package SH2InstructionEncodings is
+
+  -- Data Transfer Instruction:
+  constant MOV_IMM_RN     : std_logic_vector(15 downto 0) := "1110------------";
+  constant MOV_RM_RN      : std_logic_vector(15 downto 0) := "0110--------0011";
+  constant MOV_L_RM_AT_RN : std_logic_vector(15 downto 0) := "0010--------0010";
+
+  -- Arithmetic Instructions:
+  constant ADD_RM_RN : std_logic_vector(15 downto 0) := "0011--------1100";
+
+  -- Logical Operations:
+  -- Shift Instruction:
+  -- Branch Instructions:
+  -- System Control:
+
+end package SH2InstructionEncodings;
+
 entity  SH2Control  is
 
     port (
