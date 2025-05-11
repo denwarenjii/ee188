@@ -382,6 +382,11 @@ begin
         Tick;
         Tick;
         Tick;
+        Tick;
+        Tick;
+        Tick;
+        Tick;
+        Tick;
 
         CPU_ACTIVE <= false;
         TEST_MEMSEL <= '0';

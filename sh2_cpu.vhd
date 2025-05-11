@@ -161,6 +161,9 @@ architecture structural of sh2cpu is
     signal ProgRegIdx       : integer  range 15 downto 0; 
     signal RegDataInSel     : std_logic_vector(1 downto 0);     -- source for register input data
 
+    signal Immediate        : std_logic_vector(7 downto 0);     -- immediate value from instruction
+    signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
+
     signal SR               : std_logic_vector(31 downto 0);
     signal GBR              : std_logic_vector(31 downto 0);
     signal VBR              : std_logic_vector(31 downto 0);
@@ -195,7 +198,11 @@ begin
                   PCOut when MemOutSel = "110" else
                   (others => 'X');
 
+    ImmediateExt(7 downto 0) <= Immediate;
+    ImmediateExt(31 downto 8) <= (others => Immediate(7));
+
     RegDataIn <= Result when RegDataInSel = RegDataIn_ALUResult else
+                 ImmediateExt when RegDataInSel = RegDataIn_Immediate else
                  (others => 'X');
 
     -- Route control signals and data into register array
@@ -315,6 +322,7 @@ begin
         reset => reset,
 
         -- Outputs:
+        Immediate    => Immediate,
 
         -- Memory interface control signals:
         MemEnable    => MemEnable,

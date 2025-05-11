@@ -39,6 +39,7 @@ use ieee.numeric_std.all;
 package SH2ControlConstants is
     -- Internal control signals for controlling muxes within the CPU
     constant RegDataIn_ALUResult : std_logic_vector(1 downto 0) := "00";
+    constant RegDataIn_Immediate : std_logic_vector(1 downto 0) := "01";
 
 end package SH2ControlConstants;
 
@@ -68,6 +69,7 @@ entity  SH2Control  is
         Disp        : out std_logic_vector(11 downto 0);    -- memory displacement
         MemSel      : out std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
 
+        Immediate   : out std_logic_vector(7 downto 0);     -- 8-bit immediate
         MemOutSel   : out std_logic_vector(2 downto 0);     -- what should be output to memory
 
         -- ALU control signals
@@ -235,7 +237,15 @@ begin
             Instruction_PCAddrMode <= PCAddrMode_INC;
 
         elsif std_match(IR, MOV_IMM_RN) then
-            null;
+            report "Instruction: MOV #imm, Rn";
+            RegInSel <= to_integer(unsigned(ni_format_n));
+            RegDataInSel <= RegDataIn_Immediate;
+            Instruction_EnableIn <= '1';
+            Immediate <= ni_format_i;
+
+            -- PMAU signals
+            Instruction_PCAddrMode <= PCAddrMode_INC;
+
         else
             Instruction_PCAddrMode <= PCAddrMode_INC;
             report "Unrecognized instruction: " & to_hstring(IR);
@@ -252,16 +262,21 @@ begin
             MemSel <= '1';          -- ROM
             ReadWrite <= '0';       -- read
             MemMode <= WordMode;    -- word
+            EnableIn <= '0';
         elsif state = execute then
             MemSel <= '0';          -- RAM
             MemEnable <= Instruction_MemEnable;
             ReadWrite <= Instruction_ReadWrite;
             MemMode <= Instruction_WordMode;
+            EnableIn <= '0';
         elsif state = writeback then
             -- disable memory
             MemEnable <= '0';
             ReadWrite <= 'X';
             MemMode <= "XX";
+
+            -- perform register writeback if necessary
+            EnableIn <= Instruction_EnableIn;
         end if;
     end process output_proc;
 
