@@ -160,6 +160,7 @@ architecture structural of sh2cpu is
     signal DataRegIdx       : integer  range 15 downto 0; 
     signal ProgRegIdx       : integer  range 15 downto 0; 
     signal RegDataInSel     : std_logic_vector(1 downto 0);     -- source for register input data
+    signal TFlagSel         : std_logic_vector(1 downto 0);     -- source for next value of T flag
 
     signal Immediate        : std_logic_vector(7 downto 0);     -- immediate value from instruction
     signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
@@ -168,6 +169,9 @@ architecture structural of sh2cpu is
     signal SR               : std_logic_vector(31 downto 0);
     signal GBR              : std_logic_vector(31 downto 0);
     signal VBR              : std_logic_vector(31 downto 0);
+
+
+    signal TNext        : std_logic;    -- Next value for T bit
 
     -- Not implemented
     -- signal MACL             : std_logic_vector(31 downto 0);
@@ -240,6 +244,12 @@ begin
                 (others => 'X');
 
     TIn <= SR(0);
+
+    TNext <= SR(0)      when TFlagSel = TFlagSel_T else
+             Cout       when TFlagSel = TFlagSel_Carry else
+             Overflow   when TFlagSel = TFlagSel_Overflow else
+             Zero       when TFlagSel = TFlagSel_Zero else
+             'X';
 
     alu : entity work.sh2alu
     port map (
@@ -333,6 +343,7 @@ begin
 
         -- Outputs:
         Immediate    => Immediate,
+        TFlagSel     => TFlagSel,
 
         -- Memory interface control signals:
         MemEnable    => MemEnable,
@@ -388,7 +399,8 @@ begin
             GBR <=  (others => '0');
             VBR <=  (others => '0');
         elsif rising_edge(clock) then
-            null;
+            SR(0) <= TNext;
+            report "Next value of T: " & to_string(TNext);
         end if;
     end process register_proc;
 

@@ -21,7 +21,7 @@ package SH2InstructionEncodings is
   constant MOV_L_RM_AT_RN : std_logic_vector(15 downto 0) := "0010--------00--";
 
   -- Arithmetic Instructions:
-  constant ADD_RM_RN    : std_logic_vector(15 downto 0) := "0011--------1100";
+  constant ADD_RM_RN    : std_logic_vector(15 downto 0) := "0011--------11--";
   constant ADD_IMM_RN   : std_logic_vector(15 downto 0) := "0111------------";
 
   constant AND_RM_RN    : std_logic_vector(15 downto 0) := "0010--------1001";
@@ -61,6 +61,11 @@ package SH2ControlConstants is
     constant ALUOpB_RegB    : std_logic := '0';
     constant ALUOpB_Imm     : std_logic := '1';
 
+    constant TFlagSel_T         : std_logic_vector(1 downto 0) := "00";
+    constant TFlagSel_Zero      : std_logic_vector(1 downto 0) := "01";
+    constant TFlagSel_Carry     : std_logic_vector(1 downto 0) := "10";
+    constant TFlagSel_Overflow  : std_logic_vector(1 downto 0) := "11";
+
 end package SH2ControlConstants;
 
 
@@ -92,6 +97,7 @@ entity  SH2Control  is
 
         Immediate   : out std_logic_vector(7 downto 0);     -- 8-bit immediate
         MemOutSel   : out std_logic_vector(2 downto 0);     -- what should be output to memory
+        TFlagSel    : out std_logic_vector(1 downto 0);     -- source for next value of T flag
 
         -- ALU control signals
         ALUOpBSel   : out std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
@@ -211,6 +217,8 @@ architecture dataflow of sh2control is
   signal Instruction_EnableIn  : std_logic;
   signal Instruction_PCAddrMode : std_logic_vector(2 downto 0);
 
+  signal Instruction_TFlagSel    : std_logic_vector(1 downto 0);
+
 begin
 
     -- Only update PC before next fetch cycle
@@ -218,14 +226,25 @@ begin
 
     decode_proc: process (IR)
     begin
-        if std_match(IR, ADD_RM_RN) then
-            report "Instruction: ADD Rm, Rn";
+        -- Default flag values
 
-            -- Does not access memory
-            Instruction_MemEnable <= '0';
-            Instruction_ReadWrite <= 'X';
-            Instruction_WordMode <= "XX";
-            MemOutSel <= "XXX";
+        -- Not accessing memory
+        Instruction_MemEnable <= '0';
+        Instruction_ReadWrite <= 'X';
+        Instruction_WordMode <= "XX";
+        MemOutSel <= "XXX";
+
+        -- Disable Reg Array
+        Instruction_EnableIn <= '0';
+
+        -- Increment PC
+        Instruction_PCAddrMode <= PCAddrMode_INC;
+
+        -- Keep T flag the same
+        Instruction_TFlagSel <= TFlagSel_T;
+
+        if std_match(IR, ADD_RM_RN) then
+            report "Instruction: ADD(C/V) Rm, Rn";
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -235,6 +254,9 @@ begin
             RegDataInSel <= RegDataIn_ALUResult;
             Instruction_EnableIn <= '1';
 
+            -- Bit-decoding T flag select (None, Carry, Overflow)
+            Instruction_TFlagSel <= IR(1 downto 0);
+
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
             LoadA <= '1';
@@ -243,17 +265,8 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
-            -- PMAU signals
-            Instruction_PCAddrMode <= PCAddrMode_INC;
-
         elsif std_match(IR, ADD_IMM_RN) then
             report "Instruction: ADD #imm, Rn";
-
-            -- Does not access memory
-            Instruction_MemEnable <= '0';
-            Instruction_ReadWrite <= 'X';
-            Instruction_WordMode <= "XX";
-            MemOutSel <= "XXX";
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -271,17 +284,8 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
-            -- PMAU signals
-            Instruction_PCAddrMode <= PCAddrMode_INC;
-
         elsif std_match(IR, AND_RM_RN) then
             report "Instruction: AND Rm, Rn";
-
-            -- Does not access memory
-            Instruction_MemEnable <= '0';
-            Instruction_ReadWrite <= 'X';
-            Instruction_WordMode <= "XX";
-            MemOutSel <= "XXX";
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -299,18 +303,11 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
 
-            -- PMAU signals
-            Instruction_PCAddrMode <= PCAddrMode_INC;
-
         elsif std_match(IR, MOV_RM_RN) then
-
             RegBSel <= to_integer(unsigned(nm_format_m));
             RegInSel <= to_integer(unsigned(nm_format_n));
             RegDataInSel <= RegDataIn_RegB;
             Instruction_EnableIn <= '1';
-
-            -- PMAU signals
-            Instruction_PCAddrMode <= PCAddrMode_INC;
 
         elsif std_match(IR, MOV_IMM_RN) then
             report "Instruction: MOV #imm, Rn";
@@ -319,16 +316,13 @@ begin
             Instruction_EnableIn <= '1';
             Immediate <= ni_format_i;
 
-            -- PMAU signals
-            Instruction_PCAddrMode <= PCAddrMode_INC;
-
         elsif std_match(IR, MOV_L_RM_AT_RN) then
             report "Instruction: MOV RM, @Rn";
 
             -- Writes to memory
             Instruction_MemEnable <= '1';
             Instruction_ReadWrite <= ReadWrite_WRITE;
-            Instruction_WordMode <= IR(1 downto 0);     -- happens to work for this instruction
+            Instruction_WordMode <= IR(1 downto 0);     -- bit-decode word mode
             MemOutSel <= MemOut_RegB;
 
             RegBSel <= to_integer(unsigned(nm_format_m));
@@ -341,39 +335,15 @@ begin
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel <= IncDecSel_NONE;
 
-            -- PMAU signals
-            Instruction_PCAddrMode <= PCAddrMode_INC;
         elsif std_match(IR, NOP) then
-            report "NOP";
-            -- Does not access memory
-            Instruction_MemEnable <= '0';
-            Instruction_ReadWrite <= 'X';
-            Instruction_WordMode <= "XX";
-            MemOutSel <= "XXX";
-
-            -- Disable Reg Array
-            Instruction_EnableIn <= '0';
-
-            -- PMAU signals
-            Instruction_PCAddrMode <= PCAddrMode_INC;
+            report "Instruction: NOP";
         else
             report "Unrecognized instruction: " & to_hstring(IR);
-            -- Does not access memory
-            Instruction_MemEnable <= '0';
-            Instruction_ReadWrite <= 'X';
-            Instruction_WordMode <= "XX";
-            MemOutSel <= "XXX";
-
-            -- Disable Reg Array
-            Instruction_EnableIn <= '0';
-
-            -- PMAU signals
-            Instruction_PCAddrMode <= PCAddrMode_INC;
         end if;
     end process;
 
     -- outputs based on the current CPU state
-    output_proc: process(state, clock)
+    output_proc: process(state)
     begin
         if state = fetch then
             -- Fetch an instruction word from ROM
@@ -383,12 +353,14 @@ begin
             ReadWrite <= '0';       -- read
             MemMode <= WordMode;    -- word
             EnableIn <= '0';
+            TFlagSel <= TFlagSel_T;
         elsif state = execute then
             MemSel <= '0';          -- RAM
             MemEnable <= Instruction_MemEnable;
             ReadWrite <= Instruction_ReadWrite;
             MemMode <= Instruction_WordMode;
             EnableIn <= '0';
+            TFlagSel <= TFlagSel_T;
         elsif state = writeback then
             -- disable memory
             MemEnable <= '0';
@@ -397,6 +369,9 @@ begin
 
             -- perform register writeback if necessary
             EnableIn <= Instruction_EnableIn;
+
+            -- Update T flag if necessary
+            TFlagSel <= Instruction_TFlagSel;
         end if;
     end process output_proc;
 
