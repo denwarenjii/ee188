@@ -17,8 +17,8 @@ use ieee.numeric_std.all;
 package MemoryInterfaceConstants is
 
   constant ByteMode         : std_logic_vector(1 downto 0) := "00";
-  constant WordMode         : std_logic_vector(1 downto 0) := "10";
-  constant LongwordMode     : std_logic_vector(1 downto 0) := "11";
+  constant WordMode         : std_logic_vector(1 downto 0) := "01";
+  constant LongwordMode     : std_logic_vector(1 downto 0) := "10";
 
 end package MemoryInterfaceConstants;
 

@@ -18,7 +18,7 @@ package SH2InstructionEncodings is
   -- Data Transfer Instruction:
   constant MOV_IMM_RN     : std_logic_vector(15 downto 0) := "1110------------";
   constant MOV_RM_RN      : std_logic_vector(15 downto 0) := "0110--------0011";
-  constant MOV_L_RM_AT_RN : std_logic_vector(15 downto 0) := "0010--------0010";
+  constant MOV_L_RM_AT_RN : std_logic_vector(15 downto 0) := "0010--------00--";
 
   -- Arithmetic Instructions:
   constant ADD_RM_RN : std_logic_vector(15 downto 0) := "0011--------1100";
@@ -41,6 +41,17 @@ package SH2ControlConstants is
     constant RegDataIn_ALUResult : std_logic_vector(1 downto 0) := "00";
     constant RegDataIn_Immediate : std_logic_vector(1 downto 0) := "01";
 
+    constant ReadWrite_READ : std_logic := '0';
+    constant ReadWrite_WRITE : std_logic := '1';
+
+    constant MemOut_RegA    : std_logic_vector(2 downto 0) := "000";
+    constant MemOut_RegB    : std_logic_vector(2 downto 0) := "001";
+    constant MemOut_SR      : std_logic_vector(2 downto 0) := "010";
+    constant MemOut_GBR     : std_logic_vector(2 downto 0) := "011";
+    constant MemOut_VBR     : std_logic_vector(2 downto 0) := "100";
+    constant MemOut_PR      : std_logic_vector(2 downto 0) := "101";
+    constant MemOut_PC      : std_logic_vector(2 downto 0) := "110";
+
 end package SH2ControlConstants;
 
 
@@ -49,6 +60,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.SH2PmauConstants.all;
+use work.SH2DmauConstants.all;
 use work.MemoryInterfaceConstants.all;
 use work.SH2InstructionEncodings.all;
 use work.SH2ControlConstants.all;
@@ -246,9 +258,37 @@ begin
             -- PMAU signals
             Instruction_PCAddrMode <= PCAddrMode_INC;
 
-        else
+        elsif std_match(IR, MOV_L_RM_AT_RN) then
+            report "Instruction: MOV RM, @Rn";
+
+            -- Writes to memory
+            Instruction_MemEnable <= '1';
+            Instruction_ReadWrite <= ReadWrite_WRITE;
+            Instruction_WordMode <= IR(1 downto 0);     -- happens to work for this instruction
+            MemOutSel <= MemOut_RegB;
+
+            RegBSel <= to_integer(unsigned(nm_format_m));
+            RegA1Sel <= to_integer(unsigned(nm_format_n));
+
+            -- DMAU signals
+            GBRWriteEn <= '0';
+            BaseSel <= BaseSel_REG;
+            IndexSel <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_ONE;
+            IncDecSel <= IncDecSel_NONE;
+
+            -- PMAU signals
             Instruction_PCAddrMode <= PCAddrMode_INC;
+        else
             report "Unrecognized instruction: " & to_hstring(IR);
+            -- Does not access memory
+            Instruction_MemEnable <= '0';
+            Instruction_ReadWrite <= 'X';
+            Instruction_WordMode <= "XX";
+            MemOutSel <= "XXX";
+
+            -- PMAU signals
+            Instruction_PCAddrMode <= PCAddrMode_INC;
         end if;
     end process;
 

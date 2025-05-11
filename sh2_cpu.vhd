@@ -185,17 +185,17 @@ begin
     WE2 <= WriteMask(2) when MemEnable and (not clock) else '1';
     WE3 <= WriteMask(3) when MemEnable and (not clock) else '1';
 
-    MemAddress <= PCOut when MemSel = '1' else PCOut;
+    MemAddress <= PCOut when MemSel = '1' else DataAddress;
 
     AB <= MemAddress;
 
-    MemDataOut <= RegA  when MemOutSel = "000" else
-                  RegB  when MemOutSel = "001" else
-                  SR    when MemOutSel = "010" else
-                  GBR   when MemOutSel = "011" else
-                  VBR   when MemOutSel = "100" else
-                  PROut when MemOutSel = "101" else
-                  PCOut when MemOutSel = "110" else
+    MemDataOut <= RegA  when MemOutSel = MemOut_RegA else
+                  RegB  when MemOutSel = MemOut_RegB else
+                  SR    when MemOutSel = MemOut_SR   else
+                  GBR   when MemOutSel = MemOut_GBR  else
+                  VBR   when MemOutSel = MemOut_VBR  else
+                  PROut when MemOutSel = MemOut_PR   else
+                  PCOut when MemOutSel = MemOut_PC   else
                   (others => 'X');
 
     ImmediateExt(7 downto 0) <= Immediate;
@@ -252,6 +252,9 @@ begin
         Zero     => Zero,
         Sign     => Sign
     );
+
+
+    RegSrc <= RegA1;
 
     dmau : entity work.sh2dmau
     port map (
