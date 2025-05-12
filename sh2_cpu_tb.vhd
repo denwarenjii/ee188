@@ -274,7 +274,7 @@ begin
         begin
             TEST_AB <= std_logic_vector(address);
             TEST_DB <= (others => 'Z');  -- Data bus unused, don't set
-            -- Read only the byte being addressed
+            -- Read only the bytes being addressed
             TEST_RE0 <= '0' when address mod 4 = 0 else '1';
             TEST_RE1 <= '0' when address mod 4 = 0 else '1';
             TEST_RE2 <= '0' when address mod 4 = 2 else '1';
@@ -284,6 +284,30 @@ begin
 
             -- Shift the desired byte to the bottom 8 bits
             data := TEST_DB(15 downto 0) when address mod 4 = 0 else TEST_DB(31 downto 16);
+
+            -- Disable writing
+            TEST_RE0 <= '1';
+            TEST_RE1 <= '1';
+            TEST_RE2 <= '1';
+            TEST_RE3 <= '1';
+            wait for 5 ns;  -- wait for signal to propagate
+        end procedure;
+
+        -- assumes address is longword-aligned
+        procedure ReadLongword(address : unsigned ; data : out std_logic_vector) is
+        begin
+            TEST_AB <= std_logic_vector(address);
+            TEST_DB <= (others => 'Z');  -- Data bus unused, don't set
+            -- Read all 4 bytes of longword
+            TEST_RE0 <= '0';
+            TEST_RE1 <= '0';
+            TEST_RE2 <= '0';
+            TEST_RE3 <= '0';
+
+            wait for 5 ns;  -- wait for signal to propagate
+
+            -- Shift the desired byte to the bottom 8 bits
+            data := TEST_DB;
 
             -- Disable writing
             TEST_RE0 <= '1';
@@ -305,10 +329,14 @@ begin
             variable curr_opcode : std_logic_vector(15 downto 0);
             variable curr_pc     : unsigned(31 downto 0);
         begin
+            -- Write to ROM
+            CPU_ACTIVE <= false;
+            TEST_MEMSEL <= '1';
+
             curr_pc := to_unsigned(0, 32);
 
             -- read file as "characters" to get individual bytes
-            file_open(char_file, path);
+            file_open(char_file, path & ".bin");
             while not endfile(char_file) loop
                 -- read low byte of instruction
                 read(char_file, char_v);
@@ -340,6 +368,38 @@ begin
             end loop;
         end procedure;
 
+        procedure CheckOutput(path : string) is
+            file test_file : text;
+            variable row   : line;
+
+            variable address : unsigned(31 downto 0);
+            variable expected_value : std_logic_vector(31 downto 0);
+            variable actual_value : std_logic_vector(31 downto 0);
+        begin
+            -- Access RAM
+            CPU_ACTIVE <= false;
+            TEST_MEMSEL <= '0';
+
+            file_open(test_file, path & ".expect", read_mode);
+            while not endfile(test_file) loop
+                -- Read expected address/value pairs from test file
+                readline(test_file, row);
+                hread(row, address);
+                hread(row, expected_value);
+
+                -- Read value at address from RAM
+                ReadLongword(address, actual_value);
+
+                -- Convert from BE (RAM) to LE (test file)
+                actual_value := swap_bytes(actual_value);
+
+                -- Check that the values match up
+                assert expected_value = actual_value
+                    report path & ": expected " & to_hstring(expected_value) & " at address " &
+                           to_hstring(address) & ", got " & to_hstring(actual_value) & " instead."
+                    severity error;
+            end loop;
+        end procedure;
 
         procedure Tick is
         begin
@@ -356,37 +416,28 @@ begin
             return CPU_AB = X"FFFFFFFF";
         end function;
 
-    begin
-        CPU_ACTIVE <= false;
+        procedure ExecuteCPU is
+        begin
+            -- Give memory control to CPU
+            CPU_ACTIVE <= true;
 
-        -- Write program into ROM
-        TEST_MEMSEL <= '1';
-        LoadProgram("asm/hello.bin");
-
-        -- Verify that program has been loaded
-        TEST_MEMSEL <= '1';
-        ReadMemory(0, 8);
-
-        -- Give memory control to CPU
-        CPU_ACTIVE <= true;
-
-        report "Resetting...";
-        reset <= '0';
-        Tick;
-        Tick;
-
-        report "Starting CPU...";
-        reset <= '1';
-        while not CheckDone loop
+            -- Reset CPU
+            reset <= '0';
             Tick;
-        end loop;
 
-        report "CPU done running, printing RAM";
-        CPU_ACTIVE <= false;
-        TEST_MEMSEL <= '0';
-        ReadMemory(0, 8);
+            -- Run program until finished
+            reset <= '1';
+            while not CheckDone loop
+                Tick;
+            end loop;
+        end procedure;
 
-        END_SIM <= TRUE;
+    begin
+        -- Write program into ROM
+        LoadProgram("asm/hello");
+        ExecuteCPU;
+        CheckOutput("asm/hello");
+
         wait;
     end process;
 end behavioral;

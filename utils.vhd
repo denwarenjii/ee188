@@ -25,6 +25,9 @@ package  SH2Utils  is
     type rng is protected
         impure function rand_slv(len : integer) return std_logic_vector;
     end protected rng;
+
+    -- Convert between little-endian and big-endian (swap each consecutive pairs of bytes)
+    pure function swap_bytes(x : std_logic_vector) return std_logic_vector;
 end package SH2Utils;
 
 package body SH2Utils is
@@ -42,6 +45,21 @@ package body SH2Utils is
             return slv;
         end function;
     end protected body;
+
+    pure function swap_bytes(x : std_logic_vector) return std_logic_vector is
+        variable y : std_logic_vector(x'length-1 downto 0);
+    begin
+        -- Should contain an even number of bytes
+        assert x'length mod 16 = 0;
+
+        -- Swap every pair of bytes (since SH-2 defines a "word" as 16 bits)
+        for i in 0 to x'length / 16 - 1 loop
+            y(i * 16 + 7 downto i * 16) := x(i * 16 + 15 downto i * 16 + 8);
+            y(i * 16 + 15 downto i * 16 + 8) := x(i * 16 + 7 downto i * 16);
+        end loop;
+
+        return y;
+    end function;
 end package body;
 
 

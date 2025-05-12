@@ -223,7 +223,7 @@ architecture dataflow of sh2control is
 
 begin
 
-    -- Only update PC before next fetch cycle
+    -- Outputs that change based on the CPU state
     PCAddrMode <= Instruction_PCAddrMode when state = writeback else PCAddrMode_HOLD;
     MemEnable  <= Instruction_MemEnable when state = execute else
                   '1' when state = fetch else
@@ -257,7 +257,7 @@ begin
         PRWriteEn <= '0';                           -- keep PR
 
         if std_match(IR, ADD_RM_RN) then
-            report "Instruction: ADD(C/V) Rm, Rn";
+            -- report "Instruction: ADD(C/V) Rm, Rn";
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -284,7 +284,7 @@ begin
             ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, SUB_RM_RN) then
-            report "Instruction: SUB(C/V) Rm, Rn";
+            -- report "Instruction: SUB(C/V) Rm, Rn";
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -311,7 +311,7 @@ begin
             ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, ADD_IMM_RN) then
-            report "Instruction: ADD #imm, Rn";
+            -- report "Instruction: ADD #imm, Rn";
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -330,7 +330,7 @@ begin
             ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, AND_RM_RN) then
-            report "Instruction: AND Rm, Rn";
+            -- report "Instruction: AND Rm, Rn";
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -349,21 +349,21 @@ begin
             ALUCmd <= ALUCmd_FBLOCK;
 
         elsif std_match(IR, MOV_RM_RN) then
-            report "Instruction: MOV Rm, Rn";
+            -- report "Instruction: MOV Rm, Rn";
             RegBSel <= to_integer(unsigned(nm_format_m));
             RegInSel <= to_integer(unsigned(nm_format_n));
             RegDataInSel <= RegDataIn_RegB;
             Instruction_EnableIn <= '1';
 
         elsif std_match(IR, MOV_IMM_RN) then
-            report "Instruction: MOV #imm, Rn";
+            -- report "Instruction: MOV #imm, Rn";
             RegInSel <= to_integer(unsigned(ni_format_n));
             RegDataInSel <= RegDataIn_Immediate;
             Instruction_EnableIn <= '1';
             Immediate <= ni_format_i;
 
         elsif std_match(IR, MOV_L_RM_AT_RN) then
-            report "Instruction: MOV RM, @Rn";
+            -- report "Instruction: MOV RM, @Rn";
 
             -- Writes to memory
             Instruction_MemEnable <= '1';
@@ -381,8 +381,9 @@ begin
             IncDecSel <= IncDecSel_NONE;
 
         elsif std_match(IR, NOP) then
-            report "Instruction: NOP";
-        else
+            -- report "Instruction: NOP";
+            null;
+        elsif not is_x(IR) then
             report "Unrecognized instruction: " & to_hstring(IR);
         end if;
     end process;
@@ -425,7 +426,7 @@ begin
     begin
         if reset = '0' then
             state <= fetch;
-            IR <= (others => '0');
+            IR <= NOP;
         elsif rising_edge(clock) then
             if state = fetch then
                 state <= execute;
