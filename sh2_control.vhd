@@ -39,8 +39,9 @@ package SH2InstructionEncodings is
   constant NOP          : std_logic_vector(15 downto 0) := "0000000000001001";
   constant CLRT         : std_logic_vector(15 downto 0) := "0000000000001000";
   constant SETT         : std_logic_vector(15 downto 0) := "0000000000011000";
-  constant STC_SR_RN    : std_logic_vector(15 downto 0) := "0000----00000010";
-  constant LDC_RM_SR    : std_logic_vector(15 downto 0) := "0100----00001110";
+
+  constant STC_SYS_RN   : std_logic_vector(15 downto 0) := "0000----00--0010";
+  constant LDC_RM_SYS   : std_logic_vector(15 downto 0) := "0100----00--1110";
 
 end package SH2InstructionEncodings;
 
@@ -56,6 +57,8 @@ package SH2ControlConstants is
     constant RegDataIn_RegA      : std_logic_vector(2 downto 0) := "010";
     constant RegDataIn_RegB      : std_logic_vector(2 downto 0) := "011";
     constant RegDataIn_SR        : std_logic_vector(2 downto 0) := "100";
+    constant RegDataIn_GBR       : std_logic_vector(2 downto 0) := "101";
+    constant RegDataIn_VBR       : std_logic_vector(2 downto 0) := "110";
 
     constant ReadWrite_READ     : std_logic := '0';
     constant ReadWrite_WRITE    : std_logic := '1';
@@ -523,14 +526,14 @@ begin
         elsif std_match(IR, SETT) then
             -- report "Instruction: NOP";
             Instruction_TFlagSel <= TFlagSel_SET;
-        elsif std_match(IR, STC_SR_RN) then
+        elsif std_match(IR, STC_SYS_RN) then
             RegInSel <= to_integer(unsigned(n_format_n));
-            RegDataInSel <= RegDataIn_SR;
+            RegDataInSel <= '1' & IR(5 downto 4);
             Instruction_EnableIn <= '1';
-        elsif std_match(IR, LDC_RM_SR) then
+        elsif std_match(IR, LDC_RM_SYS) then
             RegBSel <= to_integer(unsigned(m_format_m));
             SysRegCtrl <= SysRegCtrl_LOAD;
-            SysRegSel <= SysRegSel_SR;
+            SysRegSel <= IR(5 downto 4);
         elsif std_match(IR, NOP) then
             -- report "Instruction: NOP";
             null;
