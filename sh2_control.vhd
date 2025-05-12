@@ -240,6 +240,13 @@ begin
               MemSel_ROM when state = fetch else
               'X';
 
+    -- Only modify registers during writeback
+    EnableIn <= Instruction_EnableIn when state = writeback else
+                '0';
+
+    TFlagSel <= Instruction_TFlagSel when state = writeback else
+                TFlagSel_T;
+
     decode_proc: process (IR)
     begin
         -- Default flag values (shouldn't change CPU state)
@@ -387,39 +394,6 @@ begin
             report "Unrecognized instruction: " & to_hstring(IR);
         end if;
     end process;
-
-    -- outputs based on the current CPU state
-    output_proc: process(state)
-    begin
-        if state = fetch then
-            -- Fetch an instruction word from ROM
-            -- TODO: replace magic numbers with constants
-            -- MemEnable <= '1';
-            -- MemSel <= '1';          -- ROM
-            -- ReadWrite <= '0';       -- read
-            -- MemMode <= WordMode;    -- word
-            EnableIn <= '0';
-            TFlagSel <= TFlagSel_T;
-        elsif state = execute then
-            -- MemSel <= '0';          -- RAM
-            -- MemEnable <= Instruction_MemEnable;
-            -- ReadWrite <= Instruction_ReadWrite;
-            -- MemMode <= Instruction_WordMode;
-            EnableIn <= '0';
-            TFlagSel <= TFlagSel_T;
-        elsif state = writeback then
-            -- disable memory
-            -- MemEnable <= '0';
-            -- ReadWrite <= 'X';
-            -- MemMode <= "XX";
-
-            -- perform register writeback if necessary
-            EnableIn <= Instruction_EnableIn;
-
-            -- Update T flag if necessary
-            TFlagSel <= Instruction_TFlagSel;
-        end if;
-    end process output_proc;
 
     -- Register updates done on clock edges
     state_proc: process (clock, reset)

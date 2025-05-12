@@ -32,6 +32,7 @@ use work.MemoryInterfaceConstants.all;
 -- Outputs the necessary flags and data bits to read/write a byte, word, or longword to memory.
 entity MemoryInterfaceTx is
     port (
+        clock     :  in     std_logic;                          -- system clock
         MemEnable :  in     std_logic;                          -- if memory interface should be active or not
         ReadWrite :  in     std_logic;                          -- memory read (0) or write (1)
         MemMode   :  in     STD_LOGIC_VECTOR(1 downto 0);       -- memory access mode (byte, word, or longword)
@@ -56,9 +57,9 @@ begin
     data_in_BE(23 downto 16) <= data_in(31 downto 24);
     data_in_BE(31 downto 24) <= data_in(23 downto 16);
 
-    output_proc: process(MemEnable, ReadWrite, MemMode, Address, data_in_BE)
+    output_proc: process(MemEnable, ReadWrite, MemMode, Address, data_in_BE, clock)
     begin
-        if MemEnable = '1' and not is_x(address) then
+        if MemEnable = '1' and clock = '0' and not is_x(address) then
             if ReadWrite = '0' then
                 -- Disable writing
                 WE(3 downto 0) <= (others => '1');

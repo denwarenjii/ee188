@@ -312,6 +312,7 @@ begin
     memory_tx : entity work.MemoryInterfaceTx
     port map (
         -- Inputs:
+        clock     => clock,
         MemEnable => MemEnable,
         ReadWrite => ReadWrite,
         MemMode   => MemMode,

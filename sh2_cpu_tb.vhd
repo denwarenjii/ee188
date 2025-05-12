@@ -409,14 +409,14 @@ begin
             wait for 10 ns;
         end procedure;
 
-        -- We define the CPU exit signal to be when it tries to read from
-        -- address 0xFFFFFFFF.
+        -- We define the CPU exit signal to be when it tries to access
+        -- address 0xFFFFFFFC (signed integer representation of -4);
         impure function CheckDone return boolean is
         begin
-            return CPU_AB = X"FFFFFFFF";
+            return CPU_AB = X"FFFFFFFC";
         end function;
 
-        procedure ExecuteCPU is
+        procedure RunCPU is
         begin
             -- Give memory control to CPU
             CPU_ACTIVE <= true;
@@ -432,11 +432,17 @@ begin
             end loop;
         end procedure;
 
+        procedure RunTest(path : string) is
+        begin
+            report "Running test: " & path;
+            LoadProgram(path);      -- write program in to ROM
+            RunCPU;                 -- execute program
+            CheckOutput(path);      -- check RAM has expected values
+        end procedure;
+
     begin
-        -- Write program into ROM
-        LoadProgram("asm/hello");
-        ExecuteCPU;
-        CheckOutput("asm/hello");
+        -- RunTest("asm/hello");
+        RunTest("asm/mov_reg");
 
         wait;
     end process;
