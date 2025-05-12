@@ -33,7 +33,11 @@ package SH2InstructionEncodings is
   -- Shift Instruction:
   -- Branch Instructions:
   -- System Control:
-  constant NOP : std_logic_vector(15 downto 0) := "0000000000001001";
+  constant NOP          : std_logic_vector(15 downto 0) := "0000000000001001";
+  constant CLRT         : std_logic_vector(15 downto 0) := "0000000000001000";
+  constant SETT         : std_logic_vector(15 downto 0) := "0000000000011000";
+  constant STC_SR_RN    : std_logic_vector(15 downto 0) := "0000----00000010";
+  constant LDC_RM_SR    : std_logic_vector(15 downto 0) := "0100----00001110";
 
 end package SH2InstructionEncodings;
 
@@ -44,10 +48,11 @@ use ieee.numeric_std.all;
 
 package SH2ControlConstants is
     -- Internal control signals for controlling muxes within the CPU
-    constant RegDataIn_ALUResult : std_logic_vector(1 downto 0) := "00";
-    constant RegDataIn_Immediate : std_logic_vector(1 downto 0) := "01";
-    constant RegDataIn_RegA      : std_logic_vector(1 downto 0) := "10";
-    constant RegDataIn_RegB      : std_logic_vector(1 downto 0) := "11";
+    constant RegDataIn_ALUResult : std_logic_vector(2 downto 0) := "000";
+    constant RegDataIn_Immediate : std_logic_vector(2 downto 0) := "001";
+    constant RegDataIn_RegA      : std_logic_vector(2 downto 0) := "010";
+    constant RegDataIn_RegB      : std_logic_vector(2 downto 0) := "011";
+    constant RegDataIn_SR        : std_logic_vector(2 downto 0) := "100";
 
     constant ReadWrite_READ     : std_logic := '0';
     constant ReadWrite_WRITE    : std_logic := '1';
@@ -63,13 +68,23 @@ package SH2ControlConstants is
     constant ALUOpB_RegB    : std_logic := '0';
     constant ALUOpB_Imm     : std_logic := '1';
 
-    constant TFlagSel_T         : std_logic_vector(1 downto 0) := "00";
-    constant TFlagSel_Zero      : std_logic_vector(1 downto 0) := "01";
-    constant TFlagSel_Carry     : std_logic_vector(1 downto 0) := "10";
-    constant TFlagSel_Overflow  : std_logic_vector(1 downto 0) := "11";
+    constant TFlagSel_T         : std_logic_vector(2 downto 0) := "000";
+    constant TFlagSel_Zero      : std_logic_vector(2 downto 0) := "001";
+    constant TFlagSel_Carry     : std_logic_vector(2 downto 0) := "010";
+    constant TFlagSel_Overflow  : std_logic_vector(2 downto 0) := "011";
+    constant TFlagSel_SET       : std_logic_vector(2 downto 0) := "100";
+    constant TFlagSel_CLEAR     : std_logic_vector(2 downto 0) := "101";
 
     constant MemSel_ROM     : std_logic := '1';
     constant MemSel_RAM     : std_logic := '0';
+
+    constant SysRegCtrl_NONE    : std_logic := '0';
+    constant SysRegCtrl_LOAD    : std_logic := '1';
+
+    constant SysRegSel_SR   : std_logic_vector(1 downto 0) := "00";
+    constant SysRegSel_GBR  : std_logic_vector(1 downto 0) := "01";
+    constant SysRegSel_VBR  : std_logic_vector(1 downto 0) := "10";
+    constant SysRegSel_PR   : std_logic_vector(1 downto 0) := "11";
 
 end package SH2ControlConstants;
 
@@ -102,7 +117,7 @@ entity  SH2Control  is
 
         Immediate   : out std_logic_vector(7 downto 0);     -- 8-bit immediate
         MemOutSel   : out std_logic_vector(2 downto 0);     -- what should be output to memory
-        TFlagSel    : out std_logic_vector(1 downto 0);     -- source for next value of T flag
+        TFlagSel    : out std_logic_vector(2 downto 0);     -- source for next value of T flag
 
         -- ALU control signals
         ALUOpBSel   : out std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
@@ -116,7 +131,7 @@ entity  SH2Control  is
         TSel        : out std_logic_vector(2 downto 0);     -- if T should be updated to a new value (T/C/V/0/1)
 
         -- register array control signals
-        RegDataInSel: out std_logic_vector(1 downto 0);     -- source for register input data
+        RegDataInSel: out std_logic_vector(2 downto 0);     -- source for register input data
         DataIn      : out std_logic_vector(31 downto 0);    -- data to write to a register
         EnableIn    : out std_logic;                        -- if data should be written to an input register
         RegInSel    : out integer  range 15 downto 0;       -- which register to write data to
@@ -141,7 +156,11 @@ entity  SH2Control  is
         PCAddrMode      : out std_logic_vector(2 downto 0);
         PRWriteEn       : out std_logic;
         PMAUOff8        : out std_logic_vector(7 downto 0);
-        PMAUOff12       : out std_logic_vector(11 downto 0)
+        PMAUOff12       : out std_logic_vector(11 downto 0);
+
+        -- System control signals
+        SysRegCtrl      : out std_logic;
+        SysRegSel       : out std_logic_vector(1 downto 0)
 );
     
 end  SH2Control;
@@ -182,7 +201,7 @@ architecture dataflow of sh2control is
   -- i format:   xxxx xxxx iiii iiii
   -- ni format:  xxxx nnnn iiii iiii
   --
-  alias n_format_n : std_logic_vector(3 downto 0) is IR(7 downto 4);
+  alias n_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
 
   alias m_format_m : std_logic_vector(3 downto 0) is IR(11 downto 8);
 
@@ -220,7 +239,7 @@ architecture dataflow of sh2control is
   signal Instruction_EnableIn  : std_logic;
   signal Instruction_PCAddrMode : std_logic_vector(2 downto 0);
 
-  signal Instruction_TFlagSel    : std_logic_vector(1 downto 0);
+  signal Instruction_TFlagSel    : std_logic_vector(2 downto 0);
 
 begin
 
@@ -264,6 +283,8 @@ begin
         GBRWriteEn <= '0';                          -- keep GBR
         PRWriteEn <= '0';                           -- keep PR
 
+        SysRegCtrl <= SysRegCtrl_NONE;
+
         if std_match(IR, ADD_RM_RN) then
             -- report "Instruction: ADD(C/V) Rm, Rn";
 
@@ -276,7 +297,7 @@ begin
             Instruction_EnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
-            Instruction_TFlagSel <= IR(1 downto 0);
+            Instruction_TFlagSel <= '0' & IR(1 downto 0);
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
@@ -303,7 +324,7 @@ begin
             Instruction_EnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
-            Instruction_TFlagSel <= IR(1 downto 0);
+            Instruction_TFlagSel <= '0' & IR(1 downto 0);
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
@@ -418,6 +439,20 @@ begin
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel <= IncDecSel_NONE;
 
+        elsif std_match(IR, CLRT) then
+            -- report "Instruction: NOP";
+            Instruction_TFlagSel <= TFlagSel_CLEAR;
+        elsif std_match(IR, SETT) then
+            -- report "Instruction: NOP";
+            Instruction_TFlagSel <= TFlagSel_SET;
+        elsif std_match(IR, STC_SR_RN) then
+            RegInSel <= to_integer(unsigned(n_format_n));
+            RegDataInSel <= RegDataIn_SR;
+            Instruction_EnableIn <= '1';
+        elsif std_match(IR, LDC_RM_SR) then
+            RegBSel <= to_integer(unsigned(m_format_m));
+            SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegSel <= SysRegSel_SR;
         elsif std_match(IR, NOP) then
             -- report "Instruction: NOP";
             null;

@@ -157,8 +157,8 @@ architecture structural of sh2cpu is
     signal MemOutSel        : std_logic_vector(2 downto 0);
     signal Disp             : std_logic_vector(11 downto 0);
     signal TSel             : std_logic_vector(2 downto 0);
-    signal RegDataInSel     : std_logic_vector(1 downto 0);     -- source for register input data
-    signal TFlagSel         : std_logic_vector(1 downto 0);     -- source for next value of T flag
+    signal RegDataInSel     : std_logic_vector(2 downto 0);     -- source for register input data
+    signal TFlagSel         : std_logic_vector(2 downto 0);     -- source for next value of T flag
 
     signal Immediate        : std_logic_vector(7 downto 0);     -- immediate value from instruction
     signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
@@ -167,6 +167,9 @@ architecture structural of sh2cpu is
     signal SR               : std_logic_vector(31 downto 0);
     signal GBR              : std_logic_vector(31 downto 0);
     signal VBR              : std_logic_vector(31 downto 0);
+
+    signal SysRegCtrl       : std_logic;
+    signal SysRegSel        : std_logic_vector(1 downto 0);
 
 
     signal TNext        : std_logic;    -- Next value for T bit
@@ -208,6 +211,7 @@ begin
                  ImmediateExt   when RegDataInSel = RegDataIn_Immediate else
                  RegA           when RegDataInSel = RegDataIn_RegA else
                  RegB           when RegDataInSel = RegDataIn_RegB else
+                 SR             when RegDataInSel = RegDataIn_SR else
                  (others => 'X');
 
     -- Route control signals and data into register array
@@ -247,6 +251,8 @@ begin
              Cout       when TFlagSel = TFlagSel_Carry else
              Overflow   when TFlagSel = TFlagSel_Overflow else
              Zero       when TFlagSel = TFlagSel_Zero else
+             '0'        when TFlagSel = TFlagSel_CLEAR else
+             '1'        when TFlagSel = TFlagSel_SET else
              'X';
 
     alu : entity work.sh2alu
@@ -387,7 +393,11 @@ begin
         PCAddrMode   => PCAddrMode,
         PRWriteEn    => PRWriteEn,
         PMAUOff8     => PMAUOff8,
-        PMAUOff12    => PMAUOff12
+        PMAUOff12    => PMAUOff12,
+
+        -- system control signals
+        SysRegCtrl => SysRegCtrl,
+        SysRegSel => SysRegSel
     );
 
     register_proc: process(clock, reset)
@@ -398,6 +408,12 @@ begin
             VBR <=  (others => '0');
         elsif rising_edge(clock) then
             SR(0) <= TNext;
+
+            if SysRegCtrl = SysRegCtrl_LOAD then
+                if SysRegSel = SysRegSel_SR then
+                    SR <= RegB;
+                end if;
+            end if;
         end if;
     end process register_proc;
 
