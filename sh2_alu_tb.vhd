@@ -5,6 +5,7 @@
 --  Revision History:
 --     26 Apr 25    Zack Huang      initial revision
 --     28 Apr 25    Zack Huang      finished ALU tests
+--     11 May 25    Zack Huang      removed swap
 --
 ----------------------------------------------------------------------------
 
@@ -261,6 +262,9 @@ begin
                 when SCmd_LSL =>
                     Sum := Left(30 downto 0) & '0';
                     ExpectedCarry := Left(31);
+                when SCmd_ASL =>
+                    Sum := Left(30 downto 0) & '0';
+                    ExpectedCarry := Left(31);
                 when SCmd_ROL =>
                     Sum := Left(30 downto 0) & Left(31);
                     ExpectedCarry := Left(31);
@@ -279,9 +283,6 @@ begin
                 when SCmd_RRC =>
                     Sum := TBit & Left(31 downto 1);
                     ExpectedCarry := Left(0);
-                when SCmd_SWAP =>
-                    Sum := Left(15 downto 0) & Left(31 downto 16);
-                    ExpectedCarry := 'X';
                 when others =>
                     report "Invalid Shift command";
             end case;
@@ -304,6 +305,7 @@ begin
                     TestLogic(j, k, FCmd_XOR);
                     TestLogic(j, k, FCmd_BNOT);
                     TestShift(j, k, t, SCmd_LSL);
+                    TestShift(j, k, t, SCmd_ASL);
                     TestShift(j, k, t, SCmd_LSR);
                     TestShift(j, k, t, SCmd_ASR);
                     TestShift(j, k, t, SCmd_ROL);

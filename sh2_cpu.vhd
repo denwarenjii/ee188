@@ -162,6 +162,7 @@ architecture structural of sh2cpu is
     signal TFlagSel         : std_logic_vector(2 downto 0);     -- source for next value of T flag
 
     signal Immediate        : std_logic_vector(7 downto 0);     -- immediate value from instruction
+    signal ImmediateMode    : std_logic;                        -- immediate extension mode (zero or signed)
     signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
     signal ALUOpBSel        : std_logic;
 
@@ -206,7 +207,9 @@ begin
                   (others => 'X');
 
     ImmediateExt(7 downto 0) <= Immediate;
-    ImmediateExt(31 downto 8) <= (others => Immediate(7));
+    ImmediateExt(31 downto 8) <= (others => Immediate(7)) when ImmediateMode = ImmediateMode_SIGN else
+                                 (others => '0')          when ImmediateMode = ImmediateMode_ZERO else
+                                 (others => 'X');
 
     RegDataIn <= Result         when RegDataInSel = RegDataIn_ALUResult else
                  ImmediateExt   when RegDataInSel = RegDataIn_Immediate else
@@ -350,6 +353,7 @@ begin
 
         -- Outputs:
         Immediate    => Immediate,
+        ImmediateMode=> ImmediateMode,
         TFlagSel     => TFlagSel,
 
         -- Memory interface control signals:

@@ -32,7 +32,7 @@ package  SH2ALUConstants  is
 --  Shifter command constants
    constant SCmd_LEFT  : std_logic_vector(2 downto 0) := "0--";
    constant SCmd_LSL   : std_logic_vector(2 downto 0) := "000";
-   constant SCmd_SWAP  : std_logic_vector(2 downto 0) := "001";
+   constant SCmd_ASL   : std_logic_vector(2 downto 0) := "001";
    constant SCmd_ROL   : std_logic_vector(2 downto 0) := "010";
    constant SCmd_RLC   : std_logic_vector(2 downto 0) := "011";
    constant SCmd_RIGHT : std_logic_vector(2 downto 0) := "1--";

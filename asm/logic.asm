@@ -70,6 +70,13 @@ ProgramStart:
     MOV #36, R1;
     MOV R0, @R1;
 
+    ; Test NOT
+    MOV #-1, R0;
+    XOR #$FF, R0;   R0 <- 0xFFFFFF00
+    NOT R0, R0;
+    MOV #40, R1;
+    MOV R0, @R1;    Expect R0 = 0x000000FF
+
     ; Quit test program
     MOV #-4, R0;
     MOV.B R0, @R0;
