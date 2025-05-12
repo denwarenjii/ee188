@@ -26,11 +26,14 @@ package SH2InstructionEncodings is
   constant SUB_RM_RN    : std_logic_vector(15 downto 0) := "0011--------10--";
   constant NEG_RM_RN    : std_logic_vector(15 downto 0) := "0110--------101-";
 
+  -- Logical Operations:
   constant AND_RM_RN    : std_logic_vector(15 downto 0) := "0010--------1001";
   constant AND_IMM_R0   : std_logic_vector(15 downto 0) := "11001001--------";
+  constant OR_RM_RN     : std_logic_vector(15 downto 0) := "0010--------1011";
+  constant OR_IMM_R0    : std_logic_vector(15 downto 0) := "11001011--------";
+  constant XOR_RM_RN    : std_logic_vector(15 downto 0) := "0010--------1010";
+  constant XOR_IMM_R0   : std_logic_vector(15 downto 0) := "11001010--------";
 
-
-  -- Logical Operations:
   -- Shift Instruction:
   -- Branch Instructions:
   -- System Control:
@@ -423,6 +426,82 @@ begin
             ALUOpBSel <= ALUOpB_Imm;
             LoadA <= '1';
             FCmd <= FCmd_AND;
+            CinCmd <= CinCmd_ZERO;
+            SCmd <= "XXX";
+            ALUCmd <= ALUCmd_FBLOCK;
+
+        elsif std_match(IR, OR_RM_RN) then
+            -- report "Instruction: OR Rm, Rn";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            RegInSel <= to_integer(unsigned(nm_format_n));
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_RegB;
+            LoadA <= '1';
+            FCmd <= FCmd_OR;
+            CinCmd <= CinCmd_ZERO;
+            SCmd <= "XXX";
+            ALUCmd <= ALUCmd_FBLOCK;
+
+        elsif std_match(IR, OR_IMM_R0) then
+            -- report "Instruction: OR #imm, R0";
+
+            -- Register array signals
+            RegASel <= 0;
+
+            RegInSel <= 0;
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+            Immediate <= i_format_i;
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_Imm;
+            LoadA <= '1';
+            FCmd <= FCmd_OR;
+            CinCmd <= CinCmd_ZERO;
+            SCmd <= "XXX";
+            ALUCmd <= ALUCmd_FBLOCK;
+
+        elsif std_match(IR, XOR_RM_RN) then
+            -- report "Instruction: XOR Rm, Rn";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            RegInSel <= to_integer(unsigned(nm_format_n));
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_RegB;
+            LoadA <= '1';
+            FCmd <= FCmd_XOR;
+            CinCmd <= CinCmd_ZERO;
+            SCmd <= "XXX";
+            ALUCmd <= ALUCmd_FBLOCK;
+
+        elsif std_match(IR, XOR_IMM_R0) then
+            -- report "Instruction: XOR #imm, R0";
+
+            -- Register array signals
+            RegASel <= 0;
+
+            RegInSel <= 0;
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+            Immediate <= i_format_i;
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_Imm;
+            LoadA <= '1';
+            FCmd <= FCmd_XOR;
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
