@@ -7,6 +7,7 @@
 --     06 May 25  Zack Huang        Initial revision
 --     07 May 25  Chris Miranda     Initial implentation of MOV and branch 
 --                                  instruction decoding.
+--     10 May 25  Zack Huang        Implementing ALU instruction
 ----------------------------------------------------------------------------
 
 library ieee;

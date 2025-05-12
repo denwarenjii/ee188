@@ -11,6 +11,7 @@
 --     03 May 25  Zack Huang        Add state machine, test basic I/O
 --     04 May 25  Zack Huang        Integrate memory interface
 --     07 May 25  Chris Miranda     Change code formatting.
+--     11 May 25  Zack Huang        Start system control instructions
 --
 ----------------------------------------------------------------------------
 
