@@ -586,6 +586,8 @@ begin
 
         -- MOV.W @(disp, PC), Rn
         -- nd8 format
+        -- NOTE: Testing this assumes MOV into memory works.
+        --
         elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
           -- report "Instruction: [MOV.W @(disp, PC), Rn]"
 

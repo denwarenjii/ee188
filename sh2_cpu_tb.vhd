@@ -1,10 +1,12 @@
 ----------------------------------------------------------------------------
 --
---  TODO
 -- 
 --  Revision History:
 --     01 May 25    Zack Huang      initial revision
 --     03 May 25    Zack Huang      working with data/program memory units
+--
+-- TODO:
+--  - Support loading into program memory with assembly directives.
 --
 ----------------------------------------------------------------------------
 
@@ -449,6 +451,7 @@ begin
         RunTest("asm/shift");
         RunTest("asm/sr");
         RunTest("asm/system");
+        -- RunTest("as")
         wait;
     end process;
 end behavioral;
