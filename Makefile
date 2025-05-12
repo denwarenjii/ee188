@@ -15,7 +15,10 @@ build: $(SOURCES) $(TESTBENCHES)
 $(basename $(TESTBENCHES)): build $(TESTBENCHES)
 	ghdl -e $(BUILDFLAGS) $@
 
-test: $(basename $(TESTBENCHES))
+asm:
+	cd asm && $(MAKE)
+
+test: $(basename $(TESTBENCHES)) asm
 	ghdl -r sh2_cpu_tb $(RUNFLAGS)
 
 view:
@@ -24,4 +27,4 @@ view:
 clean:
 	rm -rf *.cf *.o work/*
 
-.PHONY: test clean build view
+.PHONY: test clean build view asm

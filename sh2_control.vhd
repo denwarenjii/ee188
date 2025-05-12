@@ -24,6 +24,7 @@ package SH2InstructionEncodings is
   constant ADD_RM_RN    : std_logic_vector(15 downto 0) := "0011--------11--";
   constant ADD_IMM_RN   : std_logic_vector(15 downto 0) := "0111------------";
   constant SUB_RM_RN    : std_logic_vector(15 downto 0) := "0011--------10--";
+  constant NEG_RM_RN    : std_logic_vector(15 downto 0) := "0110--------101-";
 
   constant AND_RM_RN    : std_logic_vector(15 downto 0) := "0010--------1001";
 
@@ -313,6 +314,36 @@ begin
                 CinCmd <= CinCmd_CINBAR;    -- SUBC
             else
                 CinCmd <= CinCmd_ONE;       -- SUB, SUBV
+            end if;
+            SCmd <= "XXX";
+            ALUCmd <= ALUCmd_ADDER;
+        elsif std_match(IR, NEG_RM_RN) then
+            -- report "Instruction: NEG(C) Rm, Rn";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            RegInSel <= to_integer(unsigned(nm_format_n));
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            -- Bit-decoding T flag select
+            if IR(0) = '0' then
+                Instruction_TFlagSel <= TFlagSel_Carry;
+            else
+                Instruction_TFlagSel <= TFlagSel_T;
+            end if;
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_RegB;
+            LoadA <= '0';
+            FCmd <= FCmd_BNOT;
+            -- Bit-decode carry in value
+            if IR(0) = '0' then
+                CinCmd <= CinCmd_CINBAR;    -- NEGC
+            else
+                CinCmd <= CinCmd_ONE;       -- NEG
             end if;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
