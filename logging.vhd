@@ -12,6 +12,9 @@ use std.textio.all;
 
 package Logging is
 
+  -- Log file;
+  file LogFile : text open write_mode is "log.txt";
+
   -- Log to stdout
   procedure Log(message : in string);
 
