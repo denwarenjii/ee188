@@ -445,6 +445,7 @@ begin
         RunTest("asm/mov_reg");
         RunTest("asm/reg_indirect");
         RunTest("asm/arith");
+        RunTest("asm/logic");
         RunTest("asm/sr");
 
         wait;

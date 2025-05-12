@@ -27,6 +27,7 @@ package SH2InstructionEncodings is
   constant NEG_RM_RN    : std_logic_vector(15 downto 0) := "0110--------101-";
 
   constant AND_RM_RN    : std_logic_vector(15 downto 0) := "0010--------1001";
+  constant AND_IMM_R0   : std_logic_vector(15 downto 0) := "11001001--------";
 
 
   -- Logical Operations:
@@ -401,6 +402,25 @@ begin
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
+            LoadA <= '1';
+            FCmd <= FCmd_AND;
+            CinCmd <= CinCmd_ZERO;
+            SCmd <= "XXX";
+            ALUCmd <= ALUCmd_FBLOCK;
+
+        elsif std_match(IR, AND_IMM_R0) then
+            -- report "Instruction: AND #imm, R0";
+
+            -- Register array signals
+            RegASel <= 0;
+
+            RegInSel <= 0;
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+            Immediate <= i_format_i;
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_Imm;
             LoadA <= '1';
             FCmd <= FCmd_AND;
             CinCmd <= CinCmd_ZERO;
