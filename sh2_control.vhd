@@ -107,8 +107,9 @@ package SH2InstructionEncodings is
   constant NOP          : std_logic_vector(15 downto 0) := "0000000000001001";
   constant CLRT         : std_logic_vector(15 downto 0) := "0000000000001000";
   constant SETT         : std_logic_vector(15 downto 0) := "0000000000011000";
-  constant STC_SR_RN    : std_logic_vector(15 downto 0) := "0000----00000010";
-  constant LDC_RM_SR    : std_logic_vector(15 downto 0) := "0100----00001110";
+
+  constant STC_SYS_RN   : std_logic_vector(15 downto 0) := "0000----00--0010";
+  constant LDC_RM_SYS   : std_logic_vector(15 downto 0) := "0100----00--1110";
 
 end package SH2InstructionEncodings;
 
@@ -125,16 +126,16 @@ package SH2ControlConstants is
     constant RegDataIn_RegA           : std_logic_vector(3 downto 0) := "0010";
     constant RegDataIn_RegB           : std_logic_vector(3 downto 0) := "0011";
     constant RegDataIn_SR             : std_logic_vector(3 downto 0) := "0100";
-    constant RegDataIn_DB             : std_logic_vector(3 downto 0) := "0101";
-    constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "0110";
+    constant RegDataIn_GBR            : std_logic_vector(3 downto 0) := "0101";
+    constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "0110";
     constant RegDataIn_RegA_SWAP_B    : std_logic_vector(3 downto 0) := "0111";
     constant RegDataIn_RegA_SWAP_W    : std_logic_vector(3 downto 0) := "1000";
     constant RegDataIn_SignExt_B_RegA : std_logic_vector(3 downto 0) := "1001";
     constant RegDataIn_SignExt_W_RegA : std_logic_vector(3 downto 0) := "1010";
     constant RegDataIn_ZeroExt_B_RegA : std_logic_vector(3 downto 0) := "1011";
     constant RegDataIn_ZeroExt_W_RegA : std_logic_vector(3 downto 0) := "1100";
-    constant RegDataIn_GBR            : std_logic_vector(3 downto 0) := "1101";
-    constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "1110";
+    constant RegDataIn_DB             : std_logic_vector(3 downto 0) := "1101";
+    constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "1110";
     constant RegDataIn_PR             : std_logic_vector(3 downto 0) := "1111";
 
     constant ReadWrite_READ     : std_logic := '0';
@@ -845,14 +846,14 @@ begin
         elsif std_match(IR, SETT) then
             -- report "Instruction: NOP";
             Instruction_TFlagSel <= TFlagSel_SET;
-        elsif std_match(IR, STC_SR_RN) then
+        elsif std_match(IR, STC_SYS_RN) then
             RegInSel <= to_integer(unsigned(n_format_n));
-            RegDataInSel <= RegDataIn_SR;
+            RegDataInSel <= "01" & IR(5 downto 4);
             Instruction_EnableIn <= '1';
-        elsif std_match(IR, LDC_RM_SR) then
+        elsif std_match(IR, LDC_RM_SYS) then
             RegBSel <= to_integer(unsigned(m_format_m));
             SysRegCtrl <= SysRegCtrl_LOAD;
-            SysRegSel <= SysRegSel_SR;
+            SysRegSel <= IR(5 downto 4);
         elsif std_match(IR, NOP) then
             -- report "Instruction: NOP";
             null;

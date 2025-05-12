@@ -448,7 +448,7 @@ begin
         RunTest("asm/logic");
         RunTest("asm/shift");
         RunTest("asm/sr");
-
+        RunTest("asm/system");
         wait;
     end process;
 end behavioral;

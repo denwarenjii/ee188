@@ -216,6 +216,8 @@ begin
                  RegA           when RegDataInSel = RegDataIn_RegA else
                  RegB           when RegDataInSel = RegDataIn_RegB else
                  SR             when RegDataInSel = RegDataIn_SR else
+                 GBR            when RegDataInSel = RegDataIn_GBR else
+                 VBR            when RegDataInSel = RegDataIn_VBR else
                  (others => 'X');
 
     -- Route control signals and data into register array
@@ -417,6 +419,10 @@ begin
             if SysRegCtrl = SysRegCtrl_LOAD then
                 if SysRegSel = SysRegSel_SR then
                     SR <= RegB;
+                elsif SysRegSel = SysRegSel_GBR then
+                    GBR <= RegB;
+                elsif SysRegSel = SysRegSel_VBR then
+                    VBR <= RegB;
                 end if;
             end if;
         end if;
