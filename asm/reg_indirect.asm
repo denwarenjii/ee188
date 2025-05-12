@@ -30,10 +30,10 @@ ProgramStart:
     MOV #4, R0;
     MOV.W R1, @R0;
 
-    ; Write 0000DEAD to 0x00000008 using longword mode
-    ;MOV #8, R0;
-    ;MOV #$DEAD, R1;
-    ;MOV.L R1, @R0;
+    ; Write FFFFFFFF to 0x00000008 using longword mode
+    MOV #8, R0;
+    MOV #-1, R1;
+    MOV.L R1, @R0;
 
     ; Quit test program
     MOV #-4, R0;
