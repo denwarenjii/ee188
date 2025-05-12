@@ -1,4 +1,4 @@
-
+---------------------------------------------------------------------------
 --
 --  Control Unit
 --
@@ -8,71 +8,84 @@
 --     07 May 25  Chris Miranda     Initial implentation of MOV and branch 
 --                                  instruction decoding.
 --     10 May 25  Zack Huang        Implementing ALU instruction
+--
+-- Notes:
+--  - When reading/writing to registers, RegB is always Rm and RegA is always Rn
+--  - When reading/writing to addresses (in registers), RegA2 is always @(Rm) and
+--    RegA2 is always @(Rn).
+--
+-- TODO:
+--  - Better names for:
+--      Instruction_EnableIn, EnableIn
+--
+--  - Generate DMAU signals with vectors.
+--
 ----------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.MemoryInterfaceConstants.all;
 
 package SH2InstructionEncodings is
 
   -- Data Transfer Instruction:
-  constant  MOV_IMM_RN  :  std_logic_vector(15 downto 0) := "1110------------";  -- MOV	#imm, Rn
+  -- TODO: Bit decode when possible.
+  constant  MOV_IMM_RN  :  std_logic_vector(15 downto 0) := "1110------------";  -- MOV #imm, Rn
 
-  constant  MOV_W_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1011------------";  -- MOV.W	@(disp, PC), Rn
-  constant  MOV_L_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1101------------";  -- MOV.L	@(disp, PC), Rn
+  constant  MOV_W_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1011------------";  -- MOV.W @(disp, PC), Rn
+  constant  MOV_L_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1101------------";  -- MOV.L @(disp, PC), Rn
 
-  constant  MOV_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0011";  -- MOV	Rm, Rn
+  constant  MOV_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0011";  -- MOV Rm, Rn
 
-  constant  MOV_B_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0000";  -- MOV.B	Rm, @Rn
-  constant  MOV_W_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0001";  -- MOV.W	Rm, @Rn
-  -- TODO: ???
-  constant  MOV_L_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------00--";  -- MOV.L	Rm, @Rn
+  constant  MOV_B_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0000";  -- MOV.B Rm, @Rn
+  constant  MOV_W_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0001";  -- MOV.W Rm, @Rn
+  constant  MOV_L_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0010";  -- MOV.L Rm, @Rn
 
-  constant  MOV_B_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0000";  -- MOV.B	@Rm, Rn
-  constant  MOV_W_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0001";  -- MOV.W	@Rm, Rn
-  constant  MOV_L_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0010";  -- MOV.L	@Rm, Rn
+  constant  MOV_B_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0000";  -- MOV.B @Rm, Rn
+  constant  MOV_W_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0001";  -- MOV.W @Rm, Rn
+  constant  MOV_L_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0010";  -- MOV.L @Rm, Rn
 
-  constant  MOV_B_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0100";  -- MOV.B	Rm, @-Rn
-  constant  MOV_W_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0101";  -- MOV.W	Rm, @-Rn
-  constant  MOV_L_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0110";  -- MOV.L	Rm, @-Rn
+  constant  MOV_B_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0100";  -- MOV.B Rm, @-Rn
+  constant  MOV_W_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0101";  -- MOV.W Rm, @-Rn
+  constant  MOV_L_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0110";  -- MOV.L Rm, @-Rn
 
-  constant  MOV_B_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0100";  -- MOV.B	@Rm+, Rn
-  constant  MOV_W_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0101";  -- MOV.W	@Rm+, Rn
-  constant  MOV_L_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0110";  -- MOV.W	@Rm+, Rn
+  constant  MOV_B_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0100";  -- MOV.B @Rm+, Rn
+  constant  MOV_W_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0101";  -- MOV.W @Rm+, Rn
+  constant  MOV_L_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0110";  -- MOV.W @Rm+, Rn
 
-  constant  MOV_B_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.B	RO, @(disp,Rn)
-  constant  MOV_W_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.W	RO, @(disp,Rn)
+  constant  MOV_B_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.B RO, @(disp,Rn)
+  constant  MOV_W_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.W RO, @(disp,Rn)
   constant  MOV_L_RM_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "0001------------";  -- MOV.L Rm, @(disp, Rn)
 
-  constant  MOV_B_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000100--------";  -- MOV.B	@(disp, Rm), R0
-  constant  MOV_W_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000101--------";  -- MOV.W	@(disp, Rm), R0
-  constant  MOV_L_AT_DISP_RM_RN  :  std_logic_vector(15 downto 0)  := "0101------------";  -- MOV.L	@(disp, Rm), Rn
+  constant  MOV_B_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000100--------";  -- MOV.B @(disp, Rm), R0
+  constant  MOV_W_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000101--------";  -- MOV.W @(disp, Rm), R0
+  constant  MOV_L_AT_DISP_RM_RN  :  std_logic_vector(15 downto 0)  := "0101------------";  -- MOV.L @(disp, Rm), Rn
 
-  constant  MOV_B_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0100";  -- MOV.B	Rm, @(R0, Rn)
-  constant  MOV_W_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0101";  -- MOV.W	Rm, @(R0, Rn)
-  constant  MOV_L_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0110";  -- MOV.L	Rm, @(R0, Rn)
+  constant  MOV_B_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0100";  -- MOV.B Rm, @(R0, Rn)
+  constant  MOV_W_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0101";  -- MOV.W Rm, @(R0, Rn)
+  constant  MOV_L_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0110";  -- MOV.L Rm, @(R0, Rn)
 
-  constant  MOV_B_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1100";  -- MOV.B	@(R0, Rm), Rn
-  constant  MOV_W_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1101";  -- MOV.W	@(R0, Rm), Rn
-  constant  MOV_L_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1110";  -- MOV.L	@(R0, Rm), Rn
+  constant  MOV_B_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1100";  -- MOV.B @(R0, Rm), Rn
+  constant  MOV_W_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1101";  -- MOV.W @(R0, Rm), Rn
+  constant  MOV_L_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1110";  -- MOV.L @(R0, Rm), Rn
 
-  constant  MOV_B_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000000--------";  -- MOV.B	R0, @(disp, GBR)
-  constant  MOV_W_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000001--------";  -- MOV.W	R0, @(disp, GBR)
-  constant  MOV_L_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000010--------";  -- MOV.L	R0, @(disp, GBR)
+  constant  MOV_B_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000000--------";  -- MOV.B R0, @(disp, GBR)
+  constant  MOV_W_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000001--------";  -- MOV.W R0, @(disp, GBR)
+  constant  MOV_L_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000010--------";  -- MOV.L R0, @(disp, GBR)
 
-  constant  MOV_B_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000100--------";  -- MOV.B	@(disp, GBR), R0
-  constant  MOV_W_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000101--------";  -- MOV.W	@(disp, GBR), R0
-  constant  MOV_L_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000110--------";  -- MOV.L	@(disp, GBR), R0
+  constant  MOV_B_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000100--------";  -- MOV.B @(disp, GBR), R0
+  constant  MOV_W_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000101--------";  -- MOV.W @(disp, GBR), R0
+  constant  MOV_L_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000110--------";  -- MOV.L @(disp, GBR), R0
 
-  constant  MOVA_AT_DISP_PC_R0  :  std_logic_vector(15 downto 0) := "11000111--------";  -- MOVA	@(disp, PC), R0
+  constant  MOVA_AT_DISP_PC_R0  :  std_logic_vector(15 downto 0) := "11000111--------";  -- MOVA @(disp, PC), R0
 
-  constant  MOVT_RN  :  std_logic_vector(15 downto 0) := "0000----00101001";  -- MOVT	Rn
+  constant  MOVT_RN  :  std_logic_vector(15 downto 0) := "0000----00101001";  -- MOVT Rn
 
-  constant  SWAP_B_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------1000";  -- SWAP.B	Rm, Rn
-  constant  SWAP_W_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------1001";  -- SWAP.W	Rm, Rn
+  constant  SWAP_B_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------1000";  -- SWAP.B Rm, Rn
+  constant  SWAP_W_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------1001";  -- SWAP.W Rm, Rn
 
-  constant  XTRCT_RM_RN  :  std_logic_vector(15 downto 0) := "0010--------1101";  -- XTRCT	Rm, Rn
+  constant  XTRCT_RM_RN  :  std_logic_vector(15 downto 0) := "0010--------1101";  -- XTRCT Rm, Rn
 
 
 
@@ -308,6 +321,9 @@ architecture dataflow of sh2control is
   -- be output on the correct clock.
   signal Instruction_MemEnable : std_logic;
   signal Instruction_ReadWrite : std_logic;
+
+  -- The memory mode for a given instruction. The same as the constants in the
+  -- MemoryInterfaceConstants package.
   signal Instruction_WordMode : std_logic_vector(1 downto 0);
 
   signal Instruction_EnableIn  : std_logic;
@@ -555,13 +571,44 @@ begin
             SCmd <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
 
+        
+        -- Data Transfer Instruction -------------------------------------------
+
+        -- MOV #imm, Rn
+        -- ni format
         elsif std_match(IR, MOV_IMM_RN) then
             -- report "Instruction: MOV #imm, Rn";
-            RegInSel <= to_integer(unsigned(ni_format_n));
-            RegDataInSel <= RegDataIn_Immediate;
+            RegInSel             <= to_integer(unsigned(ni_format_n));
+            RegDataInSel         <= RegDataIn_Immediate;
             Instruction_EnableIn <= '1';
-            Immediate <= ni_format_i;
+            Immediate            <= ni_format_i;
 
+        -- MOV.W @(disp, PC), Rn
+        -- nd8 format
+        elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
+          -- report "Instruction: [MOV.W @(disp, PC), Rn]"
+
+           -- Writing to register n
+          RegInSel <= to_integer(unsigned(nd8_format_n));
+
+          -- Writing output of data bus to register.
+          RegDataInSel <= RegDataIn_DB;
+
+          -- Writes to register.
+          Instruction_EnableIn <= '1';
+
+          -- Instruction reads from memory.
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_READ; 
+
+        -- MOV.L @(disp, PC), Rn
+        -- nd format
+        elsif std_match(IR, MOV_L_AT_DISP_PC_RN) then
+          report "Instruction: [MOV.L @(disp, PC), Rn] not implemented."
+          severity ERROR;
+
+        -- MOV Rm, Rn
+        -- nd format
         elsif std_match(IR, MOV_RM_RN) then
             -- report "Instruction: MOV Rm, Rn";
             RegBSel <= to_integer(unsigned(nm_format_m));
@@ -569,14 +616,35 @@ begin
             RegDataInSel <= RegDataIn_RegB;
             Instruction_EnableIn <= '1';
 
+        -- MOV.B Rm, @Rn
+        elsif std_match(IR, MOV_B_RM_AT_RN) then
+            -- report "Instruction: [MOV.B Rm, @Rn]."
 
-        elsif std_match(IR, MOV_L_RM_AT_RN) then
-            -- report "Instruction: MOV RM, @Rn";
+            -- Writes a byte to memory to memory
+            Instruction_MemEnable <= '1';             -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
+            Instruction_WordMode  <= ByteMode;        -- A byte.
+
+            MemOutSel <= MemOut_RegB; -- Memory output goes to RegB of the Register array.
+
+            RegBSel  <= to_integer(unsigned(nm_format_m)); -- RegB is Rm.
+            RegA1Sel <= to_integer(unsigned(nm_format_n)); -- RegA is @(Rn)
+
+            -- DMAU signals (for Indirect Register Addressing)
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_ONE;
+            IncDecSel    <= IncDecSel_NONE;
+
+        -- MOV.W Rm, @Rn
+        elsif std_match(IR, MOV_W_RM_AT_RN) then
+            -- report "Instruction: [MOV.W Rm, @Rn]"
 
             -- Writes to memory
             Instruction_MemEnable <= '1';
             Instruction_ReadWrite <= ReadWrite_WRITE;
-            Instruction_WordMode <= IR(1 downto 0);     -- bit-decode word mode
+            Instruction_WordMode  <= WordMode;
+
             MemOutSel <= MemOut_RegB;
 
             RegBSel <= to_integer(unsigned(nm_format_m));
@@ -587,6 +655,189 @@ begin
             IndexSel <= IndexSel_NONE;
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel <= IncDecSel_NONE;
+
+        -- MOV.L Rm, @Rn
+        elsif std_match(IR, MOV_L_RM_AT_RN) then
+            -- report "Instruction: MOV RM, @Rn";
+
+            -- Writes to memory
+            Instruction_MemEnable <= '1';
+            Instruction_ReadWrite <= ReadWrite_WRITE;
+            Instruction_WordMode  <= LongwordMode;
+
+            MemOutSel <= MemOut_RegB;
+
+            RegBSel <= to_integer(unsigned(nm_format_m));
+            RegA1Sel <= to_integer(unsigned(nm_format_n));
+
+            -- DMAU signals
+            BaseSel <= BaseSel_REG;
+            IndexSel <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_ONE;
+            IncDecSel <= IncDecSel_NONE;
+
+        -- MOV.B @Rm, Rn
+        elsif std_match(IR, MOV_B_AT_RM_RN) then
+          report "Instruction: [MOV.B @Rm, Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.W @Rm, Rn
+        elsif std_match(IR, MOV_W_AT_RM_RN) then
+          report "Instruction: [MOV.W @Rm, Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.L @Rm, Rn
+        elsif std_match(IR, MOV_L_AT_RM_RN) then
+          report "Instruction: [MOV.L @Rm, Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.B Rm, @-Rn
+        elsif std_match(IR, MOV_B_RM_AT_MINUS_RN) then
+          report "Instruction: [MOV.B Rm, @-Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.W Rm, @-Rn
+        elsif std_match(IR, MOV_W_RM_AT_MINUS_RN) then
+          report "Instruction: [MOV.W Rm, @-Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.L Rm, @-Rn
+        elsif std_match(IR, MOV_L_RM_AT_MINUS_RN) then
+          report "Instruction: [MOV.L Rm, @-Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.B @Rm+, Rn
+        elsif std_match(IR, MOV_B_AT_RM_PLUS_RN) then
+          report "Instruction: [MOV.B @Rm+, Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.W @Rm+, Rn
+        elsif std_match(IR, MOV_W_AT_RM_PLUS_RN) then
+          report "Instruction: [MOV.W @Rm+, Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.W @Rm+, Rn
+        elsif std_match(IR, MOV_L_AT_RM_PLUS_RN) then
+          report "Instruction: [MOV.W @Rm+, Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.B RO, @(disp,Rn)
+        elsif std_match(IR, MOV_B_R0_AT_DISP_RN) then
+          report "Instruction: [MOV.B RO, @(disp,Rn)] not implemented."
+          severity ERROR;
+
+        -- MOV.W RO, @(disp,Rn)
+        elsif std_match(IR, MOV_W_R0_AT_DISP_RN) then
+          report "Instruction: [MOV.W RO, @(disp,Rn)] not implemented."
+          severity ERROR;
+
+        -- MOV.L Rm, @(disp, Rn)
+        elsif std_match(IR, MOV_L_RM_AT_DISP_RN) then
+          report "Instruction: [MOV.L Rm, @(disp, Rn)] not implemented."
+          severity ERROR;
+
+        -- MOV.B @(disp, Rm), R0
+        elsif std_match(IR, MOV_B_AT_DISP_RM_R0) then
+          report "Instruction: [MOV.B @(disp, Rm), R0] not implemented."
+          severity ERROR;
+
+        -- MOV.W @(disp, Rm), R0
+        elsif std_match(IR, MOV_W_AT_DISP_RM_R0) then
+          report "Instruction: [MOV.W @(disp, Rm), R0] not implemented."
+          severity ERROR;
+
+        -- MOV.L @(disp, Rm), Rn
+        elsif std_match(IR, MOV_L_AT_DISP_RM_RN) then
+          report "Instruction: [MOV.L @(disp, Rm), Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.B Rm, @(R0, Rn)
+        elsif std_match(IR, MOV_B_RM_AT_R0_RN) then
+          report "Instruction: [MOV.B Rm, @(R0, Rn)] not implemented."
+          severity ERROR;
+
+        -- MOV.W Rm, @(R0, Rn)
+        elsif std_match(IR, MOV_W_RM_AT_R0_RN) then
+          report "Instruction: [MOV.W Rm, @(R0, Rn)] not implemented."
+          severity ERROR;
+
+        -- MOV.L Rm, @(R0, Rn)
+        elsif std_match(IR, MOV_L_RM_AT_R0_RN) then
+          report "Instruction: [MOV.L Rm, @(R0, Rn)] not implemented."
+          severity ERROR;
+
+        -- MOV.B @(R0, Rm), Rn
+        elsif std_match(IR, MOV_B_AT_R0_RM_RN) then
+          report "Instruction: [MOV.B @(R0, Rm), Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.W @(R0, Rm), Rn
+        elsif std_match(IR, MOV_W_AT_R0_RM_RN) then
+          report "Instruction: [MOV.W @(R0, Rm), Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.L @(R0, Rm), Rn
+        elsif std_match(IR, MOV_L_AT_R0_RM_RN) then
+          report "Instruction: [MOV.L @(R0, Rm), Rn] not implemented."
+          severity ERROR;
+
+        -- MOV.B R0, @(disp, GBR)
+        elsif std_match(IR, MOV_B_R0_AT_DISP_GBR) then
+          report "Instruction: [MOV.B R0, @(disp, GBR)] not implemented."
+          severity ERROR;
+
+        -- MOV.W R0, @(disp, GBR)
+        elsif std_match(IR, MOV_W_R0_AT_DISP_GBR) then
+          report "Instruction: [MOV.W R0, @(disp, GBR)] not implemented."
+          severity ERROR;
+
+        -- MOV.L R0, @(disp, GBR)
+        elsif std_match(IR, MOV_L_R0_AT_DISP_GBR) then
+          report "Instruction: [MOV.L R0, @(disp, GBR)] not implemented."
+          severity ERROR;
+
+        -- MOV.B @(disp, GBR), R0
+        elsif std_match(IR, MOV_B_AT_DISP_GBR_R0) then
+          report "Instruction: [MOV.B @(disp, GBR), R0] not implemented."
+          severity ERROR;
+
+        -- MOV.W @(disp, GBR), R0
+        elsif std_match(IR, MOV_W_AT_DISP_GBR_R0) then
+          report "Instruction: [MOV.W @(disp, GBR), R0] not implemented."
+          severity ERROR;
+
+        -- MOV.L @(disp, GBR), R0
+        elsif std_match(IR, MOV_L_AT_DISP_GBR_R0) then
+          report "Instruction: [MOV.L @(disp, GBR), R0] not implemented."
+          severity ERROR;
+
+        -- MOVA @(disp, PC), R0
+        elsif std_match(IR, MOVA_AT_DISP_PC_R0) then
+          report "Instruction: [MOVA @(disp, PC), R0] not implemented."
+          severity ERROR;
+
+        -- MOVT Rn
+        elsif std_match(IR, MOVT_RN) then
+          report "Instruction: [MOVT Rn] not implemented."
+          severity ERROR;
+
+        -- SWAP.B Rm, Rn
+        elsif std_match(IR, SWAP_B_RM_RN) then
+          report "Instruction: [SWAP.B Rm, Rn] not implemented."
+          severity ERROR;
+
+        -- SWAP.W Rm, Rn
+        elsif std_match(IR, SWAP_W_RM_RN) then
+          report "Instruction: [SWAP.W Rm, Rn] not implemented."
+          severity ERROR;
+
+        -- XTRCT Rm, Rn
+        elsif std_match(IR, XTRCT_RM_RN) then
+          report "Instruction: [XTRCT Rm, Rn] not implemented."
+          severity ERROR;
+
+
+        -- System Control Instructions ----------------------------------------
 
         elsif std_match(IR, CLRT) then
             -- report "Instruction: NOP";

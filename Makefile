@@ -3,7 +3,6 @@ TESTBENCHES = sh2_alu_tb.vhd sh2_reg_tb.vhd sh2_cpu_tb.vhd memory_tb.vhd
 WAVEFORM = waveform.ghw
 
 BUILDFLAGS = --std=08 -fsynopsys
-# BUILDFLAGS =
 RUNFLAGS = --ieee-asserts=disable --wave=$(WAVEFORM)
 
 all: $(basename $(TESTBENCHES))
@@ -14,6 +13,9 @@ build: $(SOURCES) $(TESTBENCHES)
 
 $(basename $(TESTBENCHES)): build $(TESTBENCHES)
 	ghdl -e $(BUILDFLAGS) $@
+
+run: $(basename $(TESTBENCHES))
+	ghdl -r sh2_cpu_tb $(RUNFLAGS)
 
 asm:
 	cd asm && $(MAKE)
@@ -27,4 +29,4 @@ view:
 clean:
 	rm -rf *.cf *.o work/*
 
-.PHONY: test clean build view asm
+.PHONY: test clean build view asm run
