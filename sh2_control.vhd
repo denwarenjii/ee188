@@ -125,7 +125,6 @@ entity  SH2Control  is
         RegA2Sel    : out integer  range 15 downto 0;       -- which register to read to address bus 2
 
         -- DMAU signals
-        DataRegIdx      : out integer range 15 downto 0;
         GBRWriteEn      : out std_logic;
         DMAUOff4        : out std_logic_vector(3 downto 0);
         DMAUOff8        : out std_logic_vector(7 downto 0);
@@ -135,7 +134,6 @@ entity  SH2Control  is
         IncDecSel       : out std_logic_vector(1 downto 0);
 
         -- PMAU signals
-        ProgRegIdx      : out integer range 15 downto 0;
         PCAddrMode      : out std_logic_vector(2 downto 0);
         PRWriteEn       : out std_logic;
         PMAUOff8        : out std_logic_vector(7 downto 0);
@@ -227,7 +225,7 @@ begin
 
     decode_proc: process (IR)
     begin
-        -- Default flag values
+        -- Default flag values (shouldn't change CPU state)
 
         -- Not accessing memory
         Instruction_MemEnable <= '0';
@@ -235,14 +233,11 @@ begin
         Instruction_WordMode <= "XX";
         MemOutSel <= "XXX";
 
-        -- Disable Reg Array
-        Instruction_EnableIn <= '0';
-
-        -- Increment PC
-        Instruction_PCAddrMode <= PCAddrMode_INC;
-
-        -- Keep T flag the same
-        Instruction_TFlagSel <= TFlagSel_T;
+        Instruction_EnableIn <= '0';                -- Disable Reg Array
+        Instruction_PCAddrMode <= PCAddrMode_INC;   -- Increment PC
+        Instruction_TFlagSel <= TFlagSel_T;         -- Keep T flag the same
+        GBRWriteEn <= '0';                          -- keep GBR
+        PRWriteEn <= '0';                           -- keep PR
 
         if std_match(IR, ADD_RM_RN) then
             report "Instruction: ADD(C/V) Rm, Rn";
@@ -337,6 +332,7 @@ begin
             ALUCmd <= ALUCmd_FBLOCK;
 
         elsif std_match(IR, MOV_RM_RN) then
+            report "Instruction: MOV Rm, Rn";
             RegBSel <= to_integer(unsigned(nm_format_m));
             RegInSel <= to_integer(unsigned(nm_format_n));
             RegDataInSel <= RegDataIn_RegB;
@@ -362,7 +358,6 @@ begin
             RegA1Sel <= to_integer(unsigned(nm_format_n));
 
             -- DMAU signals
-            GBRWriteEn <= '0';
             BaseSel <= BaseSel_REG;
             IndexSel <= IndexSel_NONE;
             OffScalarSel <= OffScalarSel_ONE;

@@ -157,8 +157,6 @@ architecture structural of sh2cpu is
     signal MemOutSel        : std_logic_vector(2 downto 0);
     signal Disp             : std_logic_vector(11 downto 0);
     signal TSel             : std_logic_vector(2 downto 0);
-    signal DataRegIdx       : integer  range 15 downto 0; 
-    signal ProgRegIdx       : integer  range 15 downto 0; 
     signal RegDataInSel     : std_logic_vector(1 downto 0);     -- source for register input data
     signal TFlagSel         : std_logic_vector(1 downto 0);     -- source for next value of T flag
 
@@ -375,7 +373,6 @@ begin
         RegA2Sel     => RegA2Sel,
 
         -- DMAU control signals:
-        DataRegIdx   => DataRegIdx,
         GBRWriteEn   => GBRWriteEn,
         DMAUOff4     => DMAUOff4,
         DMAUOff8     => DMAUOff8,
@@ -385,7 +382,6 @@ begin
         IncDecSel    => IncDecSel,
 
         -- PMAU control signals:
-        ProgRegIdx   => ProgRegIdx,
         PCAddrMode   => PCAddrMode,
         PRWriteEn    => PRWriteEn,
         PMAUOff8     => PMAUOff8,
