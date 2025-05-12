@@ -28,6 +28,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.MemoryInterfaceConstants.all;
+use work.sh2utils.all;
 
 -- Outputs the necessary flags and data bits to read/write a byte, word, or longword to memory.
 entity MemoryInterfaceTx is
@@ -52,10 +53,12 @@ architecture structural of MemoryInterfaceTx is
 begin
 
     -- Re-order bytes since CPU is big-endian but registers are little-endian internally
-    data_in_BE(7 downto 0) <= data_in(15 downto 8);
-    data_in_BE(15 downto 8) <= data_in(7 downto 0);
-    data_in_BE(23 downto 16) <= data_in(31 downto 24);
-    data_in_BE(31 downto 24) <= data_in(23 downto 16);
+    -- data_in_BE(7 downto 0) <= data_in(15 downto 8);
+    -- data_in_BE(15 downto 8) <= data_in(7 downto 0);
+    -- data_in_BE(23 downto 16) <= data_in(31 downto 24);
+    -- data_in_BE(31 downto 24) <= data_in(23 downto 16);
+
+    data_in_BE <= swap_bytes(data_in);
 
     output_proc: process(MemEnable, ReadWrite, MemMode, Address, data_in_BE, clock)
     begin
@@ -156,6 +159,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.MemoryInterfaceConstants.all;
+use work.sh2utils.all;
 
 -- Performs shifting to read a byte, word, or longword from a data bus, sign-extended if necessary.
 entity MemoryInterfaceRx is
@@ -209,9 +213,6 @@ begin
     end process output_proc;
 
     -- Re-order bytes since CPU is big-endian but registers are little-endian internally
-    data(7 downto 0) <= data_BE(15 downto 8);
-    data(15 downto 8) <= data_BE(7 downto 0);
-    data(23 downto 16) <= data_BE(31 downto 24);
-    data(31 downto 24) <= data_BE(23 downto 16);
+    data <= swap_bytes(data_BE);
 
 end architecture;

@@ -441,8 +441,9 @@ begin
         end procedure;
 
     begin
-        -- RunTest("asm/hello");
+        RunTest("asm/hello");
         RunTest("asm/mov_reg");
+        RunTest("asm/reg_indirect");
 
         wait;
     end process;
