@@ -30,6 +30,7 @@ package SH2InstructionEncodings is
   -- Logical Operations:
   constant LOGIC_RM_RN      : std_logic_vector(15 downto 0) := "0010--------10--";  -- AND, TST, OR, XOR
   constant LOGIC_IMM_R0     : std_logic_vector(15 downto 0) := "110010----------";  -- AND, TST, OR, XOR
+  constant NOT_RM_RN        : std_logic_vector(15 downto 0) := "0110--------0111";  -- NOT
 
   -- Shift Instruction:
   constant SHIFT_RN         : std_logic_vector(15 downto 0) := "0100----00-00-0-";
@@ -442,6 +443,25 @@ begin
             FCmd <= FCmd_AND when IR(9) = '0' else
                     FCmd_XOR when IR(9 downto 8) = "10" else
                     FCmd_OR;
+            CinCmd <= CinCmd_ZERO;
+            SCmd <= "XXX";
+            ALUCmd <= ALUCmd_FBLOCK;
+
+        elsif std_match(IR, NOT_RM_RN) then
+            -- NOT Rm, Rn
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            RegInSel <= to_integer(unsigned(nm_format_n));
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_RegB;
+            LoadA <= '1';
+            FCmd <= FCmd_BNOT;
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
