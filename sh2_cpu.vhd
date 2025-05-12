@@ -158,7 +158,7 @@ architecture structural of sh2cpu is
     signal MemOutSel        : std_logic_vector(2 downto 0);
     signal Disp             : std_logic_vector(11 downto 0);
     signal TSel             : std_logic_vector(2 downto 0);
-    signal RegDataInSel     : std_logic_vector(2 downto 0);     -- source for register input data
+    signal RegDataInSel     : std_logic_vector(3 downto 0);     -- source for register input data
     signal TFlagSel         : std_logic_vector(2 downto 0);     -- source for next value of T flag
 
     signal Immediate        : std_logic_vector(7 downto 0);     -- immediate value from instruction

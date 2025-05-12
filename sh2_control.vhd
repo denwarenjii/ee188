@@ -42,7 +42,7 @@ package SH2InstructionEncodings is
   constant  MOV_L_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0110";  -- MOV.W	@Rm+, Rn
 
   constant  MOV_B_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.B	RO, @(disp,Rn)
-  constant  MOV_W_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "1000000l--------";  -- MOV.W	RO, @(disp,Rn)
+  constant  MOV_W_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.W	RO, @(disp,Rn)
   constant  MOV_L_RM_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "0001------------";  -- MOV.L Rm, @(disp, Rn)
 
   constant  MOV_B_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000100--------";  -- MOV.B	@(disp, Rm), R0
@@ -65,7 +65,7 @@ package SH2InstructionEncodings is
   constant  MOV_W_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000101--------";  -- MOV.W	@(disp, GBR), R0
   constant  MOV_L_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000110--------";  -- MOV.L	@(disp, GBR), R0
 
-  constant  MOVA_AT_DISP_PC_R0  :  std_logic_vector(15 downto 0) := "11000lll--------";  -- MOVA	@(disp, PC), R0
+  constant  MOVA_AT_DISP_PC_R0  :  std_logic_vector(15 downto 0) := "11000111--------";  -- MOVA	@(disp, PC), R0
 
   constant  MOVT_RN  :  std_logic_vector(15 downto 0) := "0000----00101001";  -- MOVT	Rn
 
@@ -105,12 +105,24 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 package SH2ControlConstants is
+
     -- Internal control signals for controlling muxes within the CPU
-    constant RegDataIn_ALUResult : std_logic_vector(2 downto 0) := "000";
-    constant RegDataIn_Immediate : std_logic_vector(2 downto 0) := "001";
-    constant RegDataIn_RegA      : std_logic_vector(2 downto 0) := "010";
-    constant RegDataIn_RegB      : std_logic_vector(2 downto 0) := "011";
-    constant RegDataIn_SR        : std_logic_vector(2 downto 0) := "100";
+    constant RegDataIn_ALUResult      : std_logic_vector(3 downto 0) := "0000";
+    constant RegDataIn_Immediate      : std_logic_vector(3 downto 0) := "0001";
+    constant RegDataIn_RegA           : std_logic_vector(3 downto 0) := "0010";
+    constant RegDataIn_RegB           : std_logic_vector(3 downto 0) := "0011";
+    constant RegDataIn_SR             : std_logic_vector(3 downto 0) := "0100";
+    constant RegDataIn_DB             : std_logic_vector(3 downto 0) := "0101";
+    constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "0110";
+    constant RegDataIn_RegA_SWAP_B    : std_logic_vector(3 downto 0) := "0111";
+    constant RegDataIn_RegA_SWAP_W    : std_logic_vector(3 downto 0) := "1000";
+    constant RegDataIn_SignExt_B_RegA : std_logic_vector(3 downto 0) := "1001";
+    constant RegDataIn_SignExt_W_RegA : std_logic_vector(3 downto 0) := "1010";
+    constant RegDataIn_ZeroExt_B_RegA : std_logic_vector(3 downto 0) := "1011";
+    constant RegDataIn_ZeroExt_W_RegA : std_logic_vector(3 downto 0) := "1100";
+    constant RegDataIn_GBR            : std_logic_vector(3 downto 0) := "1101";
+    constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "1110";
+    constant RegDataIn_PR             : std_logic_vector(3 downto 0) := "1111";
 
     constant ReadWrite_READ     : std_logic := '0';
     constant ReadWrite_WRITE    : std_logic := '1';
@@ -193,7 +205,7 @@ entity  SH2Control  is
         TSel        : out std_logic_vector(2 downto 0);     -- if T should be updated to a new value (T/C/V/0/1)
 
         -- register array control signals
-        RegDataInSel: out std_logic_vector(2 downto 0);     -- source for register input data
+        RegDataInSel: out std_logic_vector(3 downto 0);     -- source for register input data
         DataIn      : out std_logic_vector(31 downto 0);    -- data to write to a register
         EnableIn    : out std_logic;                        -- if data should be written to an input register
         RegInSel    : out integer  range 15 downto 0;       -- which register to write data to
