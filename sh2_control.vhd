@@ -17,9 +17,64 @@ use ieee.numeric_std.all;
 package SH2InstructionEncodings is
 
   -- Data Transfer Instruction:
-  constant MOV_IMM_RN     : std_logic_vector(15 downto 0) := "1110------------";
-  constant MOV_RM_RN      : std_logic_vector(15 downto 0) := "0110--------0011";
-  constant MOV_L_RM_AT_RN : std_logic_vector(15 downto 0) := "0010--------00--";
+  constant  MOV_IMM_RN  :  std_logic_vector(15 downto 0) := "1110------------";  -- MOV	#imm, Rn
+
+  constant  MOV_W_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1011------------";  -- MOV.W	@(disp, PC), Rn
+  constant  MOV_L_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1101------------";  -- MOV.L	@(disp, PC), Rn
+
+  constant  MOV_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0011";  -- MOV	Rm, Rn
+
+  constant  MOV_B_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0000";  -- MOV.B	Rm, @Rn
+  constant  MOV_W_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0001";  -- MOV.W	Rm, @Rn
+  -- TODO: ???
+  constant  MOV_L_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------00--";  -- MOV.L	Rm, @Rn
+
+  constant  MOV_B_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0000";  -- MOV.B	@Rm, Rn
+  constant  MOV_W_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0001";  -- MOV.W	@Rm, Rn
+  constant  MOV_L_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0010";  -- MOV.L	@Rm, Rn
+
+  constant  MOV_B_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0100";  -- MOV.B	Rm, @-Rn
+  constant  MOV_W_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0101";  -- MOV.W	Rm, @-Rn
+  constant  MOV_L_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0110";  -- MOV.L	Rm, @-Rn
+
+  constant  MOV_B_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0100";  -- MOV.B	@Rm+, Rn
+  constant  MOV_W_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0101";  -- MOV.W	@Rm+, Rn
+  constant  MOV_L_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0110";  -- MOV.W	@Rm+, Rn
+
+  constant  MOV_B_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.B	RO, @(disp,Rn)
+  constant  MOV_W_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "1000000l--------";  -- MOV.W	RO, @(disp,Rn)
+  constant  MOV_L_RM_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "0001------------";  -- MOV.L Rm, @(disp, Rn)
+
+  constant  MOV_B_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000100--------";  -- MOV.B	@(disp, Rm), R0
+  constant  MOV_W_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000101--------";  -- MOV.W	@(disp, Rm), R0
+  constant  MOV_L_AT_DISP_RM_RN  :  std_logic_vector(15 downto 0)  := "0101------------";  -- MOV.L	@(disp, Rm), Rn
+
+  constant  MOV_B_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0100";  -- MOV.B	Rm, @(R0, Rn)
+  constant  MOV_W_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0101";  -- MOV.W	Rm, @(R0, Rn)
+  constant  MOV_L_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0110";  -- MOV.L	Rm, @(R0, Rn)
+
+  constant  MOV_B_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1100";  -- MOV.B	@(R0, Rm), Rn
+  constant  MOV_W_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1101";  -- MOV.W	@(R0, Rm), Rn
+  constant  MOV_L_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1110";  -- MOV.L	@(R0, Rm), Rn
+
+  constant  MOV_B_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000000--------";  -- MOV.B	R0, @(disp, GBR)
+  constant  MOV_W_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000001--------";  -- MOV.W	R0, @(disp, GBR)
+  constant  MOV_L_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000010--------";  -- MOV.L	R0, @(disp, GBR)
+
+  constant  MOV_B_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000100--------";  -- MOV.B	@(disp, GBR), R0
+  constant  MOV_W_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000101--------";  -- MOV.W	@(disp, GBR), R0
+  constant  MOV_L_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000110--------";  -- MOV.L	@(disp, GBR), R0
+
+  constant  MOVA_AT_DISP_PC_R0  :  std_logic_vector(15 downto 0) := "11000lll--------";  -- MOVA	@(disp, PC), R0
+
+  constant  MOVT_RN  :  std_logic_vector(15 downto 0) := "0000----00101001";  -- MOVT	Rn
+
+  constant  SWAP_B_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------1000";  -- SWAP.B	Rm, Rn
+  constant  SWAP_W_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------1001";  -- SWAP.W	Rm, Rn
+
+  constant  XTRCT_RM_RN  :  std_logic_vector(15 downto 0) := "0010--------1101";  -- XTRCT	Rm, Rn
+
+
 
   -- Arithmetic Instructions:
   constant ADD_RM_RN    : std_logic_vector(15 downto 0) := "0011--------11--";
@@ -286,6 +341,7 @@ begin
 
         SysRegCtrl <= SysRegCtrl_NONE;
 
+        -- ADD Rm, Rn
         if std_match(IR, ADD_RM_RN) then
             -- report "Instruction: ADD(C/V) Rm, Rn";
 
@@ -313,6 +369,7 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
+        -- SUB Rm, Rn
         elsif std_match(IR, SUB_RM_RN) then
             -- report "Instruction: SUB(C/V) Rm, Rn";
 
@@ -339,6 +396,8 @@ begin
             end if;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
+
+        -- NEG Rm, Rn
         elsif std_match(IR, NEG_RM_RN) then
             -- report "Instruction: NEG(C) Rm, Rn";
 
@@ -370,6 +429,7 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
+        -- ADD #imm, Rn
         elsif std_match(IR, ADD_IMM_RN) then
             -- report "Instruction: ADD #imm, Rn";
 
@@ -437,6 +497,19 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
 
+        -- Data Transfer Instructions -----------------------------------------
+
+        -- MOV	#imm, Rn
+        elsif std_match(IR, MOV_IMM_RN) then
+            -- report "Instruction: MOV #imm, Rn";
+            RegInSel <= to_integer(unsigned(ni_format_n));
+            RegDataInSel <= RegDataIn_Immediate;
+            Instruction_EnableIn <= '1';
+            Immediate <= ni_format_i;
+
+        -- MOV.W	@(disp, PC), Rn
+        elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
+               
         elsif std_match(IR, MOV_RM_RN) then
             -- report "Instruction: MOV Rm, Rn";
             RegBSel <= to_integer(unsigned(nm_format_m));
@@ -444,12 +517,6 @@ begin
             RegDataInSel <= RegDataIn_RegB;
             Instruction_EnableIn <= '1';
 
-        elsif std_match(IR, MOV_IMM_RN) then
-            -- report "Instruction: MOV #imm, Rn";
-            RegInSel <= to_integer(unsigned(ni_format_n));
-            RegDataInSel <= RegDataIn_Immediate;
-            Instruction_EnableIn <= '1';
-            Immediate <= ni_format_i;
 
         elsif std_match(IR, MOV_L_RM_AT_RN) then
             -- report "Instruction: MOV RM, @Rn";
