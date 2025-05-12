@@ -555,6 +555,13 @@ begin
             SCmd <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
 
+        elsif std_match(IR, MOV_IMM_RN) then
+            -- report "Instruction: MOV #imm, Rn";
+            RegInSel <= to_integer(unsigned(ni_format_n));
+            RegDataInSel <= RegDataIn_Immediate;
+            Instruction_EnableIn <= '1';
+            Immediate <= ni_format_i;
+
         elsif std_match(IR, MOV_RM_RN) then
             -- report "Instruction: MOV Rm, Rn";
             RegBSel <= to_integer(unsigned(nm_format_m));
@@ -598,6 +605,7 @@ begin
         elsif std_match(IR, NOP) then
             -- report "Instruction: NOP";
             null;
+
         elsif not is_x(IR) then
             report "Unrecognized instruction: " & to_hstring(IR);
         end if;
