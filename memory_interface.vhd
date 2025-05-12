@@ -32,6 +32,7 @@ use work.MemoryInterfaceConstants.all;
 -- Outputs the necessary flags and data bits to read/write a byte, word, or longword to memory.
 entity MemoryInterfaceTx is
     port (
+        MemEnable :  in     std_logic;                          -- if memory interface should be active or not
         ReadWrite :  in     std_logic;                          -- memory read (0) or write (1)
         MemMode   :  in     STD_LOGIC_VECTOR(1 downto 0);       -- memory access mode (byte, word, or longword)
         Address   :  in     unsigned(31 downto 0);              -- memory address bus
@@ -55,68 +56,94 @@ begin
     data_in_BE(23 downto 16) <= data_in(31 downto 24);
     data_in_BE(31 downto 24) <= data_in(23 downto 16);
 
-    output_proc: process(ReadWrite, MemMode, Address, data_in_BE)
+    output_proc: process(MemEnable, ReadWrite, MemMode, Address, data_in_BE)
     begin
-        if ReadWrite = '0' then
-            -- Disable writing
-            WE(3 downto 0) <= (others => '1');
-            DB <= (others => 'Z');
+        if MemEnable = '1' and not is_x(address) then
+            if ReadWrite = '0' then
+                -- Disable writing
+                WE(3 downto 0) <= (others => '1');
+                DB <= (others => 'Z');
 
-            -- Enable specific bytes based on type of read
-            case MemMode is
-                when ByteMode =>
-                    -- Reversed for big-endian
-                    RE(0) <= '0' when address mod 4 = 0 else '1';
-                    RE(1) <= '0' when address mod 4 = 1 else '1';
-                    RE(2) <= '0' when address mod 4 = 2 else '1';
-                    RE(3) <= '0' when address mod 4 = 3 else '1';
+                -- Enable specific bytes based on type of read
+                case MemMode is
+                    when ByteMode =>
+                        RE(0) <= '0' when address mod 4 = 0 else '1';
+                        RE(1) <= '0' when address mod 4 = 1 else '1';
+                        RE(2) <= '0' when address mod 4 = 2 else '1';
+                        RE(3) <= '0' when address mod 4 = 3 else '1';
 
-                when WordMode =>
-                    RE(0) <= '0' when address mod 4 = 0 else '1';
-                    RE(1) <= '0' when address mod 4 = 0 else '1';
-                    RE(2) <= '0' when address mod 4 = 2 else '1';
-                    RE(3) <= '0' when address mod 4 = 2 else '1';
+                    when WordMode =>
+                        assert (address mod 2 = 0)
+                        report "Memory interface Tx: Cannot read word from non-aligned address: " & to_hstring(address)
+                        severity error;
 
-                when LongwordMode =>
-                    RE(3 downto 0) <= (others => '0');
+                        RE(0) <= '0' when address mod 4 = 0 else '1';
+                        RE(1) <= '0' when address mod 4 = 0 else '1';
+                        RE(2) <= '0' when address mod 4 = 2 else '1';
+                        RE(3) <= '0' when address mod 4 = 2 else '1';
 
-                when others =>
-                    -- When unrecognized mode, don't read/write anything
-                    RE <= (others => '1');
-            end case;
+                    when LongwordMode =>
+                        assert (address mod 4 = 0)
+                        report "Memory interface Tx: Cannot read longword from non-aligned address: " & to_hstring(address)
+                        severity error;
 
-        elsif ReadWrite = '1' then
-            -- Disable reading
-            RE(3 downto 0) <= (others => '1');
+                        RE(3 downto 0) <= (others => '0');
 
-            -- Enable specific bytes based on type of read
-            case MemMode is
-                when ByteMode =>
-                    WE(0) <= '0' when address mod 4 = 0 else '1';
-                    WE(1) <= '0' when address mod 4 = 1 else '1';
-                    WE(2) <= '0' when address mod 4 = 2 else '1';
-                    WE(3) <= '0' when address mod 4 = 3 else '1';
-                    -- TODO: may not synthesize efficiently, use conditionals instead?
-                    DB <= std_logic_vector(unsigned(data_in_BE) sll to_integer(8 * (address mod 4)));
+                    when others =>
+                        assert (false)
+                        report "Memory interface Tx: unrecognized read mode" & to_hstring(address)
+                        severity error;
 
-                when WordMode =>
-                    WE(0) <= '0' when address mod 4 = 0 else '1';
-                    WE(1) <= '0' when address mod 4 = 0 else '1';
-                    WE(2) <= '0' when address mod 4 = 2 else '1';
-                    WE(3) <= '0' when address mod 4 = 2 else '1';
-                    -- TODO: may not synthesize efficiently, use conditionals instead?
-                    DB <= std_logic_vector(unsigned(data_in_BE) sll to_integer(8 * (address mod 4)));
+                        -- When unrecognized mode, don't read/write anything
+                        RE <= (others => '1');
+                end case;
 
-                when LongwordMode =>
-                    WE(3 downto 0) <= (others => '0');
-                    DB <= data_in_BE;
+            elsif ReadWrite = '1' then
+                -- Disable reading
+                RE(3 downto 0) <= (others => '1');
 
-                when others =>
-                    assert (false)
-                    report "Memory interface Tx: Invalid memory mode for write"
-                    severity error;
-            end case;
+                -- Enable specific bytes based on type of read
+                case MemMode is
+                    when ByteMode =>
+                        WE(0) <= '0' when address mod 4 = 0 else '1';
+                        WE(1) <= '0' when address mod 4 = 1 else '1';
+                        WE(2) <= '0' when address mod 4 = 2 else '1';
+                        WE(3) <= '0' when address mod 4 = 3 else '1';
+                        -- TODO: may not synthesize efficiently, use conditionals instead?
+                        -- Note: not using data_in_BE since reading/writing individual byte
+                        DB <= std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)));
 
+                    when WordMode =>
+                        assert (address mod 2 = 0)
+                        report "Memory interface Tx: Cannot write word to non-aligned address: " & to_hstring(address)
+                        severity error;
+
+                        WE(0) <= '0' when address mod 4 = 0 else '1';
+                        WE(1) <= '0' when address mod 4 = 0 else '1';
+                        WE(2) <= '0' when address mod 4 = 2 else '1';
+                        WE(3) <= '0' when address mod 4 = 2 else '1';
+                        -- TODO: may not synthesize efficiently, use conditionals instead?
+                        DB <= std_logic_vector(unsigned(data_in_BE) sll to_integer(8 * (address mod 4)));
+
+                    when LongwordMode =>
+                        assert (address mod 4 = 0)
+                        report "Memory interface Tx: Cannot write longword to non-aligned address: " & to_hstring(address)
+                        severity error;
+
+                        WE(3 downto 0) <= (others => '0');
+                        DB <= data_in_BE;
+
+                    when others =>
+                        WE(3 downto 0) <= (others => '1');
+                        assert (false)
+                        report "Memory interface Tx: Invalid memory mode for write"
+                        severity error;
+                end case;
+            end if;
+        else
+            -- should not enable memory interface
+            RE <= (others => '1');
+            WE <= (others => '1');
         end if;
 
     end process output_proc;

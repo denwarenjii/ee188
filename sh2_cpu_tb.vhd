@@ -349,6 +349,13 @@ begin
             wait for 10 ns;
         end procedure;
 
+        -- We define the CPU exit signal to be when it tries to read from
+        -- address 0xFFFFFFFF.
+        impure function CheckDone return boolean is
+        begin
+            return CPU_AB = X"FFFFFFFF";
+        end function;
+
     begin
         CPU_ACTIVE <= false;
 
@@ -366,32 +373,15 @@ begin
         report "Resetting...";
         reset <= '0';
         Tick;
+        Tick;
 
         report "Starting CPU...";
         reset <= '1';
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
-        Tick;
+        while not CheckDone loop
+            Tick;
+        end loop;
 
+        report "CPU done running, printing RAM";
         CPU_ACTIVE <= false;
         TEST_MEMSEL <= '0';
         ReadMemory(0, 8);

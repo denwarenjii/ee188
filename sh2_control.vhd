@@ -67,6 +67,9 @@ package SH2ControlConstants is
     constant TFlagSel_Carry     : std_logic_vector(1 downto 0) := "10";
     constant TFlagSel_Overflow  : std_logic_vector(1 downto 0) := "11";
 
+    constant MemSel_ROM     : std_logic := '1';
+    constant MemSel_RAM     : std_logic := '0';
+
 end package SH2ControlConstants;
 
 
@@ -222,6 +225,20 @@ begin
 
     -- Only update PC before next fetch cycle
     PCAddrMode <= Instruction_PCAddrMode when state = writeback else PCAddrMode_HOLD;
+    MemEnable  <= Instruction_MemEnable when state = execute else
+                  '1' when state = fetch else
+                  '0' when state = writeback;
+    ReadWrite <= Instruction_ReadWrite when state = execute else
+                 '0' when state = fetch else
+                 'X' when state = writeback;
+
+    MemMode <= Instruction_WordMode when state = execute else
+               WordMode when state = fetch else
+               "XX";
+
+    MemSel <= MemSel_RAM when state = execute else
+              MemSel_ROM when state = fetch else
+              'X';
 
     decode_proc: process (IR)
     begin
@@ -376,24 +393,24 @@ begin
         if state = fetch then
             -- Fetch an instruction word from ROM
             -- TODO: replace magic numbers with constants
-            MemEnable <= '1';
-            MemSel <= '1';          -- ROM
-            ReadWrite <= '0';       -- read
-            MemMode <= WordMode;    -- word
+            -- MemEnable <= '1';
+            -- MemSel <= '1';          -- ROM
+            -- ReadWrite <= '0';       -- read
+            -- MemMode <= WordMode;    -- word
             EnableIn <= '0';
             TFlagSel <= TFlagSel_T;
         elsif state = execute then
-            MemSel <= '0';          -- RAM
-            MemEnable <= Instruction_MemEnable;
-            ReadWrite <= Instruction_ReadWrite;
-            MemMode <= Instruction_WordMode;
+            -- MemSel <= '0';          -- RAM
+            -- MemEnable <= Instruction_MemEnable;
+            -- ReadWrite <= Instruction_ReadWrite;
+            -- MemMode <= Instruction_WordMode;
             EnableIn <= '0';
             TFlagSel <= TFlagSel_T;
         elsif state = writeback then
             -- disable memory
-            MemEnable <= '0';
-            ReadWrite <= 'X';
-            MemMode <= "XX";
+            -- MemEnable <= '0';
+            -- ReadWrite <= 'X';
+            -- MemMode <= "XX";
 
             -- perform register writeback if necessary
             EnableIn <= Instruction_EnableIn;

@@ -15,6 +15,9 @@ build: $(SOURCES) $(TESTBENCHES)
 $(basename $(TESTBENCHES)): build $(TESTBENCHES)
 	ghdl -e $(BUILDFLAGS) $@
 
+test: $(basename $(TESTBENCHES))
+	ghdl -r sh2_cpu_tb $(RUNFLAGS)
+
 view:
 	gtkwave $(WAVEFORM)
 

@@ -178,15 +178,15 @@ architecture structural of sh2cpu is
 
 begin
 
-    RE0 <= ReadMask(0) when MemEnable and (not clock) else '1';
-    RE1 <= ReadMask(1) when MemEnable and (not clock) else '1';
-    RE2 <= ReadMask(2) when MemEnable and (not clock) else '1';
-    RE3 <= ReadMask(3) when MemEnable and (not clock) else '1';
+    RE0 <= ReadMask(0) when (not clock) else '1';
+    RE1 <= ReadMask(1) when (not clock) else '1';
+    RE2 <= ReadMask(2) when (not clock) else '1';
+    RE3 <= ReadMask(3) when (not clock) else '1';
 
-    WE0 <= WriteMask(0) when MemEnable and (not clock) else '1';
-    WE1 <= WriteMask(1) when MemEnable and (not clock) else '1';
-    WE2 <= WriteMask(2) when MemEnable and (not clock) else '1';
-    WE3 <= WriteMask(3) when MemEnable and (not clock) else '1';
+    WE0 <= WriteMask(0) when (not clock) else '1';
+    WE1 <= WriteMask(1) when (not clock) else '1';
+    WE2 <= WriteMask(2) when (not clock) else '1';
+    WE3 <= WriteMask(3) when (not clock) else '1';
 
     MemAddress <= PCOut when MemSel = '1' else DataAddress;
 
@@ -312,6 +312,7 @@ begin
     memory_tx : entity work.MemoryInterfaceTx
     port map (
         -- Inputs:
+        MemEnable => MemEnable,
         ReadWrite => ReadWrite,
         MemMode   => MemMode,
         Address   => unsigned(MemAddress),
@@ -396,7 +397,6 @@ begin
             VBR <=  (others => '0');
         elsif rising_edge(clock) then
             SR(0) <= TNext;
-            report "Next value of T: " & to_string(TNext);
         end if;
     end process register_proc;
 
