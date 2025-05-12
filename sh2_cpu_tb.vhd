@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
 --
 -- 
 --  Revision History:
@@ -18,6 +18,7 @@ use ieee.math_real.all;
 use std.textio.all;
 
 use work.sh2utils.all;
+use work.Logging.all;
 
 entity sh2_cpu_tb is
 end sh2_cpu_tb;
@@ -87,6 +88,9 @@ architecture behavioral of sh2_cpu_tb is
 
     -- Test signals
     signal END_SIM    : boolean    := false;    -- if the simulation should end
+
+    -- Log file;
+    file LogFile : text open write_mode is "log.txt";
 
 begin
 
@@ -350,6 +354,10 @@ begin
                 byte_v := character'pos(char_v);
                 curr_opcode(15 downto 8) := std_logic_vector(to_unsigned(byte_v, 8));
 
+                LogWithTime(
+                  "Read " & to_string(curr_opcode) & 
+                  " @ PC 0x" & to_hstring(curr_pc), LogFile);
+
                 -- Write instruction word into memory
                 WriteWord(curr_pc, curr_opcode);
 
@@ -436,13 +444,15 @@ begin
 
         procedure RunTest(path : string) is
         begin
-            report "Running test: " & path;
+            -- report "Running test: " & path;
+            LogBothWithTime("Running test: " & path, LogFile);
             LoadProgram(path);      -- write program in to ROM
             RunCPU;                 -- execute program
             CheckOutput(path);      -- check RAM has expected values
         end procedure;
 
     begin
+
         RunTest("asm/hello");
         RunTest("asm/mov_reg");
         RunTest("asm/reg_indirect");

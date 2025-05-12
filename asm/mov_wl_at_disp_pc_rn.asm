@@ -28,12 +28,12 @@ ProgramStart:
   MOV.B R1, @R0   ; PC is 0x06
 
   MOV   #$7B, R0  ; PC is 0x08
-  MOV.B R1, @R0   ; PC is 0x10
+  MOV.B R1, @R0   ; PC is 0x0A
 
-  MOV   #$7C, R0  ; PC is 0x12
-  MOV.B R1, @R0   ; PC is 0x14
+  MOV   #$7C, R0  ; PC is 0x0C
+  MOV.B R1, @R0   ; PC is 0x0E
 
-  MOV   #$7D, R0  ; PC is 0x16
+  MOV   #$7D, R0  ; PC is 0x10
   MOV.B R1, @R0   ; PC is 0x18
   
 
