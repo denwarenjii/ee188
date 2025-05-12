@@ -32,6 +32,7 @@ package SH2InstructionEncodings is
   constant LOGIC_IMM_R0     : std_logic_vector(15 downto 0) := "110010----------";  -- AND, TST, OR, XOR
 
   -- Shift Instruction:
+  constant SHIFT_RN         : std_logic_vector(15 downto 0) := "0100----00-00-0-";
   -- Branch Instructions:
   -- System Control:
   constant NOP          : std_logic_vector(15 downto 0) := "0000000000001001";
@@ -87,6 +88,9 @@ package SH2ControlConstants is
     constant SysRegSel_VBR  : std_logic_vector(1 downto 0) := "10";
     constant SysRegSel_PR   : std_logic_vector(1 downto 0) := "11";
 
+    constant ImmediateMode_SIGN     : std_logic := '0';
+    constant ImmediateMode_ZERO     : std_logic := '1';
+
 end package SH2ControlConstants;
 
 
@@ -117,6 +121,7 @@ entity  SH2Control  is
         MemSel      : out std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
 
         Immediate   : out std_logic_vector(7 downto 0);     -- 8-bit immediate
+        ImmediateMode   : out std_logic;                    -- Immediate extension mode
         MemOutSel   : out std_logic_vector(2 downto 0);     -- what should be output to memory
         TFlagSel    : out std_logic_vector(2 downto 0);     -- source for next value of T flag
 
@@ -286,6 +291,8 @@ begin
 
         SysRegCtrl <= SysRegCtrl_NONE;
 
+        ImmediateMode <= ImmediateMode_SIGN;
+
         if std_match(IR, ADD_RM_RN) then
             -- report "Instruction: ADD(C/V) Rm, Rn";
 
@@ -339,6 +346,7 @@ begin
             end if;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
+
         elsif std_match(IR, NEG_RM_RN) then
             -- report "Instruction: NEG(C) Rm, Rn";
 
@@ -423,6 +431,7 @@ begin
             RegDataInSel <= RegDataIn_ALUResult;
             Instruction_EnableIn <= IR(9) or IR(8);   -- exclude TST
             Immediate <= i_format_i;
+            ImmediateMode <= ImmediateMode_ZERO;
 
             -- Enable TFlagSel for TST
             Instruction_TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00" else TFlagSel_T;
@@ -436,6 +445,25 @@ begin
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
+
+        elsif std_match(IR, SHIFT_RN) then
+            -- {ROTL, ROTR, ROTCL, ROTCR, SHAL, SHAR, SHLL, SHLR} Rn
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(n_format_n));
+            RegInSel <= to_integer(unsigned(n_format_n));
+            RegDataInSel <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            Instruction_TFlagSel <= TFlagSel_Carry;
+
+            -- ALU signals
+            ALUOpBSel <= ALUOpB_RegB;
+            LoadA <= '1';
+            FCmd <= "XXXX";
+            CinCmd <= CinCmd_CIN when (IR(5) and IR(2)) = '1' else CinCmd_ZERO;     -- ROTCL, ROTCR
+            SCmd <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
+            ALUCmd <= ALUCmd_SHIFT;
 
         elsif std_match(IR, MOV_RM_RN) then
             -- report "Instruction: MOV Rm, Rn";

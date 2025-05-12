@@ -25,6 +25,7 @@
 --     29 Jan 21  Glen George       Fixed a number of wordsize bugs.
 --     29 Jan 21  Glen George       Fixed overflow signal in adder.
 --     11 Apr 25  Glen George       Removed Status Register.
+--     11 May 25  Zack Huang        Removed Swap
 --
 ----------------------------------------------------------------------------
 
@@ -55,7 +56,7 @@ package  ALUConstants  is
 
    constant SCmd_LEFT  : std_logic_vector(2 downto 0) := "0--";
    constant SCmd_LSL   : std_logic_vector(2 downto 0) := "000";
-   constant SCmd_SWAP  : std_logic_vector(2 downto 0) := "001";
+   constant SCmd_ASL   : std_logic_vector(2 downto 0) := "001";
    constant SCmd_ROL   : std_logic_vector(2 downto 0) := "010";
    constant SCmd_RLC   : std_logic_vector(2 downto 0) := "011";
    constant SCmd_RIGHT : std_logic_vector(2 downto 0) := "1--";
@@ -343,8 +344,7 @@ end  structural;
 --
 --  This is the shifter for doing shift/rotate operations in the ALU.  The
 --  shift operations are defined by the constants SCmd_LEFT, SCmd_RIGHT,
---  SCmd_SWAP, SCmd_LSL, SCmd_ROL, SCmd_RLC, SCmd_LSR, SCmd_ASR, SCmd_ROR,
---  and SCmd_RRC.
+--  SCmd_LSL, SCmd_ROL, SCmd_RLC, SCmd_LSR, SCmd_ASR, SCmd_ROR, and SCmd_RRC.
 --
 --  Generics:
 --    wordsize - width of the shifter in bits (default 8)
@@ -385,12 +385,8 @@ end  Shifter;
 architecture  dataflow  of  Shifter  is
 begin
 
-    -- middle bits get either bit to the left or bit to the right or upper
-    --   half bit when swapping
+    -- middle bits get either bit to the left or bit to the right
     SResult(wordsize - 2 downto 1)  <= 
-
-        -- do swap first because it is a special case of SCmd
-        (SOp(wordsize/2 - 2 downto 0) & SOp(wordsize - 1 downto wordsize/2 + 1))  when  SCmd = SCmd_SWAP  else
 
         -- right shift
         SOp(wordsize - 1 downto 2)                                                when  std_match(SCmd, SCmd_RIGHT)  else
@@ -403,10 +399,8 @@ begin
 
 
     -- high bit gets low bit, high bit, bit to the right, 0, or Cin depending
-    --   on shift mode, note that swap is a special case that has to be first
-    --   due to encoding (overlaps left shifts)
+    --   on shift mode
     SResult(wordsize - 1)  <=
-        SOp(wordsize/2 - 1)  when  SCmd = SCmd_SWAP  else  -- swap
         SOp(wordsize - 2)    when  std_match(SCmd, SCmd_LEFT)  else  -- shift/rotate left
         SOp(0)               when  SCmd = SCmd_ROR   else  -- rotate right
         SOp(wordsize - 1)    when  SCmd = SCmd_ASR   else  -- arithmetic shift right
@@ -417,16 +411,15 @@ begin
 
     -- low bit gets high bit, bit to the left, 0, or Cin depending on mode
     SResult(0)  <=
-        SOp(wordsize/2)   when  SCmd = SCmd_SWAP  else  -- swap
         SOp(1)            when  std_match(SCmd, SCmd_RIGHT)  else  -- shift/rotate right
-        '0'               when  SCmd = SCmd_LSL   else  -- shift left
+        '0'               when  SCmd = SCmd_LSL or SCmd = SCmd_ASL   else  -- shift left
         SOp(wordsize - 1) when  SCmd = SCmd_ROL   else  -- rotate left
         Cin               when  SCmd = SCmd_RLC   else  -- rotate left w/carry
         'X';                                            -- anything else is illegal
 
 
     -- compute the carry out, it is low bit when shifting right and high bit
-    --    when shifting left (don't care about swap)
+    --    when shifting left
     Cout  <=  SOp(0)             when  std_match(SCmd, SCmd_RIGHT)  else
               SOp(wordsize - 1)  when  std_match(SCmd, SCmd_LEFT)   else
               'X';

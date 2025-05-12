@@ -446,6 +446,7 @@ begin
         RunTest("asm/reg_indirect");
         RunTest("asm/arith");
         RunTest("asm/logic");
+        RunTest("asm/shift");
         RunTest("asm/sr");
 
         wait;
