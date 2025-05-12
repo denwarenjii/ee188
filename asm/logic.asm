@@ -38,6 +38,38 @@ ProgramStart:
     MOV #20, R1;
     MOV R0, @R1;
 
+    ; Test TST
+    MOV #$2, R0;
+    MOV #$1, R1;
+    TST R1, R0;
+    STC SR, R0;
+    AND #1, R0;
+    MOV #24, R1;
+    MOV R0, @R1;
+
+    MOV #$2, R0;
+    MOV #$2, R1;
+    TST R1, R0;
+    STC SR, R0;
+    AND #1, R0;
+    MOV #28, R1;
+    MOV R0, @R1;
+
+    ; Test TST immediate
+    MOV #$2, R0;
+    TST #1, R0;
+    STC SR, R0;
+    AND #1, R0;
+    MOV #32, R1;
+    MOV R0, @R1;
+
+    MOV #$2, R0;
+    TST #2, R0;
+    STC SR, R0;
+    AND #1, R0;
+    MOV #36, R1;
+    MOV R0, @R1;
+
     ; Quit test program
     MOV #-4, R0;
     MOV.B R0, @R0;

@@ -27,12 +27,8 @@ package SH2InstructionEncodings is
   constant NEG_RM_RN    : std_logic_vector(15 downto 0) := "0110--------101-";
 
   -- Logical Operations:
-  constant AND_RM_RN    : std_logic_vector(15 downto 0) := "0010--------1001";
-  constant AND_IMM_R0   : std_logic_vector(15 downto 0) := "11001001--------";
-  constant OR_RM_RN     : std_logic_vector(15 downto 0) := "0010--------1011";
-  constant OR_IMM_R0    : std_logic_vector(15 downto 0) := "11001011--------";
-  constant XOR_RM_RN    : std_logic_vector(15 downto 0) := "0010--------1010";
-  constant XOR_IMM_R0   : std_logic_vector(15 downto 0) := "11001010--------";
+  constant LOGIC_RM_RN      : std_logic_vector(15 downto 0) := "0010--------10--";  -- AND, TST, OR, XOR
+  constant LOGIC_IMM_R0     : std_logic_vector(15 downto 0) := "110010----------";  -- AND, TST, OR, XOR
 
   -- Shift Instruction:
   -- Branch Instructions:
@@ -392,8 +388,8 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
-        elsif std_match(IR, AND_RM_RN) then
-            -- report "Instruction: AND Rm, Rn";
+        elsif std_match(IR, LOGIC_RM_RN) then
+            -- {AND, TST, OR, XOR} Rm, Rn
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -401,107 +397,41 @@ begin
 
             RegInSel <= to_integer(unsigned(nm_format_n));
             RegDataInSel <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_EnableIn <= IR(1) or IR(0);   -- exclude TST
+
+            -- Enable TFlagSel for TST
+            Instruction_TFlagSel <= TFlagSel_Zero when IR(1 downto 0) = "00" else TFlagSel_T;
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
             LoadA <= '1';
-            FCmd <= FCmd_AND;
+            FCmd <= FCmd_AND when IR(1) = '0' else
+                    FCmd_XOR when IR(1 downto 0) = "10" else
+                    FCmd_OR;
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
 
-        elsif std_match(IR, AND_IMM_R0) then
-            -- report "Instruction: AND #imm, R0";
+        elsif std_match(IR, LOGIC_IMM_R0) then
+            -- {AND, TST, OR, XOR} immediate, R0
 
             -- Register array signals
             RegASel <= 0;
 
             RegInSel <= 0;
             RegDataInSel <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_EnableIn <= IR(9) or IR(8);   -- exclude TST
             Immediate <= i_format_i;
+
+            -- Enable TFlagSel for TST
+            Instruction_TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00" else TFlagSel_T;
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_Imm;
             LoadA <= '1';
-            FCmd <= FCmd_AND;
-            CinCmd <= CinCmd_ZERO;
-            SCmd <= "XXX";
-            ALUCmd <= ALUCmd_FBLOCK;
-
-        elsif std_match(IR, OR_RM_RN) then
-            -- report "Instruction: OR Rm, Rn";
-
-            -- Register array signals
-            RegASel <= to_integer(unsigned(nm_format_n));
-            RegBSel <= to_integer(unsigned(nm_format_m));
-
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
-
-            -- ALU signals
-            ALUOpBSel <= ALUOpB_RegB;
-            LoadA <= '1';
-            FCmd <= FCmd_OR;
-            CinCmd <= CinCmd_ZERO;
-            SCmd <= "XXX";
-            ALUCmd <= ALUCmd_FBLOCK;
-
-        elsif std_match(IR, OR_IMM_R0) then
-            -- report "Instruction: OR #imm, R0";
-
-            -- Register array signals
-            RegASel <= 0;
-
-            RegInSel <= 0;
-            RegDataInSel <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
-            Immediate <= i_format_i;
-
-            -- ALU signals
-            ALUOpBSel <= ALUOpB_Imm;
-            LoadA <= '1';
-            FCmd <= FCmd_OR;
-            CinCmd <= CinCmd_ZERO;
-            SCmd <= "XXX";
-            ALUCmd <= ALUCmd_FBLOCK;
-
-        elsif std_match(IR, XOR_RM_RN) then
-            -- report "Instruction: XOR Rm, Rn";
-
-            -- Register array signals
-            RegASel <= to_integer(unsigned(nm_format_n));
-            RegBSel <= to_integer(unsigned(nm_format_m));
-
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
-
-            -- ALU signals
-            ALUOpBSel <= ALUOpB_RegB;
-            LoadA <= '1';
-            FCmd <= FCmd_XOR;
-            CinCmd <= CinCmd_ZERO;
-            SCmd <= "XXX";
-            ALUCmd <= ALUCmd_FBLOCK;
-
-        elsif std_match(IR, XOR_IMM_R0) then
-            -- report "Instruction: XOR #imm, R0";
-
-            -- Register array signals
-            RegASel <= 0;
-
-            RegInSel <= 0;
-            RegDataInSel <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
-            Immediate <= i_format_i;
-
-            -- ALU signals
-            ALUOpBSel <= ALUOpB_Imm;
-            LoadA <= '1';
-            FCmd <= FCmd_XOR;
+            FCmd <= FCmd_AND when IR(9) = '0' else
+                    FCmd_XOR when IR(9 downto 8) = "10" else
+                    FCmd_OR;
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
