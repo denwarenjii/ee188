@@ -51,10 +51,14 @@
 --
 
 library ieee;
+library work;
+
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
+use work.Logging.all;
+use work.Utils.all;
 
 entity  MEMORY32x32  is
 
@@ -105,6 +109,14 @@ architecture  behavioral  of  MEMORY32x32  is
 
 begin
 
+    -- LogAddrRange : process
+    -- begin
+    --   LogWithTime("memory.vhd: Initializing memory from byte " & to_string(START_ADDR0), LogFile);
+    --   LogWithTime("memory.vhd: Initializing memory from byte " & to_string(START_ADDR1), LogFile);
+    --   LogWithTime("memory.vhd: Initializing memory from byte " & to_string(START_ADDR2), LogFile);
+    --   LogWithTime("memory.vhd: Initializing memory from byte " & to_string(START_ADDR3), LogFile);
+    --   wait; -- wait forever
+    -- end process LogAddrRange;
 
     -- compute the general read and write signals (active low signals)
     RE  <=  RE0  and  RE1  and  RE2  and  RE3;

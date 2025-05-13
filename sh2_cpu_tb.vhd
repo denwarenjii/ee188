@@ -1,10 +1,12 @@
-----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
 --
---  TODO
 -- 
 --  Revision History:
 --     01 May 25    Zack Huang      initial revision
 --     03 May 25    Zack Huang      working with data/program memory units
+--
+-- TODO:
+--  - Support loading into program memory with assembly directives.
 --
 ----------------------------------------------------------------------------
 
@@ -16,6 +18,7 @@ use ieee.math_real.all;
 use std.textio.all;
 
 use work.sh2utils.all;
+use work.Logging.all;
 
 entity sh2_cpu_tb is
 end sh2_cpu_tb;
@@ -85,6 +88,8 @@ architecture behavioral of sh2_cpu_tb is
 
     -- Test signals
     signal END_SIM    : boolean    := false;    -- if the simulation should end
+
+
 
 begin
 
@@ -198,6 +203,16 @@ begin
         memsel => CPU_MEMSEL
     );
 
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Initializing memory from byte " & 
+                to_string(16#0000#) & " to " & to_string(16#0000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Initializing memory from byte " & 
+                to_string(16#1000#) & " to " & to_string(16#1000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Initializing memory from byte " & 
+                to_string(16#2000#) & " to " & to_string(16#2000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Initializing memory from byte " & 
+                to_string(16#3000#) & " to " & to_string(16#3000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Valid Data Memory Range is 0x0000 to 0x40000", LogFile);
+
     ram : entity work.MEMORY32x32
     generic map (
         MEMSIZE => 1024,
@@ -219,6 +234,16 @@ begin
         MemAB => RAM_AB,
         MemDB => RAM_DB
     );
+
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Initializing memory from byte " & 
+                to_string(16#0000#) & " to " & to_string(16#0000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Initializing memory from byte " & 
+                to_string(16#1000#) & " to " & to_string(16#1000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Initializing memory from byte " & 
+                to_string(16#2000#) & " to " & to_string(16#2000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Initializing memory from byte " & 
+                to_string(16#3000#) & " to " & to_string(16#3000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Valid Program Memory Range is 0x0000 to 0x40000", LogFile);
 
     rom : entity work.MEMORY32x32
     generic map (
@@ -348,6 +373,10 @@ begin
                 byte_v := character'pos(char_v);
                 curr_opcode(15 downto 8) := std_logic_vector(to_unsigned(byte_v, 8));
 
+                LogWithTime(
+                  "Read " & to_string(curr_opcode) & 
+                  " @ PC 0x" & to_hstring(curr_pc), LogFile);
+
                 -- Write instruction word into memory
                 WriteWord(curr_pc, curr_opcode);
 
@@ -390,7 +419,7 @@ begin
                 -- Read value at address from RAM
                 ReadLongword(address, actual_value);
 
-                -- Convert from BE (RAM) to LE (test file)
+                -- Convert from Big Endian (RAM) to Little Endian (test file)
                 actual_value := swap_bytes(actual_value);
 
                 -- Check that the values match up
@@ -434,13 +463,15 @@ begin
 
         procedure RunTest(path : string) is
         begin
-            report "Running test: " & path;
+            -- report "Running test: " & path;
+            LogBothWithTime("Running test: " & path, LogFile);
             LoadProgram(path);      -- write program in to ROM
             RunCPU;                 -- execute program
             CheckOutput(path);      -- check RAM has expected values
         end procedure;
 
     begin
+
         RunTest("asm/hello");
         RunTest("asm/mov_reg");
         RunTest("asm/reg_indirect");
@@ -449,6 +480,9 @@ begin
         RunTest("asm/shift");
         RunTest("asm/sr");
         RunTest("asm/system");
+
+        -- Test Data transfer instructions.
+        -- RunTest("asm/mov_wl_at_disp_pc_rn")
         wait;
     end process;
 end behavioral;

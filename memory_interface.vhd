@@ -24,11 +24,16 @@ end package MemoryInterfaceConstants;
 
 
 library ieee;
+library std;
+
+use std.textio.all;
+
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.MemoryInterfaceConstants.all;
 use work.sh2utils.all;
+use work.Logging.all;
 
 -- Outputs the necessary flags and data bits to read/write a byte, word, or longword to memory.
 entity MemoryInterfaceTx is
@@ -61,6 +66,7 @@ begin
     data_in_BE <= swap_bytes(data_in);
 
     output_proc: process(MemEnable, ReadWrite, MemMode, Address, data_in_BE, clock)
+      variable l : line;
     begin
         if MemEnable = '1' and clock = '0' and not is_x(address) then
             if ReadWrite = '0' then
@@ -71,10 +77,12 @@ begin
                 -- Enable specific bytes based on type of read
                 case MemMode is
                     when ByteMode =>
+
                         RE(0) <= '0' when address mod 4 = 0 else '1';
                         RE(1) <= '0' when address mod 4 = 1 else '1';
                         RE(2) <= '0' when address mod 4 = 2 else '1';
                         RE(3) <= '0' when address mod 4 = 3 else '1';
+
 
                     when WordMode =>
                         assert (address mod 2 = 0)
@@ -115,6 +123,7 @@ begin
                         WE(3) <= '0' when address mod 4 = 3 else '1';
                         -- TODO: may not synthesize efficiently, use conditionals instead?
                         -- Note: not using data_in_BE since reading/writing individual byte
+                        
                         DB <= std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)));
 
                     when WordMode =>
