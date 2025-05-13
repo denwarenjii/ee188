@@ -481,8 +481,9 @@ begin
         RunTest("asm/sr");
         RunTest("asm/system");
 
-        -- Test Data transfer instructions.
-        -- RunTest("asm/mov_wl_at_disp_pc_rn")
+
+        RunTest("asm/mov_wl_at_disp_pc_rn");
+
         wait;
     end process;
 end behavioral;

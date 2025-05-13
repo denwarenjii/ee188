@@ -23,9 +23,13 @@
 ----------------------------------------------------------------------------
 
 library ieee;
+
+library work;
+
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.MemoryInterfaceConstants.all;
+use work.Logging.all;
 
 package SH2InstructionEncodings is
 
@@ -186,6 +190,7 @@ use work.MemoryInterfaceConstants.all;
 use work.SH2InstructionEncodings.all;
 use work.SH2ControlConstants.all;
 use work.SH2ALUConstants.all;
+use work.Logging.all;
 
 
 entity  SH2Control  is
@@ -379,6 +384,9 @@ begin
         ImmediateMode <= ImmediateMode_SIGN;
 
         if std_match(IR, ADD_RM_RN) then
+
+            LogWithTime("Decoded Add Rm, Rn", LogFile);
+
             -- report "Instruction: ADD(C/V) Rm, Rn";
 
             -- Register array signals
@@ -591,24 +599,31 @@ begin
         elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
           -- report "Instruction: [MOV.W @(disp, PC), Rn]"
 
-           -- Writing to register n
-          RegInSel <= to_integer(unsigned(nd8_format_n));
+          RegInSel <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
+          RegDataInSel <= RegDataIn_DB;                    -- Writing output of data bus to register. 
+          Instruction_EnableIn <= '1';                     -- Writes to register. 
 
-          -- Writing output of data bus to register.
-          RegDataInSel <= RegDataIn_DB;
-
-          -- Writes to register.
-          Instruction_EnableIn <= '1';
-
-          -- Instruction reads from memory.
+          -- Instruction reads from word memory.
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_READ; 
+          Instruction_WordMode  <= WordMode;
+
 
         -- MOV.L @(disp, PC), Rn
         -- nd format
         elsif std_match(IR, MOV_L_AT_DISP_PC_RN) then
-          report "Instruction: [MOV.L @(disp, PC), Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.L @(disp, PC), Rn] not implemented."
+          -- severity ERROR;
+
+          RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
+          RegDataInSel         <= RegDataIn_DB;                        -- Writing output of data bus to register. 
+          Instruction_EnableIn <= '1';                                 -- Writes to register. 
+
+          -- Instruction reads from longcword memory.
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_READ; 
+          Instruction_WordMode  <= LongwordMode;
+
 
         -- MOV Rm, Rn
         -- nd format
