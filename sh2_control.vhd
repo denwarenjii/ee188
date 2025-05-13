@@ -23,8 +23,10 @@
 ----------------------------------------------------------------------------
 
 library ieee;
-
 library work;
+library std;
+
+use std.textio.all;
 
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -174,6 +176,7 @@ package SH2ControlConstants is
     constant SysRegSel_VBR  : std_logic_vector(1 downto 0) := "10";
     constant SysRegSel_PR   : std_logic_vector(1 downto 0) := "11";
 
+    -- Whether to sign or zero extend the immediate into a 32-bit word.
     constant ImmediateMode_SIGN     : std_logic := '0';
     constant ImmediateMode_ZERO     : std_logic := '1';
 
@@ -181,8 +184,12 @@ end package SH2ControlConstants;
 
 
 library ieee;
+library std;
+
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
+use std.textio.all;
 
 use work.SH2PmauConstants.all;
 use work.SH2DmauConstants.all;
@@ -191,7 +198,7 @@ use work.SH2InstructionEncodings.all;
 use work.SH2ControlConstants.all;
 use work.SH2ALUConstants.all;
 use work.Logging.all;
-
+use work.Utils.all;
 
 entity  SH2Control  is
 
@@ -259,6 +266,8 @@ entity  SH2Control  is
 end  SH2Control;
 
 architecture dataflow of sh2control is
+  
+    
     type state_t is (
         fetch,
         execute,
@@ -344,6 +353,7 @@ begin
     MemEnable  <= Instruction_MemEnable when state = execute else
                   '1' when state = fetch else
                   '0' when state = writeback;
+
     ReadWrite <= Instruction_ReadWrite when state = execute else
                  '0' when state = fetch else
                  'X' when state = writeback;
@@ -364,6 +374,7 @@ begin
                 TFlagSel_T;
 
     decode_proc: process (IR)
+      variable l : line;
     begin
         -- Default flag values (shouldn't change CPU state)
 
@@ -385,7 +396,8 @@ begin
 
         if std_match(IR, ADD_RM_RN) then
 
-            LogWithTime("Decoded Add Rm, Rn", LogFile);
+            LogWithTime(l, "sh2_control.vhd: Decoded Add R" & to_string(to_integer(unsigned(nm_format_m))) &
+                           " , R" & to_string(to_integer(unsigned(nm_format_n))), LogFile);
 
             -- report "Instruction: ADD(C/V) Rm, Rn";
 
@@ -587,6 +599,10 @@ begin
         -- ni format
         elsif std_match(IR, MOV_IMM_RN) then
             -- report "Instruction: MOV #imm, Rn";
+
+            LogWithTime(l, "sh2_control.vhd: Decoded MOV H'" & to_hstring(ni_format_i) &
+                          ", R" & to_string(slv_to_int(ni_format_n)), LogFile);
+          
             RegInSel             <= to_integer(unsigned(ni_format_n));
             RegDataInSel         <= RegDataIn_Immediate;
             Instruction_EnableIn <= '1';
@@ -597,16 +613,29 @@ begin
         -- NOTE: Testing this assumes MOV into memory works.
         --
         elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
-          -- report "Instruction: [MOV.W @(disp, PC), Rn]"
+          -- report "Instruction: [MOV.W @(disp, PC), Rn]";
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(nd8_format_d) &
+            ", PC), R" & to_string(slv_to_int(nd8_format_n)), LogFile);
+
 
           RegInSel <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
           RegDataInSel <= RegDataIn_DB;                    -- Writing output of data bus to register. 
           Instruction_EnableIn <= '1';                     -- Writes to register. 
 
+
           -- Instruction reads from word memory.
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_READ; 
           Instruction_WordMode  <= WordMode;
+
+          -- DMAU signals for PC Relative addressing with displacement (word mode)
+          BaseSel <= BaseSel_PC;
+          IndexSel <= IndexSel_OFF8;
+          OffScalarSel <= OffScalarSel_TWO;
+          IncDecSel <= IncDecSel_NONE;
+          DMAUOff8 <= nd8_format_d;
 
 
         -- MOV.L @(disp, PC), Rn
@@ -615,19 +644,35 @@ begin
           -- report "Instruction: [MOV.L @(disp, PC), Rn] not implemented."
           -- severity ERROR;
 
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(nd8_format_d) &
+            ", PC), R" & to_string(slv_to_int(nd8_format_n)), LogFile);
+
           RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
           RegDataInSel         <= RegDataIn_DB;                        -- Writing output of data bus to register. 
           Instruction_EnableIn <= '1';                                 -- Writes to register. 
 
-          -- Instruction reads from longcword memory.
+          -- Instruction reads from longword memory.
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_READ; 
           Instruction_WordMode  <= LongwordMode;
 
+          -- DMAU signals for PC Relative addressing with displacement (longword mode)
+          BaseSel <= BaseSel_PC;
+          IndexSel <= IndexSel_OFF8;
+          OffScalarSel <= OffScalarSel_FOUR;
+          IncDecSel <= IncDecSel_NONE;
+          DMAUOff8 <= nd8_format_d;
+
 
         -- MOV Rm, Rn
-        -- nd format
+        -- nm format
         elsif std_match(IR, MOV_RM_RN) then
+          
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV R" & to_string(slv_to_int(nm_format_m)) &
+              "R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+
             -- report "Instruction: MOV Rm, Rn";
             RegBSel <= to_integer(unsigned(nm_format_m));
             RegInSel <= to_integer(unsigned(nm_format_n));
@@ -635,8 +680,13 @@ begin
             Instruction_EnableIn <= '1';
 
         -- MOV.B Rm, @Rn
+        -- nm format
         elsif std_match(IR, MOV_B_RM_AT_RN) then
             -- report "Instruction: [MOV.B Rm, @Rn]."
+
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.B R" & to_string(slv_to_int(nm_format_m)) &
+              ", @R" & to_string(slv_to_int(nm_format_n)) , LogFile);
 
             -- Writes a byte to memory to memory
             Instruction_MemEnable <= '1';             -- Uses memory.
@@ -658,6 +708,10 @@ begin
         elsif std_match(IR, MOV_W_RM_AT_RN) then
             -- report "Instruction: [MOV.W Rm, @Rn]"
 
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.W R" & to_string(slv_to_int(nm_format_m)) &
+              ", @R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+
             -- Writes to memory
             Instruction_MemEnable <= '1';
             Instruction_ReadWrite <= ReadWrite_WRITE;
@@ -677,6 +731,10 @@ begin
         -- MOV.L Rm, @Rn
         elsif std_match(IR, MOV_L_RM_AT_RN) then
             -- report "Instruction: MOV RM, @Rn";
+
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_int(nm_format_m)) &
+              ", @R" & to_string(slv_to_int(nm_format_n)) , LogFile);
 
             -- Writes to memory
             Instruction_MemEnable <= '1';
@@ -872,6 +930,7 @@ begin
             SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= IR(5 downto 4);
         elsif std_match(IR, NOP) then
+            LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
             -- report "Instruction: NOP";
             null;
 
@@ -882,18 +941,22 @@ begin
 
     -- Register updates done on clock edges
     state_proc: process (clock, reset)
+      variable l : line;
     begin
         if reset = '0' then
             state <= fetch;
             IR <= NOP;
         elsif rising_edge(clock) then
             if state = fetch then
+              -- LogWithTime(l, "fetch -> execute", LogFile);
                 state <= execute;
                 IR <= DB(15 downto 0); -- latch in instruction from memory
             elsif state = execute then
+              -- LogWithTime(l, "execute -> writeback", LogFile);
                 -- report "Decoding instruction: " & to_hstring(IR);
                 state <= writeback;
             elsif state = writeback then
+              -- LogWithTime(l, "writeback -> fetch", LogFile);
                 state <= fetch;
             end if;
         end if;

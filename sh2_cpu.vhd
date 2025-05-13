@@ -12,7 +12,8 @@
 --     04 May 25  Zack Huang        Integrate memory interface
 --     07 May 25  Chris Miranda     Change code formatting.
 --     11 May 25  Zack Huang        Start system control instructions
---
+--     12 May 25  Chris M.          Add extra RegDataIn sources and connect 
+--                                  PCSrc of DMAU.
 ----------------------------------------------------------------------------
 
 
@@ -44,12 +45,18 @@
 --
 
 library ieee;
+library std;
+
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
+use std.textio.all;
 
 use work.SH2PmauConstants.all;
 use work.MemoryInterfaceConstants.all;
 use work.SH2ControlConstants.all;
+use work.Logging.all;
+use work.SH2Constants.all;
 
 --library opcodes;
 --use opcodes.opcodes.all;
@@ -78,6 +85,39 @@ entity  SH2CPU  is
 end  SH2CPU;
 
 architecture structural of sh2cpu is
+
+    pure function SignExtend(slv : std_logic_vector) return std_logic_vector is
+      variable result : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    begin
+      -- slv -> signed, resize to sign-extend, then convert to slv. 
+      result := std_logic_vector(resize(signed(slv), SH2_WORDSIZE));
+      return result;
+    end function;
+
+    pure function ZeroExtend(slv : std_logic_vector) return std_logic_vector is
+      variable result : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    begin
+      result := std_logic_vector(resize(unsigned(slv), SH2_WORDSIZE));
+    end function;
+
+    pure function LowByte(slv : std_logic_vector) return std_logic_vector is
+    begin
+      assert slv'length >= 8
+      report "slv must be >= 8 bits."
+      severity ERROR;
+
+      return slv(7 downto 0);
+    end function;
+
+    pure function LowWord(slv : std_logic_vector) return std_logic_vector is
+    begin
+      assert slv'length >= 16
+      report "slv must be >= 16 bits"
+      severity ERROR;
+      
+      return slv(15 downto 0);
+    end function;
+
 
     -- Register array inputs
     signal RegDataIn     : std_logic_vector(31 downto 0);    -- data to write to a register
@@ -176,6 +216,13 @@ architecture structural of sh2cpu is
 
     signal TNext        : std_logic;    -- Next value for T bit
 
+
+    -- RegA with the high and low bytes swapped (for the SWAP.B instruction).
+    signal RegASwapB : std_logic_vector(31 downto 0);
+
+    -- RegA with the high and low words swapped (for the SWAP.W instruction).
+    signal RegASwapW : std_logic_vector(31 downto 0);
+
     -- Not implemented
     -- signal MACL             : std_logic_vector(31 downto 0);
     -- signal MACH             : std_logic_vector(31 downto 0);
@@ -211,14 +258,35 @@ begin
                                  (others => '0')          when ImmediateMode = ImmediateMode_ZERO else
                                  (others => 'X');
 
-    RegDataIn <= Result         when RegDataInSel = RegDataIn_ALUResult else
-                 ImmediateExt   when RegDataInSel = RegDataIn_Immediate else
-                 RegA           when RegDataInSel = RegDataIn_RegA else
-                 RegB           when RegDataInSel = RegDataIn_RegB else
-                 SR             when RegDataInSel = RegDataIn_SR else
-                 GBR            when RegDataInSel = RegDataIn_GBR else
-                 VBR            when RegDataInSel = RegDataIn_VBR else
-                 (others => 'X');
+    -- RegA with the high and low bytes swapped.
+    RegASwapB <= RegA(3 downto 0) & RegA(27 downto 4) & RegA(31 downto 28);
+
+    -- RegA with the high and low words swapped.
+    RegASwapW <= RegA(17 downto 0) & RegA(31 downto 18);
+
+
+    -- Select the data to write the the register based on the decoded instruction.
+    --
+    with RegDataInSel select RegDataIn <=
+      Result                    when RegDataIn_ALUResult,
+      ImmediateExt              when RegDataIn_Immediate,
+      RegA                      when RegDataIn_RegA,
+      RegB                      when RegDataIn_RegB,
+      SR                        when RegDataIn_SR,
+      GBR                       when RegDataIn_GBR,
+      VBR                       when RegDataIn_VBR,
+      RegASwapB                 when RegDataIn_RegA_SWAP_B,
+      RegASwapW                 when RegDataIn_RegA_SWAP_W,
+      SignExtend(LowByte(RegA)) when RegDataIn_SignExt_B_RegA,
+      SignExtend(LowWord(RegA)) when RegDataIn_SignExt_W_RegA,
+      ZeroExtend(LowByte(RegA)) when RegDataIn_ZeroExt_B_RegA,
+      ZeroExtend(LowWord(RegA)) when RegDataIn_ZeroExt_W_RegA,
+      DB                        when RegDataIn_DB,
+
+      -- Extract the T bit from the status register.
+      SR and x"00000001"        when RegDataIn_SR_TBit,
+      PROut                     when RegDataIn_PR,
+      (others => 'X')           when others;
 
     -- Route control signals and data into register array
     registers : entity work.SH2Regs
@@ -282,6 +350,9 @@ begin
 
 
     RegSrc <= RegA1;
+
+    -- Connect PCSrc to PCOut
+    PCSrc <= PCOut;
 
     dmau : entity work.sh2dmau
     port map (
@@ -408,6 +479,7 @@ begin
     );
 
     register_proc: process(clock, reset)
+      variable l : line;
     begin
         if reset = '0' then
             SR <=  (others => '0');
@@ -415,6 +487,8 @@ begin
             VBR <=  (others => '0');
         elsif rising_edge(clock) then
             SR(0) <= TNext;
+
+            -- LogWithTime(l, "sh2_cpu.vhd: PC is 0x" & to_hstring(PCOut), LogFile);
 
             if SysRegCtrl = SysRegCtrl_LOAD then
                 if SysRegSel = SysRegSel_SR then

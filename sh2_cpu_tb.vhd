@@ -24,6 +24,7 @@ entity sh2_cpu_tb is
 end sh2_cpu_tb;
 
 architecture behavioral of sh2_cpu_tb is
+
     -- Stimulus signals for unit under test
     signal Reset   :  std_logic;                       -- reset signal (active low)
     signal NMI     :  std_logic;                       -- non-maskable interrupt signal (falling edge)
@@ -374,7 +375,8 @@ begin
                 curr_opcode(15 downto 8) := std_logic_vector(to_unsigned(byte_v, 8));
 
                 LogWithTime(
-                  "Read " & to_string(curr_opcode) & 
+                  "Read " & to_hstring(curr_opcode(15 downto 8)) &  " " &
+                            to_hstring(curr_opcode(7 downto 0)) &
                   " @ PC 0x" & to_hstring(curr_pc), LogFile);
 
                 -- Write instruction word into memory

@@ -38,15 +38,15 @@ ProgramStart:
 
   ; disp is zero extended and doubled for MOV.W
   ; 0x1A + d*2 = 0x7A -> d = 0x30
-  ; MOV.W ($30, PC), R2 ; PC is 0x1A              (B2 30)
+  MOV.W ($30, PC), R2 ; PC is 0x1A              (B2 30)
   NOP
 
   NOP              ; PC is 0x1C                   (00 09)
 
   ; disp is zero extended and quadrupled for MOV.L
   ; 0x1E + d*4 = 0x7A -> d = 0x17
-  ; MOV.L ($17, PC), R3 ; PC is 0x1E              (D3 17)
-  NOP
+  MOV.L ($17, PC), R3 ; PC is 0x1E              (D3 17)
+  ;NOP
 
   ; Move R2 and R3 into memory to check for correctness.
    
