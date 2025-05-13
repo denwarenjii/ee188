@@ -115,6 +115,7 @@ begin
                         WE(3) <= '0' when address mod 4 = 3 else '1';
                         -- TODO: may not synthesize efficiently, use conditionals instead?
                         -- Note: not using data_in_BE since reading/writing individual byte
+                        
                         DB <= std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)));
 
                     when WordMode =>

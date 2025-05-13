@@ -204,6 +204,16 @@ begin
         memsel => CPU_MEMSEL
     );
 
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Initializing memory from byte " & 
+                to_string(16#0000#) & " to " & to_string(16#0000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Initializing memory from byte " & 
+                to_string(16#1000#) & " to " & to_string(16#1000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Initializing memory from byte " & 
+                to_string(16#2000#) & " to " & to_string(16#2000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Initializing memory from byte " & 
+                to_string(16#3000#) & " to " & to_string(16#3000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [RAM] Valid Data Memory Range is 0x0000 to 0x40000", LogFile);
+
     ram : entity work.MEMORY32x32
     generic map (
         MEMSIZE => 1024,
@@ -225,6 +235,16 @@ begin
         MemAB => RAM_AB,
         MemDB => RAM_DB
     );
+
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Initializing memory from byte " & 
+                to_string(16#0000#) & " to " & to_string(16#0000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Initializing memory from byte " & 
+                to_string(16#1000#) & " to " & to_string(16#1000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Initializing memory from byte " & 
+                to_string(16#2000#) & " to " & to_string(16#2000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Initializing memory from byte " & 
+                to_string(16#3000#) & " to " & to_string(16#3000# + 1024), LogFile);
+    LogWithTime("sh2_cpu_tb.vhd: [ROM] Valid Program Memory Range is 0x0000 to 0x40000", LogFile);
 
     rom : entity work.MEMORY32x32
     generic map (
