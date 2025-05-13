@@ -17,21 +17,27 @@ package Logging is
 
   -- Log to stdout
   procedure Log(message : in string);
+  procedure Log(l : inout line; message : in string);
 
   -- Log to a file.
   procedure Log(message : in string; file file_handle : text);
+  procedure Log(l : inout line; message : in string; file file_handle : text);
 
   -- Log to stdout and prefix the message with the current time.
   procedure LogWithTime(message : in string);
+  procedure LogWithTime(l : inout line; message : in string);
 
   -- Log to a file and prefix the message with the current time.
   procedure LogWithTime(message : in string; file file_handle : text);
+  procedure LogWithTime(l : inout line; message : in string; file file_handle : text);
 
   -- Log to both stdout and a file.
   procedure LogBoth(message : in string; file file_handle : text);
+  procedure LogBoth(l_1 : inout line; l_2 : inout line; message : in string; file file_handle : text);
 
   -- Log to both stdout and a file and prefix the message with the current time.
   procedure LogBothWithTime(message : in string; file file_handle : text);
+  procedure LogBothWithTime(l_1 : inout line; l_2 : inout line; message : in string; file file_handle : text);
 
 end package Logging;
 
@@ -49,6 +55,12 @@ package body Logging is
     writeline(output, l);
   end procedure Log;
 
+  procedure Log(l : inout line; message : in string) is
+  begin
+    write(l, message);
+    writeline(output, l);
+  end procedure Log;
+
   -- Log to a file.
   procedure Log(message : in string; file file_handle : text) is
     variable l : line;
@@ -57,9 +69,24 @@ package body Logging is
     writeline(file_handle, l);
   end procedure Log;
 
+  procedure Log(l : inout line; message : in string; file file_handle : text) is
+  begin
+    write(l, message);
+    writeline(file_handle, l);
+  end procedure Log;
+
   -- Log to stdout and prefix the message with the current time.
   procedure LogWithTime(message : in string) is
     variable l : line;
+  begin
+    write(l, string'("[@"));
+    write(l, now);
+    write(l, string'("] "));
+    write(l, message);
+    writeline(output, l);
+  end procedure LogWithTime;
+
+  procedure LogWithTime(l : inout line; message : in string) is
   begin
     write(l, string'("[@"));
     write(l, now);
@@ -79,6 +106,15 @@ package body Logging is
     writeline(file_handle, l);
   end procedure LogWithTime;
 
+  procedure LogWithTime(l : inout line; message : in string; file file_handle : text) is
+  begin
+    write(l, string'("[@"));
+    write(l, now);
+    write(l, string'("] "));
+    write(l, message);
+    writeline(file_handle, l);
+  end procedure LogWithTime;
+
   -- Log to both stdout and a file.
   procedure LogBoth(message : in string; file file_handle : text) is
     variable l_1 : line;
@@ -89,10 +125,34 @@ package body Logging is
     writeline(output, l_2);
   end procedure LogBoth;
 
+  procedure LogBoth(l_1 : inout line; l_2 : inout line; message : in string; file file_handle : text) is
+  begin
+    write(l_1, message);
+    writeline(file_handle, l_1);
+    writeline(output, l_2);
+  end procedure LogBoth;
+
   -- Log to both stdout and a file and prefix the message with the current time.
   procedure LogBothWithTime(message : in string; file file_handle : text) is
     variable l_1 : line;
     variable l_2 : line;
+  begin
+    write(l_1, string'("[@"));
+    write(l_1, now);
+    write(l_1, string'("] "));
+    write(l_1, message);
+
+    write(l_2, string'("[@"));
+    write(l_2, now);
+    write(l_2, string'("] "));
+    write(l_2, message);
+
+    writeline(output, l_1);
+    writeline(file_handle, l_2);
+
+  end procedure LogBothWithTime;
+
+  procedure LogBothWithTime(l_1 : inout line; l_2 : inout line; message : in string; file file_handle : text) is
   begin
     write(l_1, string'("[@"));
     write(l_1, now);

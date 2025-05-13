@@ -89,8 +89,7 @@ architecture behavioral of sh2_cpu_tb is
     -- Test signals
     signal END_SIM    : boolean    := false;    -- if the simulation should end
 
-    -- Log file;
-    file LogFile : text open write_mode is "log.txt";
+
 
 begin
 
@@ -420,7 +419,7 @@ begin
                 -- Read value at address from RAM
                 ReadLongword(address, actual_value);
 
-                -- Convert from BE (RAM) to LE (test file)
+                -- Convert from Big Endian (RAM) to Little Endian (test file)
                 actual_value := swap_bytes(actual_value);
 
                 -- Check that the values match up
@@ -481,7 +480,9 @@ begin
         RunTest("asm/shift");
         RunTest("asm/sr");
         RunTest("asm/system");
-        -- RunTest("as")
+
+        -- Test Data transfer instructions.
+        -- RunTest("asm/mov_wl_at_disp_pc_rn")
         wait;
     end process;
 end behavioral;
