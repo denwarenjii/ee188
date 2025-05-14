@@ -61,6 +61,8 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use std.textio.all;
+use work.Logging.all;
 
 entity  RegArray  is
 
@@ -121,14 +123,13 @@ begin
 
     -- only write registers on the clock, plus async reset (active low)
     process(clock, reset)
+        variable l : line;
     begin
         if (reset = '0') then
             -- set all registers to 0 on async reset
             Registers  <=  (others => (others => '0'));
         elsif  rising_edge(clock)  then
             -- update registers on clock rising edge
-            -- report "R0: " & to_hstring(Registers(0));
-            -- report "R1: " & to_hstring(Registers(1));
 
             -- handle double word stores
             if (RegDStore = '1')  then
@@ -144,6 +145,7 @@ begin
 
             -- handle normal stores last so they have highest precedence
             if (RegStore = '1')  then
+                LogWithTime(l, "Storing " & to_hstring(RegIn) & " to R" & to_string(RegInSel), LogFile);
                 Registers(RegInSel)  <=  RegIn;
             end if;
         else

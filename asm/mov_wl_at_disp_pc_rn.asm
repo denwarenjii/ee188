@@ -33,20 +33,9 @@ ProgramStart:
   MOV   #$7D, R0   ; PC is 0x14                   (E0 7D)
   MOV.B R1, @R0    ; PC is 0x16                   (20 10)
   
-  ;Needed for alignment.
-  NOP              ; PC is 0x18.                  (00 09)
+  MOV.W Var, R2
 
-  ; disp is zero extended and doubled for MOV.W
-  ; 0x1A + d*2 = 0x7A -> d = 0x30
-  MOV.W ($30, PC), R2 ; PC is 0x1A              (B2 30)
-  NOP
-
-  NOP              ; PC is 0x1C                   (00 09)
-
-  ; disp is zero extended and quadrupled for MOV.L
-  ; 0x1E + d*4 = 0x7A -> d = 0x17
-  MOV.L ($17, PC), R3 ; PC is 0x1E              (D3 17)
-  ;NOP
+  MOV Var, R3;
 
   ; Move R2 and R3 into memory to check for correctness.
    
@@ -61,3 +50,9 @@ Done:
   ;as system exit.
   MOV #-4, R0;                                    (E0 FC)
   MOV.B R0, @R0;                                  (20 00)
+
+    align 4
+    LTORG
+; Var: dc.l $12345678
+Var: dc.w $1234
+     dc.w $5678
