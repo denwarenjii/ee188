@@ -632,10 +632,12 @@ begin
             ", PC), R" & to_string(slv_to_int(nd8_format_n)), LogFile);
 
 
-          RegInSel <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
-          RegDataInSel <= RegDataIn_DB;                    -- Writing output of data bus to register. 
-          Instruction_EnableIn <= '1';                     -- Writes to register. 
+          RegInSel             <= to_integer(unsigned(nd8_format_n));   -- Writing to register n 
+          RegDataInSel         <= RegDataIn_DB;                         -- Writing output of data bus to register. 
+          Instruction_EnableIn <= '1';                                  -- Writes to register. 
 
+          -- TODO: remove
+          RegASel <= to_integer(unsigned(nd8_format_n));
 
           -- Instruction reads from word memory.
           Instruction_MemEnable <= '1';
@@ -652,7 +654,7 @@ begin
 
 
         -- MOV.L @(disp, PC), Rn
-        -- nd format
+        -- nd8 format
         elsif std_match(IR, MOV_L_AT_DISP_PC_RN) then
           -- report "Instruction: [MOV.L @(disp, PC), Rn] not implemented."
           -- severity ERROR;
