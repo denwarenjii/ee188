@@ -380,7 +380,7 @@ begin
     EnableIn <= Instruction_EnableIn when state = execute else
                 '0';
 
-    TFlagSel <= Instruction_TFlagSel when state = writeback else
+    TFlagSel <= Instruction_TFlagSel when state = execute else
                 TFlagSel_T;
 
     decode_proc: process (IR)

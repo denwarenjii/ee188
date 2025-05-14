@@ -470,10 +470,6 @@ begin
             LoadProgram(path);      -- write program in to ROM
             RunCPU;                 -- execute program
             CheckOutput(path);      -- check RAM has expected values
-
-            
-            -- TEST_MEMSEL <= '1';
-            -- ReadMemory(0, 40);
         end procedure;
 
     begin
