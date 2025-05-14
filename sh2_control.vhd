@@ -39,7 +39,7 @@ package SH2InstructionEncodings is
   -- TODO: Bit decode when possible.
   constant  MOV_IMM_RN  :  std_logic_vector(15 downto 0) := "1110------------";  -- MOV #imm, Rn
 
-  constant  MOV_W_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1011------------";  -- MOV.W @(disp, PC), Rn
+  constant  MOV_W_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1001------------";  -- MOV.W @(disp, PC), Rn
   constant  MOV_L_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1101------------";  -- MOV.L @(disp, PC), Rn
 
   constant  MOV_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0011";  -- MOV Rm, Rn
@@ -168,6 +168,9 @@ package SH2ControlConstants is
     constant MemSel_ROM     : std_logic := '1';
     constant MemSel_RAM     : std_logic := '0';
 
+    constant MemAddrSel_PMAU : std_logic := '0';
+    constant MemAddrSel_DMAU : std_logic := '1';
+
     constant SysRegCtrl_NONE    : std_logic := '0';
     constant SysRegCtrl_LOAD    : std_logic := '1';
 
@@ -209,6 +212,7 @@ entity  SH2Control  is
 
         -- control signals to control memory interface
         MemEnable   : out std_logic;                        -- if memory needs to be accessed (read or write)
+        MemAddrSel  : out std_logic;
         ReadWrite   : out std_logic;                        -- if should do memory read (0) or write (1)
         MemMode     : out std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
         Disp        : out std_logic_vector(11 downto 0);    -- memory displacement
@@ -336,6 +340,8 @@ architecture dataflow of sh2control is
   -- be output on the correct clock.
   signal Instruction_MemEnable : std_logic;
   signal Instruction_ReadWrite : std_logic;
+  signal Instruction_MemSel    : std_logic;
+  signal Instruction_MemAddrSel: std_logic;
 
   -- The memory mode for a given instruction. The same as the constants in the
   -- MemoryInterfaceConstants package.
@@ -362,12 +368,16 @@ begin
                WordMode when state = fetch else
                "XX";
 
-    MemSel <= MemSel_RAM when state = execute else
-              MemSel_ROM when state = fetch else
+    MemSel <= Instruction_MemSel when state = execute else
+              MemSel_ROM         when state = fetch else
               'X';
 
+    MemAddrSel <= Instruction_MemAddrSel when state = execute else
+                  MemAddrSel_PMAU        when state = fetch else
+                  'X';
+
     -- Only modify registers during writeback
-    EnableIn <= Instruction_EnableIn when state = writeback else
+    EnableIn <= Instruction_EnableIn when state = execute else
                 '0';
 
     TFlagSel <= Instruction_TFlagSel when state = writeback else
@@ -383,6 +393,8 @@ begin
         Instruction_ReadWrite <= 'X';
         Instruction_WordMode <= "XX";
         MemOutSel <= "XXX";
+        Instruction_MemSel <= MemSel_RAM;           -- access data memory by default
+        Instruction_MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default
 
         Instruction_EnableIn <= '0';                -- Disable Reg Array
         Instruction_PCAddrMode <= PCAddrMode_INC;   -- Increment PC
@@ -629,6 +641,7 @@ begin
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_READ; 
           Instruction_WordMode  <= WordMode;
+          Instruction_MemSel    <= MemSel_ROM;
 
           -- DMAU signals for PC Relative addressing with displacement (word mode)
           BaseSel <= BaseSel_PC;
@@ -645,7 +658,7 @@ begin
           -- severity ERROR;
 
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(nd8_format_d) &
+            "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nd8_format_d) &
             ", PC), R" & to_string(slv_to_int(nd8_format_n)), LogFile);
 
           RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
@@ -656,6 +669,7 @@ begin
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_READ; 
           Instruction_WordMode  <= LongwordMode;
+          Instruction_MemSel    <= MemSel_ROM;
 
           -- DMAU signals for PC Relative addressing with displacement (longword mode)
           BaseSel <= BaseSel_PC;

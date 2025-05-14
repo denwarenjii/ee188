@@ -227,6 +227,9 @@ architecture structural of sh2cpu is
     -- signal MACL             : std_logic_vector(31 downto 0);
     -- signal MACH             : std_logic_vector(31 downto 0);
 
+    signal MemDataLatch : std_logic_vector(31 downto 0);
+
+    signal MemAddrSel  : std_logic;
 
 begin
 
@@ -240,7 +243,7 @@ begin
     WE2 <= WriteMask(2) when (not clock) else '1';
     WE3 <= WriteMask(3) when (not clock) else '1';
 
-    MemAddress <= PCOut when MemSel = '1' else DataAddress;
+    MemAddress <= PCOut when MemAddrSel = MemAddrSel_PMAU else DataAddress;
 
     AB <= MemAddress;
 
@@ -281,7 +284,7 @@ begin
       SignExtend(LowWord(RegA)) when RegDataIn_SignExt_W_RegA,
       ZeroExtend(LowByte(RegA)) when RegDataIn_ZeroExt_B_RegA,
       ZeroExtend(LowWord(RegA)) when RegDataIn_ZeroExt_W_RegA,
-      DB                        when RegDataIn_DB,
+      MemDataIn                 when RegDataIn_DB,
 
       -- Extract the T bit from the status register.
       SR and x"00000001"        when RegDataIn_SR_TBit,
@@ -436,6 +439,7 @@ begin
         Disp         => Disp,
         MemSel       => MemSel,
         MemOutSel    => MemOutSel,
+        MemAddrSel   => MemAddrSel,
 
         -- ALU control signals:
         ALUOpBSel    => ALUOpBSel,
@@ -498,6 +502,11 @@ begin
                 elsif SysRegSel = SysRegSel_VBR then
                     VBR <= RegB;
                 end if;
+            end if;
+
+            LogWithTime(l, "sh2_cpu.vhd: MemDataIn: " & to_hstring(MemDataIn), LogFile);
+            if RegDataInSel = RegDataIn_DB then
+                MemDataLatch <= MemDataIn;
             end if;
         end if;
     end process register_proc;

@@ -394,7 +394,7 @@ begin
             curr_pc := to_unsigned(start, 32);
             for i in 1 to length loop
                 ReadWord(curr_pc, data_out);
-                report "Data: " & to_hstring(data_out);
+                report to_hstring(curr_pc) & " " & to_hstring(data_out);
                 curr_pc := curr_pc + 2;
             end loop;
         end procedure;
@@ -470,6 +470,10 @@ begin
             LoadProgram(path);      -- write program in to ROM
             RunCPU;                 -- execute program
             CheckOutput(path);      -- check RAM has expected values
+
+            
+            -- TEST_MEMSEL <= '1';
+            -- ReadMemory(0, 40);
         end procedure;
 
     begin
@@ -482,7 +486,6 @@ begin
         RunTest("asm/shift");
         RunTest("asm/sr");
         RunTest("asm/system");
-
 
         RunTest("asm/mov_wl_at_disp_pc_rn");
 

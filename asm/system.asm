@@ -1,5 +1,3 @@
-LTORG
-
 ProgramStart:
     MOV #$F, R0;
     LDC R0, SR;     SR  <- 0x0000000F
