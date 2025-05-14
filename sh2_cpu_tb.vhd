@@ -332,8 +332,8 @@ begin
 
             wait for 5 ns;  -- wait for signal to propagate
 
-            -- Shift the desired byte to the bottom 8 bits
-            data := TEST_DB;
+            -- Reverse bytes to convert from big-endian (in memory) to little-endian (in CPU)
+            data := TEST_DB(7 downto 0) & TEST_DB(15 downto 8) & TEST_DB(23 downto 16) & TEST_DB(31 downto 24);
 
             -- Disable writing
             TEST_RE0 <= '1';
@@ -420,9 +420,6 @@ begin
 
                 -- Read value at address from RAM
                 ReadLongword(address, actual_value);
-
-                -- Convert from Big Endian (RAM) to Little Endian (test file)
-                actual_value := swap_bytes(actual_value);
 
                 -- Check that the values match up
                 assert expected_value = actual_value
