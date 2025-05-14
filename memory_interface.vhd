@@ -194,7 +194,6 @@ entity MemoryInterfaceRx is
 end entity;
 
 architecture structural of MemoryInterfaceRx is
-    signal data_BE : std_logic_vector(31 downto 0);
 begin
     output_proc: process(MemMode, Address, DB)
     begin
@@ -202,39 +201,41 @@ begin
         case MemMode is
             when ByteMode =>
                 if (Address mod 4 = 0) then
-                    data_BE(7 downto 0) <= DB(7 downto 0);
-                    data_BE(31 downto 8) <= (others => DB(7));
+                    data(7 downto 0) <= DB(7 downto 0);
+                    data(31 downto 8) <= (others => DB(7));
                 elsif (Address mod 4 = 1) then
-                    data_BE(7 downto 0) <= DB(15 downto 8);
-                    data_BE(31 downto 8) <= (others => DB(15));
+                    data(7 downto 0) <= DB(15 downto 8);
+                    data(31 downto 8) <= (others => DB(15));
                 elsif (Address mod 4 = 2) then
-                    data_BE(7 downto 0) <= DB(23 downto 16);
-                    data_BE(31 downto 8) <= (others => DB(23));
+                    data(7 downto 0) <= DB(23 downto 16);
+                    data(31 downto 8) <= (others => DB(23));
                 elsif (Address mod 4 = 3) then
-                    data_BE(7 downto 0) <= DB(31 downto 24);
-                    data_BE(31 downto 8) <= (others => DB(31));
+                    data(7 downto 0) <= DB(31 downto 24);
+                    data(31 downto 8) <= (others => DB(31));
                 end if;
                     
             when WordMode =>
                 if (Address mod 4 = 0) then
-                    data_BE(15 downto 0) <= DB(15 downto 0);
-                    data_BE(31 downto 16) <= (others => DB(15));
+                    data(7 downto 0)  <= DB(15 downto 8);
+                    data(15 downto 8) <= DB(7 downto 0);
+                    data(31 downto 16) <= (others => DB(15));
                 elsif (Address mod 4 = 2) then
-                    data_BE(15 downto 0) <= DB(31 downto 16);
-                    data_BE(31 downto 16) <= (others => DB(31));
+                    data(7 downto 0) <= DB(31 downto 24);
+                    data(15 downto 8) <= DB(23 downto 16);
+                    data(31 downto 16) <= (others => DB(31));
                 end if;
 
             when LongwordMode =>
-                data_BE <= DB;
+                data(7 downto 0) <= DB(31 downto 24);
+                data(15 downto 8) <= DB(23 downto 16);
+                data(23 downto 16) <= DB(15 downto 8);
+                data(31 downto 24) <= DB(7 downto 0);
 
             when others =>
                 -- When invalid memory mode, don't read anything
-                data_BE <= (others => 'X');
+                data <= (others => 'X');
         end case;
 
     end process output_proc;
-
-    -- Re-order bytes since CPU is big-endian but registers are little-endian internally
-    data <= swap_bytes(data_BE);
 
 end architecture;

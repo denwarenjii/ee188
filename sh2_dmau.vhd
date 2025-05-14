@@ -299,7 +299,7 @@ begin
 
   DMAUAddrSrc(DMAUAddrSrc_REG) <= RegSrc;
   DMAUAddrSrc(DMAUAddrSrc_GBR) <= GBR;
-  DMAUAddrSrc(DMAUAddrSrc_PC)  <= PCMux;
+  DMAUAddrSrc(DMAUAddrSrc_PC)  <= std_logic_vector(unsigned(PCMux) + 4);
 
 
   -- DMAUSrcSel --------------------------------------------------------------
