@@ -63,8 +63,6 @@ begin
     -- data_in_BE(23 downto 16) <= data_in(31 downto 24);
     -- data_in_BE(31 downto 24) <= data_in(23 downto 16);
 
-    data_in_BE <= swap_bytes(data_in);
-
     output_proc: process(MemEnable, ReadWrite, MemMode, Address, data_in_BE, clock)
       variable l : line;
     begin
@@ -119,6 +117,7 @@ begin
             elsif ReadWrite = '1' then
                 -- Disable reading
                 RE(3 downto 0) <= (others => '1');
+                DB <= (others => 'Z');
 
                 -- Enable specific bytes based on type of read
                 case MemMode is
@@ -146,8 +145,12 @@ begin
 
                         LogWithTime(l, "memory_interface.vhd: Writing word at address " & to_hstring(address), LogFile);
 
-                        -- TODO: may not synthesize efficiently, use conditionals instead?
-                        DB <= std_logic_vector(unsigned(data_in_BE) sll to_integer(8 * (address mod 4)));
+                        -- Convert LE to BE, shift the correct byte positions, then output to DB
+                        if address mod 4 = 0 then
+                            DB(15 downto 0) <= data_in(7 downto 0) & data_in(15 downto 8);
+                        elsif address mod 2 = 0 then
+                            DB(31 downto 16) <= data_in(7 downto 0) & data_in(15 downto 8);
+                        end if;
 
                     when LongwordMode =>
                         assert (address mod 4 = 0)
@@ -157,7 +160,12 @@ begin
                         LogWithTime(l, "memory_interface.vhd: Writing longword at address " & to_hstring(address), LogFile);
 
                         WE(3 downto 0) <= (others => '0');
-                        DB <= data_in_BE;
+
+                        -- Reverse bytes to convert little-endian to big-endian
+                        DB(7 downto 0) <= data_in(31 downto 24);
+                        DB(15 downto 8) <= data_in(23 downto 16);
+                        DB(23 downto 16) <= data_in(15 downto 8);
+                        DB(31 downto 24) <= data_in(7 downto 0);
 
                     when others =>
                         WE(3 downto 0) <= (others => '1');
