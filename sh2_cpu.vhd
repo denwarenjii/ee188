@@ -281,7 +281,7 @@ begin
       SignExtend(LowWord(RegA)) when RegDataIn_SignExt_W_RegA,
       ZeroExtend(LowByte(RegA)) when RegDataIn_ZeroExt_B_RegA,
       ZeroExtend(LowWord(RegA)) when RegDataIn_ZeroExt_W_RegA,
-      DB                        when RegDataIn_DB,
+      MemDataIn                 when RegDataIn_DB,
 
       -- Extract the T bit from the status register.
       SR and x"00000001"        when RegDataIn_SR_TBit,
