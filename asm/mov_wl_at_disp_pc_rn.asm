@@ -39,17 +39,17 @@ ProgramStart:
 
   ; Move R2 and R3 into memory to check for correctness.
    
-  MOV #0, R0  ; 0x00007F7E expected at 0x00000000 (E0 00)
-  MOV R2, @R0 ;                                   (20 22)
+  MOV   #0, R0  ; 0x00007F7E expected at 0x00000000
+  MOV.L R2, @R0 ;
 
-  MOV #4, R0  ; 0x7F7E7D7C expected at 0x00000004 (E0 04)
-  MOV R3, @R0 ;                                   (20, 32)
+  MOV.L #4, R0  ; 0x7F7E7D7C expected at 0x00000004
+  MOV.L R3, @R0 ;
 
 Done:
   ; The test bench interprets a read of 0xFFFFFFFC (-4) 
   ;as system exit.
-  MOV #-4, R0;                                    (E0 FC)
-  MOV.B R0, @R0;                                  (20 00)
+  MOV   #-4, R0;
+  MOV.B R0, @R0;
 
     align 4
     LTORG

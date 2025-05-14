@@ -19,6 +19,7 @@
 --      Instruction_EnableIn, EnableIn
 --
 --  - Generate DMAU signals with vectors.
+--  - Document register output conventions.
 --
 ----------------------------------------------------------------------------
 
@@ -769,19 +770,92 @@ begin
             IncDecSel <= IncDecSel_NONE;
 
         -- MOV.B @Rm, Rn
+        -- nm format
         elsif std_match(IR, MOV_B_AT_RM_RN) then
-          report "Instruction: [MOV.B @Rm, Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.B @Rm, Rn] not implemented."
+          -- severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.B @R" & to_string(slv_to_int(nm_format_m)) &
+            ", R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+
+          -- Instruction reads byte from memory.
+          Instruction_MemEnable <= '1';            -- Instr does memory access.
+          Instruction_ReadWrite <= ReadWrite_READ; -- Instr reads from memory.
+          Instruction_WordMode  <= ByteMode;       -- Instr reads byte.
+          Instruction_MemSel    <= MemSel_RAM;     -- Instr reads RAM.
+
+          -- DMAU signals for Indirect Register addressing.
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_NONE;
+          OffScalarSel <= OffScalarSel_ONE;
+          IncDecSel    <= IncDecSel_NONE;
+
+          -- Output @(Rm) to RegA2. 
+          RegA2Sel <= to_integer(unsigned(nm_format_m));
+
+          RegInSel             <= to_integer(unsigned(nm_format_n));
+          RegDataInSel         <= RegDataIn_DB;
+          Instruction_EnableIn <= '1';
+
 
         -- MOV.W @Rm, Rn
         elsif std_match(IR, MOV_W_AT_RM_RN) then
-          report "Instruction: [MOV.W @Rm, Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.W @Rm, Rn] not implemented."
+          -- severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.W @R" & to_string(slv_to_int(nm_format_m)) &
+            ", R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+
+          -- Instruction reads word from memory.
+          Instruction_MemEnable <= '1';            -- Instr does memory access.
+          Instruction_ReadWrite <= ReadWrite_READ; -- Instr reads from memory.
+          Instruction_WordMode  <= WordMode;       -- Instr reads word.
+          Instruction_MemSel    <= MemSel_RAM;     -- Instr reads RAM.
+
+          -- DMAU signals for Indirect Register addressing.
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_NONE;
+          OffScalarSel <= OffScalarSel_ONE;
+          IncDecSel    <= IncDecSel_NONE;
+
+          -- Output @(Rm) to RegA2. 
+          RegA2Sel <= to_integer(unsigned(nm_format_m));
+
+          RegInSel             <= to_integer(unsigned(nm_format_n));
+          RegDataInSel         <= RegDataIn_DB;
+          Instruction_EnableIn <= '1';
+
 
         -- MOV.L @Rm, Rn
         elsif std_match(IR, MOV_L_AT_RM_RN) then
-          report "Instruction: [MOV.L @Rm, Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.L @Rm, Rn] not implemented."
+          -- severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.L @R" & to_string(slv_to_int(nm_format_m)) &
+            ", R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+
+          -- Instruction reads longword from memory.
+          Instruction_MemEnable <= '1';              -- Instr does memory access.
+          Instruction_ReadWrite <= ReadWrite_READ;   -- Instr reads from memory.
+          Instruction_WordMode  <= LongwordMode;     -- Instr reads longword.
+          Instruction_MemSel    <= MemSel_RAM;       -- Instr reads RAM.
+
+          -- DMAU signals for Indirect Register addressing.
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_NONE;
+          OffScalarSel <= OffScalarSel_ONE;
+          IncDecSel    <= IncDecSel_NONE;
+
+          -- Output @(Rm) to RegA2. 
+          RegA2Sel <= to_integer(unsigned(nm_format_m));
+
+          RegInSel             <= to_integer(unsigned(nm_format_n));
+          RegDataInSel         <= RegDataIn_DB;
+          Instruction_EnableIn <= '1';
+
 
         -- MOV.B Rm, @-Rn
         elsif std_match(IR, MOV_B_RM_AT_MINUS_RN) then
