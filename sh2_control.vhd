@@ -8,6 +8,7 @@
 --     07 May 25  Chris Miranda     Initial implentation of MOV and branch 
 --                                  instruction decoding.
 --     10 May 25  Zack Huang        Implementing ALU instruction
+--     14 May 25  Chris M.          Formatting.
 --
 -- Notes:
 --  - When reading/writing to registers, RegB is always Rm and RegA is always Rn
@@ -36,87 +37,90 @@ use work.Logging.all;
 
 package SH2InstructionEncodings is
 
+  subtype Instruction is std_logic_vector(15 downto 0);
+
   -- Data Transfer Instruction:
   -- TODO: Bit decode when possible.
-  constant  MOV_IMM_RN  :  std_logic_vector(15 downto 0) := "1110------------";  -- MOV #imm, Rn
+  constant  MOV_IMM_RN            :  Instruction := "1110------------";  -- MOV #imm, Rn
 
-  constant  MOV_W_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1001------------";  -- MOV.W @(disp, PC), Rn
-  constant  MOV_L_AT_DISP_PC_RN  :  std_logic_vector(15 downto 0) := "1101------------";  -- MOV.L @(disp, PC), Rn
+  constant  MOV_W_AT_DISP_PC_RN   :  Instruction := "1001------------";  -- MOV.W @(disp, PC), Rn
+  constant  MOV_L_AT_DISP_PC_RN   :  Instruction := "1101------------";  -- MOV.L @(disp, PC), Rn
 
-  constant  MOV_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0011";  -- MOV Rm, Rn
+  constant  MOV_RM_RN             :  Instruction := "0110--------0011";  -- MOV Rm, Rn
 
-  constant  MOV_B_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0000";  -- MOV.B Rm, @Rn
-  constant  MOV_W_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0001";  -- MOV.W Rm, @Rn
-  constant  MOV_L_RM_AT_RN  :  std_logic_vector(15 downto 0) := "0010--------0010";  -- MOV.L Rm, @Rn
+  constant  MOV_B_RM_AT_RN        :  Instruction := "0010--------0000";  -- MOV.B Rm, @Rn
+  constant  MOV_W_RM_AT_RN        :  Instruction := "0010--------0001";  -- MOV.W Rm, @Rn
+  constant  MOV_L_RM_AT_RN        :  Instruction := "0010--------0010";  -- MOV.L Rm, @Rn
 
-  constant  MOV_B_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0000";  -- MOV.B @Rm, Rn
-  constant  MOV_W_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0001";  -- MOV.W @Rm, Rn
-  constant  MOV_L_AT_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------0010";  -- MOV.L @Rm, Rn
+  constant  MOV_B_AT_RM_RN        :  Instruction := "0110--------0000";  -- MOV.B @Rm, Rn
+  constant  MOV_W_AT_RM_RN        :  Instruction := "0110--------0001";  -- MOV.W @Rm, Rn
+  constant  MOV_L_AT_RM_RN        :  Instruction := "0110--------0010";  -- MOV.L @Rm, Rn
 
-  constant  MOV_B_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0100";  -- MOV.B Rm, @-Rn
-  constant  MOV_W_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0101";  -- MOV.W Rm, @-Rn
-  constant  MOV_L_RM_AT_MINUS_RN  :  std_logic_vector(15 downto 0) := "0010--------0110";  -- MOV.L Rm, @-Rn
+  constant  MOV_B_RM_AT_MINUS_RN  :  Instruction := "0010--------0100";  -- MOV.B Rm, @-Rn
+  constant  MOV_W_RM_AT_MINUS_RN  :  Instruction := "0010--------0101";  -- MOV.W Rm, @-Rn
+  constant  MOV_L_RM_AT_MINUS_RN  :  Instruction := "0010--------0110";  -- MOV.L Rm, @-Rn
 
-  constant  MOV_B_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0100";  -- MOV.B @Rm+, Rn
-  constant  MOV_W_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0101";  -- MOV.W @Rm+, Rn
-  constant  MOV_L_AT_RM_PLUS_RN  :  std_logic_vector(15 downto 0) := "0110--------0110";  -- MOV.W @Rm+, Rn
+  constant  MOV_B_AT_RM_PLUS_RN   :  Instruction := "0110--------0100";  -- MOV.B @Rm+, Rn
+  constant  MOV_W_AT_RM_PLUS_RN   :  Instruction := "0110--------0101";  -- MOV.W @Rm+, Rn
+  constant  MOV_L_AT_RM_PLUS_RN   :  Instruction := "0110--------0110";  -- MOV.W @Rm+, Rn
 
-  constant  MOV_B_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.B RO, @(disp,Rn)
-  constant  MOV_W_R0_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "10000000--------";  -- MOV.W RO, @(disp,Rn)
-  constant  MOV_L_RM_AT_DISP_RN  :  std_logic_vector(15 downto 0) := "0001------------";  -- MOV.L Rm, @(disp, Rn)
+  constant  MOV_B_R0_AT_DISP_RN   :  Instruction := "10000000--------";  -- MOV.B RO, @(disp,Rn)
+  constant  MOV_W_R0_AT_DISP_RN   :  Instruction := "10000000--------";  -- MOV.W RO, @(disp,Rn)
+  constant  MOV_L_RM_AT_DISP_RN   :  Instruction := "0001------------";  -- MOV.L Rm, @(disp, Rn)
 
-  constant  MOV_B_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000100--------";  -- MOV.B @(disp, Rm), R0
-  constant  MOV_W_AT_DISP_RM_R0  :  std_logic_vector(15 downto 0)  := "10000101--------";  -- MOV.W @(disp, Rm), R0
-  constant  MOV_L_AT_DISP_RM_RN  :  std_logic_vector(15 downto 0)  := "0101------------";  -- MOV.L @(disp, Rm), Rn
+  constant  MOV_B_AT_DISP_RM_R0   :  Instruction := "10000100--------";  -- MOV.B @(disp, Rm), R0
+  constant  MOV_W_AT_DISP_RM_R0   :  Instruction := "10000101--------";  -- MOV.W @(disp, Rm), R0
+  constant  MOV_L_AT_DISP_RM_RN   :  Instruction := "0101------------";  -- MOV.L @(disp, Rm), Rn
 
-  constant  MOV_B_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0100";  -- MOV.B Rm, @(R0, Rn)
-  constant  MOV_W_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0101";  -- MOV.W Rm, @(R0, Rn)
-  constant  MOV_L_RM_AT_R0_RN  :  std_logic_vector(15 downto 0) := "0000--------0110";  -- MOV.L Rm, @(R0, Rn)
+  constant  MOV_B_RM_AT_R0_RN     :  Instruction := "0000--------0100";  -- MOV.B Rm, @(R0, Rn)
+  constant  MOV_W_RM_AT_R0_RN     :  Instruction := "0000--------0101";  -- MOV.W Rm, @(R0, Rn)
+  constant  MOV_L_RM_AT_R0_RN     :  Instruction := "0000--------0110";  -- MOV.L Rm, @(R0, Rn)
 
-  constant  MOV_B_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1100";  -- MOV.B @(R0, Rm), Rn
-  constant  MOV_W_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1101";  -- MOV.W @(R0, Rm), Rn
-  constant  MOV_L_AT_R0_RM_RN  :  std_logic_vector(15 downto 0) := "0000--------1110";  -- MOV.L @(R0, Rm), Rn
+  constant  MOV_B_AT_R0_RM_RN     :  Instruction := "0000--------1100";  -- MOV.B @(R0, Rm), Rn
+  constant  MOV_W_AT_R0_RM_RN     :  Instruction := "0000--------1101";  -- MOV.W @(R0, Rm), Rn
+  constant  MOV_L_AT_R0_RM_RN     :  Instruction := "0000--------1110";  -- MOV.L @(R0, Rm), Rn
 
-  constant  MOV_B_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000000--------";  -- MOV.B R0, @(disp, GBR)
-  constant  MOV_W_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000001--------";  -- MOV.W R0, @(disp, GBR)
-  constant  MOV_L_R0_AT_DISP_GBR  :  std_logic_vector(15 downto 0) := "11000010--------";  -- MOV.L R0, @(disp, GBR)
+  constant  MOV_B_R0_AT_DISP_GBR  :  Instruction := "11000000--------";  -- MOV.B R0, @(disp, GBR)
+  constant  MOV_W_R0_AT_DISP_GBR  :  Instruction := "11000001--------";  -- MOV.W R0, @(disp, GBR)
+  constant  MOV_L_R0_AT_DISP_GBR  :  Instruction := "11000010--------";  -- MOV.L R0, @(disp, GBR)
 
-  constant  MOV_B_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000100--------";  -- MOV.B @(disp, GBR), R0
-  constant  MOV_W_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000101--------";  -- MOV.W @(disp, GBR), R0
-  constant  MOV_L_AT_DISP_GBR_R0  :  std_logic_vector(15 downto 0) := "11000110--------";  -- MOV.L @(disp, GBR), R0
+  constant  MOV_B_AT_DISP_GBR_R0  :  Instruction := "11000100--------";  -- MOV.B @(disp, GBR), R0
+  constant  MOV_W_AT_DISP_GBR_R0  :  Instruction := "11000101--------";  -- MOV.W @(disp, GBR), R0
+  constant  MOV_L_AT_DISP_GBR_R0  :  Instruction := "11000110--------";  -- MOV.L @(disp, GBR), R0
 
-  constant  MOVA_AT_DISP_PC_R0  :  std_logic_vector(15 downto 0) := "11000111--------";  -- MOVA @(disp, PC), R0
+  constant  MOVA_AT_DISP_PC_R0    :  Instruction := "11000111--------";  -- MOVA @(disp, PC), R0
 
-  constant  MOVT_RN  :  std_logic_vector(15 downto 0) := "0000----00101001";  -- MOVT Rn
+  constant  MOVT_RN               :  Instruction := "0000----00101001";  -- MOVT Rn
 
-  constant  SWAP_B_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------1000";  -- SWAP.B Rm, Rn
-  constant  SWAP_W_RM_RN  :  std_logic_vector(15 downto 0) := "0110--------1001";  -- SWAP.W Rm, Rn
+  constant  SWAP_B_RM_RN          :  Instruction := "0110--------1000";  -- SWAP.B Rm, Rn
+  constant  SWAP_W_RM_RN          :  Instruction := "0110--------1001";  -- SWAP.W Rm, Rn
 
-  constant  XTRCT_RM_RN  :  std_logic_vector(15 downto 0) := "0010--------1101";  -- XTRCT Rm, Rn
+  constant  XTRCT_RM_RN           :  Instruction := "0010--------1101";  -- XTRCT Rm, Rn
 
 
 
   -- Arithmetic Instructions:
-  constant ADD_RM_RN    : std_logic_vector(15 downto 0) := "0011--------11--";
-  constant ADD_IMM_RN   : std_logic_vector(15 downto 0) := "0111------------";
-  constant SUB_RM_RN    : std_logic_vector(15 downto 0) := "0011--------10--";
-  constant NEG_RM_RN    : std_logic_vector(15 downto 0) := "0110--------101-";
+  constant ADD_RM_RN        : Instruction := "0011--------11--";
+  constant ADD_IMM_RN       : Instruction := "0111------------";
+  constant SUB_RM_RN        : Instruction := "0011--------10--";
+  constant NEG_RM_RN        : Instruction := "0110--------101-";
 
   -- Logical Operations:
-  constant LOGIC_RM_RN      : std_logic_vector(15 downto 0) := "0010--------10--";  -- AND, TST, OR, XOR
-  constant LOGIC_IMM_R0     : std_logic_vector(15 downto 0) := "110010----------";  -- AND, TST, OR, XOR
-  constant NOT_RM_RN        : std_logic_vector(15 downto 0) := "0110--------0111";  -- NOT
+  constant LOGIC_RM_RN      : Instruction := "0010--------10--";  -- AND, TST, OR, XOR
+  constant LOGIC_IMM_R0     : Instruction := "110010----------";  -- AND, TST, OR, XOR
+  constant NOT_RM_RN        : Instruction := "0110--------0111";  -- NOT
 
   -- Shift Instruction:
-  constant SHIFT_RN         : std_logic_vector(15 downto 0) := "0100----00-00-0-";
+  constant SHIFT_RN         : Instruction := "0100----00-00-0-";
+
   -- Branch Instructions:
   -- System Control:
-  constant NOP          : std_logic_vector(15 downto 0) := "0000000000001001";
-  constant CLRT         : std_logic_vector(15 downto 0) := "0000000000001000";
-  constant SETT         : std_logic_vector(15 downto 0) := "0000000000011000";
+  constant NOP              : Instruction := "0000000000001001";
+  constant CLRT             : Instruction := "0000000000001000";
+  constant SETT             : Instruction := "0000000000011000";
 
-  constant STC_SYS_RN   : std_logic_vector(15 downto 0) := "0000----00--0010";
-  constant LDC_RM_SYS   : std_logic_vector(15 downto 0) := "0100----00--1110";
+  constant STC_SYS_RN       : Instruction := "0000----00--0010";
+  constant LDC_RM_SYS       : Instruction := "0100----00--1110";
 
 end package SH2InstructionEncodings;
 
@@ -308,41 +312,53 @@ architecture dataflow of sh2control is
   -- i format:   xxxx xxxx iiii iiii
   -- ni format:  xxxx nnnn iiii iiii
   --
+
+  -- n format
   alias n_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
 
+  -- m format
   alias m_format_m : std_logic_vector(3 downto 0) is IR(11 downto 8);
 
+  -- nm format
   alias nm_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
   alias nm_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
 
+  -- md format
   alias md_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
   alias md_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
 
+  -- nd4 format
   alias nd4_format_n : std_logic_vector(3 downto 0) is IR(7 downto 4);
   alias nd4_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
 
+  -- nmd format
   alias nmd_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
   alias nmd_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
   alias nmd_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
 
+  -- d format
   alias d_format_d : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
+  -- d12 format
   alias d12_format_d : std_logic_vector(11 downto 0) is IR(11 downto 0);
 
+  -- nd8 format
   alias nd8_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
   alias nd8_format_d : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
+  -- i format
   alias i_format_i : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
+  -- ni format
   alias ni_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
   alias ni_format_i : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
   -- Internal signals computed combinatorially to memory signals can
   -- be output on the correct clock.
-  signal Instruction_MemEnable : std_logic;
-  signal Instruction_ReadWrite : std_logic;
-  signal Instruction_MemSel    : std_logic;
-  signal Instruction_MemAddrSel: std_logic;
+  signal Instruction_MemEnable   : std_logic;
+  signal Instruction_ReadWrite   : std_logic;
+  signal Instruction_MemSel      : std_logic;
+  signal Instruction_MemAddrSel  : std_logic;
 
   -- The memory mode for a given instruction. The same as the constants in the
   -- MemoryInterfaceConstants package.
@@ -365,26 +381,34 @@ architecture dataflow of sh2control is
 begin
 
     -- Outputs that change based on the CPU state
-    PCAddrMode <= Instruction_PCAddrMode when state = writeback else PCAddrMode_HOLD;
-    MemEnable  <= Instruction_MemEnable when state = execute else
-                  '1' when state = fetch else
-                  '0' when state = writeback;
+    with state select 
+      PCAddrMode <= Instruction_PCAddrMode when writeback,
+                    PCAddrMode_HOLD        when others;
 
-    ReadWrite <= Instruction_ReadWrite when state = execute else
-                 '0' when state = fetch else
-                 'X' when state = writeback;
+    with state select 
+      MemEnable <= Instruction_MemEnable when execute,
+                   '1'                   when fetch,
+                   '0'                   when writeback;
 
-    MemMode <= Instruction_WordMode when state = execute else
-               WordMode when state = fetch else
-               "XX";
+    with state select 
+      ReadWrite <= Instruction_ReadWrite when execute,
+                  '0'                    when fetch,
+                  'X'                    when writeback;
 
-    MemSel <= Instruction_MemSel when state = execute else
-              MemSel_ROM         when state = fetch else
-              'X';
+    with state select 
+      MemMode <= Instruction_WordMode when execute,
+                 WordMode             when fetch,
+                 "XX"                 when others;
 
-    MemAddrSel <= Instruction_MemAddrSel when state = execute else
-                  MemAddrSel_PMAU        when state = fetch else
-                  'X';
+    with state select
+        MemSel <= Instruction_MemSel when execute,
+                  MemSel_ROM         when fetch,
+                  'X'                when others;
+
+    with state select
+      MemAddrSel <= Instruction_MemAddrSel when execute,
+                    MemAddrSel_PMAU        when fetch,
+                    'X'                    when others;
 
     -- Only modify registers during execution. 
     EnableIn <= Instruction_EnableIn when state = execute else
@@ -402,18 +426,18 @@ begin
         -- Default flag values (shouldn't change CPU state)
 
         -- Not accessing memory
-        Instruction_MemEnable <= '0';
-        Instruction_ReadWrite <= 'X';
-        Instruction_WordMode <= "XX";
-        MemOutSel <= "XXX";
-        Instruction_MemSel <= MemSel_RAM;           -- access data memory by default
+        Instruction_MemEnable  <= '0';
+        Instruction_ReadWrite  <= 'X';
+        Instruction_WordMode   <= "XX";
+        MemOutSel              <= "XXX";
+        Instruction_MemSel     <= MemSel_RAM;       -- access data memory by default
         Instruction_MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default
 
-        Instruction_EnableIn <= '0';                -- Disable Reg Array
-        Instruction_PCAddrMode <= PCAddrMode_INC;   -- Increment PC
-        Instruction_TFlagSel <= TFlagSel_T;         -- Keep T flag the same
-        GBRWriteEn <= '0';                          -- keep GBR
-        PRWriteEn <= '0';                           -- keep PR
+        Instruction_EnableIn    <= '0';              -- Disable Reg Array
+        Instruction_PCAddrMode  <= PCAddrMode_INC;   -- Increment PC
+        Instruction_TFlagSel    <= TFlagSel_T;       -- Keep T flag the same
+        GBRWriteEn              <= '0';              -- keep GBR
+        PRWriteEn               <= '0';              -- keep PR
 
         SysRegCtrl <= SysRegCtrl_NONE;
 
@@ -430,8 +454,8 @@ begin
             RegASel <= to_integer(unsigned(nm_format_n));
             RegBSel <= to_integer(unsigned(nm_format_m));
 
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
@@ -439,15 +463,17 @@ begin
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
-            LoadA <= '1';
-            FCmd <= FCmd_B;
+            LoadA     <= '1';
+            FCmd      <= FCmd_B;
+
             -- Bit-decode carry in value
             if IR(1 downto 0) = "10" then
                 CinCmd <= CinCmd_CIN;   -- ADDC
             else
                 CinCmd <= CinCmd_ZERO;  -- ADD, ADDV
             end if;
-            SCmd <= "XXX";
+
+            SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
@@ -460,8 +486,8 @@ begin
             RegASel <= to_integer(unsigned(nm_format_n));
             RegBSel <= to_integer(unsigned(nm_format_m));
 
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
@@ -469,15 +495,17 @@ begin
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
-            LoadA <= '1';
-            FCmd <= FCmd_BNOT;
+            LoadA     <= '1';
+            FCmd      <= FCmd_BNOT;
+
             -- Bit-decode carry in value
             if IR(1 downto 0) = "10" then
                 CinCmd <= CinCmd_CINBAR;    -- SUBC
             else
                 CinCmd <= CinCmd_ONE;       -- SUB, SUBV
             end if;
-            SCmd <= "XXX";
+
+            SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
@@ -490,8 +518,8 @@ begin
             RegASel <= to_integer(unsigned(nm_format_n));
             RegBSel <= to_integer(unsigned(nm_format_m));
 
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= '1';
 
             -- Bit-decoding T flag select
@@ -503,15 +531,17 @@ begin
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
-            LoadA <= '0';
-            FCmd <= FCmd_BNOT;
+            LoadA     <= '0';
+            FCmd      <= FCmd_BNOT;
+
             -- Bit-decode carry in value
             if IR(0) = '0' then
                 CinCmd <= CinCmd_CINBAR;    -- NEGC
             else
                 CinCmd <= CinCmd_ONE;       -- NEG
             end if;
-            SCmd <= "XXX";
+
+            SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
@@ -523,18 +553,18 @@ begin
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
 
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= '1';
-            Immediate <= ni_format_i;
+            Immediate            <= ni_format_i;
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_Imm;
-            LoadA <= '1';
-            FCmd <= FCmd_B;
-            CinCmd <= CinCmd_ZERO;
-            SCmd   <= "XXX";
-            ALUCmd <= ALUCmd_ADDER;
+            LoadA     <= '1';
+            FCmd      <= FCmd_B;
+            CinCmd    <= CinCmd_ZERO;
+            SCmd      <= "XXX";
+            ALUCmd    <= ALUCmd_ADDER;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
@@ -545,8 +575,8 @@ begin
             RegASel <= to_integer(unsigned(nm_format_n));
             RegBSel <= to_integer(unsigned(nm_format_m));
 
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= IR(1) or IR(0);   -- exclude TST
 
             -- Enable TFlagSel for TST
@@ -554,12 +584,14 @@ begin
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
-            LoadA <= '1';
-            FCmd <= FCmd_AND when IR(1) = '0' else
+            LoadA     <= '1';
+
+            FCmd <= FCmd_AND when IR(1) = '0'           else
                     FCmd_XOR when IR(1 downto 0) = "10" else
                     FCmd_OR;
+
             CinCmd <= CinCmd_ZERO;
-            SCmd <= "XXX";
+            SCmd   <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
@@ -570,23 +602,25 @@ begin
             -- Register array signals
             RegASel <= 0;
 
-            RegInSel <= 0;
-            RegDataInSel <= RegDataIn_ALUResult;
+            RegInSel             <= 0;
+            RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= IR(9) or IR(8);   -- exclude TST
-            Immediate <= i_format_i;
-            ImmediateMode <= ImmediateMode_ZERO;
+            Immediate            <= i_format_i;
+            ImmediateMode        <= ImmediateMode_ZERO;
 
             -- Enable TFlagSel for TST
             Instruction_TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00" else TFlagSel_T;
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_Imm;
-            LoadA <= '1';
+            LoadA     <= '1';
+
             FCmd <= FCmd_AND when IR(9) = '0' else
                     FCmd_XOR when IR(9 downto 8) = "10" else
                     FCmd_OR;
+
             CinCmd <= CinCmd_ZERO;
-            SCmd <= "XXX";
+            SCmd   <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
@@ -598,17 +632,17 @@ begin
             RegASel <= to_integer(unsigned(nm_format_n));
             RegBSel <= to_integer(unsigned(nm_format_m));
 
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= '1';
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
-            LoadA <= '1';
-            FCmd <= FCmd_BNOT;
-            CinCmd <= CinCmd_ZERO;
-            SCmd <= "XXX";
-            ALUCmd <= ALUCmd_FBLOCK;
+            LoadA     <= '1';
+            FCmd      <= FCmd_BNOT;
+            CinCmd    <= CinCmd_ZERO;
+            SCmd      <= "XXX";
+            ALUCmd    <= ALUCmd_FBLOCK;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
@@ -616,19 +650,22 @@ begin
             -- {ROTL, ROTR, ROTCL, ROTCR, SHAL, SHAR, SHLL, SHLR} Rn
 
             -- Register array signals
-            RegASel <= to_integer(unsigned(n_format_n));
-            RegInSel <= to_integer(unsigned(n_format_n));
-            RegDataInSel <= RegDataIn_ALUResult;
+            RegASel              <= to_integer(unsigned(n_format_n));
+            RegInSel             <= to_integer(unsigned(n_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= '1';
 
             Instruction_TFlagSel <= TFlagSel_Carry;
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
-            LoadA <= '1';
-            FCmd <= "XXXX";
-            CinCmd <= CinCmd_CIN when (IR(5) and IR(2)) = '1' else CinCmd_ZERO;     -- ROTCL, ROTCR
-            SCmd <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
+            LoadA     <= '1';
+            FCmd      <= "XXXX";
+
+            CinCmd    <= CinCmd_CIN when (IR(5) and IR(2)) = '1' else  -- ROTCL, ROTCR
+                         CinCmd_ZERO;     
+
+            SCmd   <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
@@ -676,11 +713,11 @@ begin
           Instruction_MemSel    <= MemSel_ROM;
 
           -- DMAU signals for PC Relative addressing with displacement (word mode)
-          BaseSel <= BaseSel_PC;
-          IndexSel <= IndexSel_OFF8;
+          BaseSel      <= BaseSel_PC;
+          IndexSel     <= IndexSel_OFF8;
           OffScalarSel <= OffScalarSel_TWO;
-          IncDecSel <= IncDecSel_NONE;
-          DMAUOff8 <= nd8_format_d;
+          IncDecSel    <= IncDecSel_NONE;
+          DMAUOff8     <= nd8_format_d;
 
           Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
@@ -706,11 +743,11 @@ begin
           Instruction_MemSel    <= MemSel_ROM;
 
           -- DMAU signals for PC Relative addressing with displacement (longword mode)
-          BaseSel <= BaseSel_PC;
-          IndexSel <= IndexSel_OFF8;
+          BaseSel      <= BaseSel_PC;
+          IndexSel     <= IndexSel_OFF8;
           OffScalarSel <= OffScalarSel_FOUR;
-          IncDecSel <= IncDecSel_NONE;
-          DMAUOff8 <= nd8_format_d;
+          IncDecSel    <= IncDecSel_NONE;
+          DMAUOff8     <= nd8_format_d;
 
           Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
@@ -724,9 +761,9 @@ begin
               "R" & to_string(slv_to_int(nm_format_n)) , LogFile);
 
             -- report "Instruction: MOV Rm, Rn";
-            RegBSel <= to_integer(unsigned(nm_format_m));
-            RegInSel <= to_integer(unsigned(nm_format_n));
-            RegDataInSel <= RegDataIn_RegB;
+            RegBSel              <= to_integer(unsigned(nm_format_m));
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_RegB;
             Instruction_EnableIn <= '1';
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
@@ -773,14 +810,14 @@ begin
 
             MemOutSel <= MemOut_RegB;
 
-            RegBSel <= to_integer(unsigned(nm_format_m));
-            RegA1Sel <= to_integer(unsigned(nm_format_n));
+            RegBSel   <= to_integer(unsigned(nm_format_m));
+            RegA1Sel  <= to_integer(unsigned(nm_format_n));
 
             -- DMAU signals
-            BaseSel <= BaseSel_REG;
-            IndexSel <= IndexSel_NONE;
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
             OffScalarSel <= OffScalarSel_ONE;
-            IncDecSel <= IncDecSel_NONE;
+            IncDecSel    <= IncDecSel_NONE;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
@@ -799,14 +836,14 @@ begin
 
             MemOutSel <= MemOut_RegB;
 
-            RegBSel <= to_integer(unsigned(nm_format_m));
+            RegBSel  <= to_integer(unsigned(nm_format_m));
             RegA1Sel <= to_integer(unsigned(nm_format_n));
 
             -- DMAU signals
-            BaseSel <= BaseSel_REG;
-            IndexSel <= IndexSel_NONE;
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
             OffScalarSel <= OffScalarSel_ONE;
-            IncDecSel <= IncDecSel_NONE;
+            IncDecSel    <= IncDecSel_NONE;
 
             Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
