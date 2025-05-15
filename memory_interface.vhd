@@ -129,7 +129,9 @@ begin
                         -- TODO: may not synthesize efficiently, use conditionals instead?
                         -- Note: not using data_in_BE since reading/writing individual byte
                         
-                        LogWithTime(l, "memory_interface.vhd: Writing byte at address " & to_hstring(address), LogFile);
+                        LogWithTime(l, "memory_interface.vhd: Writing byte (0x" & 
+                        to_hstring(std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)))) & 
+                        ") at address " & to_hstring(address), LogFile);
 
                         DB <= std_logic_vector(unsigned(data_in) sll to_integer(8 * (address mod 4)));
 
@@ -143,21 +145,30 @@ begin
                         WE(2) <= '0' when address mod 4 = 2 else '1';
                         WE(3) <= '0' when address mod 4 = 2 else '1';
 
-                        LogWithTime(l, "memory_interface.vhd: Writing word at address " & to_hstring(address), LogFile);
+
+
 
                         -- Convert LE to BE, shift the correct byte positions, then output to DB
                         if address mod 4 = 0 then
                             DB(15 downto 0) <= data_in(7 downto 0) & data_in(15 downto 8);
+                            LogWithTime(l, "memory_interface.vhd: Writing word (0x" & 
+                                            to_hstring(data_in(7 downto 0) & data_in(15 downto 8)), LogFile);
                         elsif address mod 2 = 0 then
                             DB(31 downto 16) <= data_in(7 downto 0) & data_in(15 downto 8);
+                            LogWithTime(l, "memory_interface.vhd: Writing word (0x" & 
+                                            to_hstring(data_in(7 downto 0) & data_in(15 downto 8)), LogFile);
                         end if;
+
+                        LogWithTime(") at address " & to_hstring(address), LogFile);
 
                     when LongwordMode =>
                         assert (address mod 4 = 0)
                         report "Memory interface Tx: Cannot write longword to non-aligned address: " & to_hstring(address)
                         severity error;
 
-                        LogWithTime(l, "memory_interface.vhd: Writing longword at address " & to_hstring(address), LogFile);
+                        LogWithTime(l, "memory_interface.vhd: Writing longword (0x" & 
+                        to_hstring(data_in(31 downto 24) & data_in(23 downto 16) & data_in(15 downto 8) & data_in(7 downto 0)) &
+                        ") at address " & to_hstring(address), LogFile);
 
                         WE(3 downto 0) <= (others => '0');
 

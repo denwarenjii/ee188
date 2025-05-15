@@ -19,15 +19,15 @@ Start:
   MOV    #$79,  R0
   MOV.B  R1,   @R0
 
-  MOV    #$33,  R1   ; 0x22 at address 0x7A
+  MOV    #$33,  R1   ; 0x33 at address 0x7A
   MOV    #$7A,  R0
   MOV.B  R1,   @R0
 
-  MOV    #$44,  R1   ; 0x3 at address 0x7B
+  MOV    #$44,  R1   ; 0x44 at address 0x7B
   MOV    #$7B,  R0
   MOV.B  R1,   @R0
 
-  MOV   #$78, R0  ; Move 44332211 into R1
+  MOV   #$78, R0     ; Move 44332211 into R1
   MOV.L @R0,  R1
 
 
@@ -35,19 +35,24 @@ Start:
                      ; R0 is pre-decremented by 1.
   MOV.B  R1, @-R0
 
-  MOV  #$01, R0      ; Write 0x00 at 0x01.
+
+  MOV  #$01, R0      ; Write 0x00 at 0x01 since the proceeding word write must 
+                     ; be word aligned.
   MOV  #$00, R2
   MOV.B R2, @R0
 
+
   MOV   #$04,  R0    ; Write word from R1 (0x2211) into address 0x02. Note
                      ; that R0 is pre-decremented by 2.
-  MOV.W  R0, @R0    
+  MOV.W  R1, @-R0    
 
 
-  MOV   #$08,  R0    ; Write word from R1 (0x44332211) into address 0x04. Note
+  MOV   #$08,  R0    ; Write longword from R1 (0x44332211) into address 0x04. Note
                      ; that R0 is pre-decremented by 4.
-  MOV.W  R0, @R0    
+  MOV.L  R1, @-R0    
 
+  ; Expected memory layout
+  ;
   ; 00000000  11002211
   ; 00000004  44332211
 

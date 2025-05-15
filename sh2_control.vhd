@@ -450,6 +450,8 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
         -- SUB Rm, Rn
         elsif std_match(IR, SUB_RM_RN) then
             -- report "Instruction: SUB(C/V) Rm, Rn";
@@ -477,6 +479,8 @@ begin
             end if;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
+
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         -- NEG Rm, Rn
         elsif std_match(IR, NEG_RM_RN) then
@@ -510,6 +514,8 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
         -- ADD #imm, Rn
         elsif std_match(IR, ADD_IMM_RN) then
             -- report "Instruction: ADD #imm, Rn";
@@ -527,8 +533,10 @@ begin
             LoadA <= '1';
             FCmd <= FCmd_B;
             CinCmd <= CinCmd_ZERO;
-            SCmd <= "XXX";
+            SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
+
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         elsif std_match(IR, LOGIC_RM_RN) then
             -- {AND, TST, OR, XOR} Rm, Rn
@@ -553,6 +561,8 @@ begin
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
+
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         elsif std_match(IR, LOGIC_IMM_R0) then
             -- {AND, TST, OR, XOR} immediate, R0
@@ -579,6 +589,8 @@ begin
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
 
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
         elsif std_match(IR, NOT_RM_RN) then
             -- NOT Rm, Rn
 
@@ -597,6 +609,8 @@ begin
             CinCmd <= CinCmd_ZERO;
             SCmd <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
+
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         elsif std_match(IR, SHIFT_RN) then
             -- {ROTL, ROTR, ROTCL, ROTCR, SHAL, SHAR, SHLL, SHLR} Rn
@@ -617,6 +631,8 @@ begin
             SCmd <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
 
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
         
         -- Data Transfer Instruction -------------------------------------------
 
@@ -632,6 +648,8 @@ begin
             RegDataInSel         <= RegDataIn_Immediate;
             Instruction_EnableIn <= '1';
             Immediate            <= ni_format_i;
+
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         -- MOV.W @(disp, PC), Rn
         -- nd8 format
@@ -664,6 +682,8 @@ begin
           IncDecSel <= IncDecSel_NONE;
           DMAUOff8 <= nd8_format_d;
 
+          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
 
         -- MOV.L @(disp, PC), Rn
         -- nd8 format
@@ -692,6 +712,8 @@ begin
           IncDecSel <= IncDecSel_NONE;
           DMAUOff8 <= nd8_format_d;
 
+          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
 
         -- MOV Rm, Rn
         -- nm format
@@ -706,6 +728,8 @@ begin
             RegInSel <= to_integer(unsigned(nm_format_n));
             RegDataInSel <= RegDataIn_RegB;
             Instruction_EnableIn <= '1';
+
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         -- MOV.B Rm, @Rn
         -- nm format
@@ -732,6 +756,8 @@ begin
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel    <= IncDecSel_NONE;
 
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
         -- MOV.W Rm, @Rn
         elsif std_match(IR, MOV_W_RM_AT_RN) then
             -- report "Instruction: [MOV.W Rm, @Rn]"
@@ -756,6 +782,8 @@ begin
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel <= IncDecSel_NONE;
 
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
         -- MOV.L Rm, @Rn
         elsif std_match(IR, MOV_L_RM_AT_RN) then
             -- report "Instruction: MOV RM, @Rn";
@@ -779,6 +807,8 @@ begin
             IndexSel <= IndexSel_NONE;
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel <= IncDecSel_NONE;
+
+            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         -- MOV.B @Rm, Rn
         -- nm format
@@ -809,6 +839,8 @@ begin
           RegDataInSel         <= RegDataIn_DB;
           Instruction_EnableIn <= '1';
 
+          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
 
         -- MOV.W @Rm, Rn
         elsif std_match(IR, MOV_W_AT_RM_RN) then
@@ -838,6 +870,8 @@ begin
           RegDataInSel         <= RegDataIn_DB;
           Instruction_EnableIn <= '1';
 
+          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
 
         -- MOV.L @Rm, Rn
         elsif std_match(IR, MOV_L_AT_RM_RN) then
@@ -866,6 +900,10 @@ begin
           RegInSel             <= to_integer(unsigned(nm_format_n));
           RegDataInSel         <= RegDataIn_DB;
           Instruction_EnableIn <= '1';
+
+          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
+
+          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
 
         -- MOV.B Rm, @-Rn
