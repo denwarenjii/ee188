@@ -21,11 +21,11 @@ Start:
   MOV    #$79,  R0
   MOV.B  R1,   @R0
 
-  MOV    #$33,  R1   ; 0x22 at address 0x7A
+  MOV    #$33,  R1   ; 0x33 at address 0x7A
   MOV    #$7A,  R0
   MOV.B  R1,   @R0
 
-  MOV    #$44,  R1   ; 0x3 at address 0x7B
+  MOV    #$44,  R1   ; 0x44 at address 0x7B
   MOV    #$7B,  R0
   MOV.B  R1,   @R0
 

@@ -14,6 +14,8 @@
 --     11 May 25  Zack Huang        Start system control instructions
 --     12 May 25  Chris M.          Add extra RegDataIn sources and connect 
 --                                  PCSrc of DMAU.
+--     14 May 25  Chris M.          Tri-state address in writeback state.
+--
 ----------------------------------------------------------------------------
 
 
@@ -57,7 +59,7 @@ use work.MemoryInterfaceConstants.all;
 use work.SH2ControlConstants.all;
 use work.Logging.all;
 use work.SH2Constants.all;
-
+use work.SH2DmauConstants.all;
 --library opcodes;
 --use opcodes.opcodes.all;
 
@@ -243,7 +245,10 @@ begin
     WE2 <= WriteMask(2) when (not clock) else '1';
     WE3 <= WriteMask(3) when (not clock) else '1';
 
-    MemAddress <= PCOut when MemAddrSel = MemAddrSel_PMAU else DataAddress;
+    with MemAddrSel select MemAddress <=
+      PCOut       when MemAddrSel_PMAU,
+      DataAddress when MemAddrSel_DMAU,
+      (others => 'Z') when others;
 
     AB <= MemAddress;
 
@@ -290,6 +295,14 @@ begin
       SR and x"00000001"        when RegDataIn_SR_TBit,
       PROut                     when RegDataIn_PR,
       (others => 'X')           when others;
+
+
+    -- The address being stored to a register is the pre-decremented or 
+    -- post-incremented address when we are in that mode. If we are not in 
+    -- that mode, it is just the normal address.
+    with IncDecSel select RegAxIn <=
+    AddrSrcOut  when IncDecSel_PRE_DEC | IncDecSel_POST_INC,
+    DataAddress when others;
 
     -- Route control signals and data into register array
     registers : entity work.SH2Regs

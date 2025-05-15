@@ -348,9 +348,18 @@ architecture dataflow of sh2control is
   -- MemoryInterfaceConstants package.
   signal Instruction_WordMode : std_logic_vector(1 downto 0);
 
-  signal Instruction_EnableIn  : std_logic;
+  -- Reg write enable for the current instruction. Output to RegisterArray 
+  -- in the writeback state.
+  signal Instruction_EnableIn  : std_logic;   
+
+  signal Instruction_RegAxStore : std_logic;
+
+  -- Program addressing mode for the current instruction. Output during the
+  -- writeback state.
   signal Instruction_PCAddrMode : std_logic_vector(2 downto 0);
 
+  -- What to write to the TFlag for the current instruction. Output during
+  -- the execute state.
   signal Instruction_TFlagSel    : std_logic_vector(2 downto 0);
 
 begin
@@ -377,9 +386,12 @@ begin
                   MemAddrSel_PMAU        when state = fetch else
                   'X';
 
-    -- Only modify registers during writeback
+    -- Only modify registers during execution. 
     EnableIn <= Instruction_EnableIn when state = execute else
                 '0';
+
+    RegAxStore <= Instruction_RegAxStore when state = execute else
+                  '0';
 
     TFlagSel <= Instruction_TFlagSel when state = execute else
                 TFlagSel_T;
@@ -637,7 +649,6 @@ begin
           RegDataInSel         <= RegDataIn_DB;                         -- Writing output of data bus to register. 
           Instruction_EnableIn <= '1';                                  -- Writes to register. 
 
-          -- TODO: remove
           RegASel <= to_integer(unsigned(nd8_format_n));
 
           -- Instruction reads from word memory.
@@ -710,7 +721,7 @@ begin
             Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
             Instruction_WordMode  <= ByteMode;        -- A byte.
 
-            MemOutSel <= MemOut_RegB; -- Memory output goes to RegB of the Register array.
+            MemOutSel <= MemOut_RegB; -- Output RegB (Rm) to memory data bus.
 
             RegBSel  <= to_integer(unsigned(nm_format_m)); -- RegB is Rm.
             RegA1Sel <= to_integer(unsigned(nm_format_n)); -- RegA is @(Rn)
@@ -858,19 +869,88 @@ begin
 
 
         -- MOV.B Rm, @-Rn
+        -- nm format
         elsif std_match(IR, MOV_B_RM_AT_MINUS_RN) then
-          report "Instruction: [MOV.B Rm, @-Rn] not implemented."
-          severity ERROR;
+            -- report "Instruction: [MOV.B Rm, @-Rn] not implemented."
+            -- severity ERROR;
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.B R" & to_string(slv_to_int(nm_format_m)) &
+              ", @-R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+
+            -- Writes a byte to memory
+            Instruction_MemEnable <= '1';             -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
+            Instruction_WordMode  <= ByteMode;        -- A byte.
+
+            MemOutSel <= MemOut_RegB; -- Output RegB (Rm) to memory data bus.
+
+            RegBSel                <= to_integer(unsigned(nm_format_m));  -- Output Rm from RegB output.
+            RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
+            RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
+            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+
+            -- DMAU signals (for Pre-decrement indirect register addressing)
+            GBRWriteEn   <= '0';
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_ONE;
+            IncDecSel    <= IncDecSel_PRE_DEC;
+
 
         -- MOV.W Rm, @-Rn
+        -- nm format
         elsif std_match(IR, MOV_W_RM_AT_MINUS_RN) then
-          report "Instruction: [MOV.W Rm, @-Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.W Rm, @-Rn] not implemented."
+          -- severity ERROR;
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.W R" & to_string(slv_to_int(nm_format_m)) &
+            ", @-R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+
+            -- Writes a word to memory
+            Instruction_MemEnable <= '1';             -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
+            Instruction_WordMode  <= WordMode;        -- A word.
+
+            MemOutSel <= MemOut_RegB; -- Output RegB (Rm) to memory data bus.
+
+            RegBSel                <= to_integer(unsigned(nm_format_m));  -- Output Rm from RegB output.
+            RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
+            RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
+            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+
+            -- DMAU signals (for Pre-decrement indirect register addressing)
+            GBRWriteEn   <= '0';
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_TWO;
+            IncDecSel    <= IncDecSel_PRE_DEC;
 
         -- MOV.L Rm, @-Rn
         elsif std_match(IR, MOV_L_RM_AT_MINUS_RN) then
-          report "Instruction: [MOV.L Rm, @-Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.L Rm, @-Rn] not implemented."
+          -- severity ERROR;
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_int(nm_format_m)) &
+            ", @-R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+
+            -- Writes a longword to memory
+            Instruction_MemEnable <= '1';             -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
+            Instruction_WordMode  <= LongwordMode;        -- A longword.
+
+            MemOutSel <= MemOut_RegB; -- Output RegB (Rm) to memory data bus.
+
+            RegBSel                <= to_integer(unsigned(nm_format_m));  -- Output Rm from RegB output.
+            RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
+            RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
+            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+
+            -- DMAU signals (for Pre-decrement indirect register addressing)
+            GBRWriteEn   <= '0';
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_PRE_DEC;
 
         -- MOV.B @Rm+, Rn
         elsif std_match(IR, MOV_B_AT_RM_PLUS_RN) then
