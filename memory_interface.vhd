@@ -34,7 +34,7 @@ package MemoryInterfaceConstants is
     constant MemEnable_OFF  : std_logic := '0';     -- disble memory reading/writing
     constant MemEnable_ON   : std_logic := '1';     -- enable memory reading/writing
 
-    -- MemMode constants
+    -- MemMode constants (BIT-DECODED, DO NOT CHANGE VALUES)
     constant ByteMode       : std_logic_vector(1 downto 0) := "00"; -- read/write a single byte
     constant WordMode       : std_logic_vector(1 downto 0) := "01"; -- read/write two bytes as a word
     constant LongwordMode   : std_logic_vector(1 downto 0) := "10"; -- read/write four bytes as a longword

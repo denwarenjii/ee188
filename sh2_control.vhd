@@ -130,9 +130,9 @@ package SH2ControlConstants is
     constant RegDataIn_Immediate      : std_logic_vector(3 downto 0) := "0001";
     constant RegDataIn_RegA           : std_logic_vector(3 downto 0) := "0010";
     constant RegDataIn_RegB           : std_logic_vector(3 downto 0) := "0011";
-    constant RegDataIn_SR             : std_logic_vector(3 downto 0) := "0100";
-    constant RegDataIn_GBR            : std_logic_vector(3 downto 0) := "0101";
-    constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "0110";
+    constant RegDataIn_SR             : std_logic_vector(3 downto 0) := "0100"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_GBR            : std_logic_vector(3 downto 0) := "0101"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "0110"; -- BIT DECODED - DO NOT CHANGE
     constant RegDataIn_RegA_SWAP_B    : std_logic_vector(3 downto 0) := "0111";
     constant RegDataIn_RegA_SWAP_W    : std_logic_vector(3 downto 0) := "1000";
     constant RegDataIn_SignExt_B_RegA : std_logic_vector(3 downto 0) := "1001";
@@ -150,9 +150,9 @@ package SH2ControlConstants is
     constant MemOut_RegB    : std_logic_vector(2 downto 0) := "001";
     constant MemOut_PR      : std_logic_vector(2 downto 0) := "010";
     constant MemOut_PC      : std_logic_vector(2 downto 0) := "011";
-    constant MemOut_SR      : std_logic_vector(2 downto 0) := "100";
-    constant MemOut_GBR     : std_logic_vector(2 downto 0) := "101";
-    constant MemOut_VBR     : std_logic_vector(2 downto 0) := "110";
+    constant MemOut_SR      : std_logic_vector(2 downto 0) := "100"; -- BIT DECODED - DO NOT CHANGE
+    constant MemOut_GBR     : std_logic_vector(2 downto 0) := "101"; -- BIT DECODED - DO NOT CHANGE
+    constant MemOut_VBR     : std_logic_vector(2 downto 0) := "110"; -- BIT DECODED - DO NOT CHANGE
 
     constant ALUOpB_RegB    : std_logic := '0';
     constant ALUOpB_Imm     : std_logic := '1';
