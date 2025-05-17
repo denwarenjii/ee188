@@ -25,7 +25,6 @@
 ----------------------------------------------------------------------------
 
 library ieee;
-library work;
 library std;
 
 use std.textio.all;
@@ -211,7 +210,7 @@ use work.Utils.all;
 entity  SH2Control  is
 
     port (
-        DB          : in  std_logic_vector(31 downto 0);    -- data read from memory
+        MemDataIn          : in  std_logic_vector(31 downto 0);    -- data read from memory
         clock       : in  std_logic;                        -- system clock
         reset       : in  std_logic;                        -- system reset (active low, async)
 
@@ -230,7 +229,6 @@ entity  SH2Control  is
 
         -- ALU control signals
         ALUOpBSel   : out std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
-        TIn         : out std_logic;                        -- T bit from status register
         LoadA       : out std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
         FCmd        : out std_logic_vector(3 downto 0);     -- F-Block operation
         CinCmd      : out std_logic_vector(1 downto 0);     -- carry in operation
@@ -241,7 +239,6 @@ entity  SH2Control  is
 
         -- register array control signals
         RegDataInSel: out std_logic_vector(3 downto 0);     -- source for register input data
-        DataIn      : out std_logic_vector(31 downto 0);    -- data to write to a register
         EnableIn    : out std_logic;                        -- if data should be written to an input register
         RegInSel    : out integer  range 15 downto 0;       -- which register to write data to
         RegASel     : out integer  range 15 downto 0;       -- which register to read to bus A
@@ -275,7 +272,6 @@ entity  SH2Control  is
 end  SH2Control;
 
 architecture dataflow of sh2control is
-  
     
     type state_t is (
         fetch,
@@ -364,66 +360,71 @@ architecture dataflow of sh2control is
   -- MemoryInterfaceConstants package.
   signal Instruction_WordMode : std_logic_vector(1 downto 0);
 
-  -- Reg write enable for the current instruction. Output to RegisterArray 
-  -- in the writeback state.
+  -- Register write enable for the current instruction. Output to RegisterArray 
+  -- during the execute state so that it is high when the rising clock of the writeback state occurs.
   signal Instruction_EnableIn  : std_logic;   
 
+  -- Address register write enable for the current instruction. Output to RegisterArray 
+  -- during the execute state so that it is high when the rising clock of the writeback state occurs.
   signal Instruction_RegAxStore : std_logic;
 
   -- Program addressing mode for the current instruction. Output during the
-  -- writeback state.
+  -- writeback state so that it is ready by the following fetch state.
   signal Instruction_PCAddrMode : std_logic_vector(2 downto 0);
 
   -- What to write to the TFlag for the current instruction. Output during
-  -- the execute state.
+  -- the execute state so that it is high when the rising clock of the writeback state occurs.
   signal Instruction_TFlagSel    : std_logic_vector(2 downto 0);
 
 begin
 
     -- Outputs that change based on the CPU state
     with state select 
-      PCAddrMode <= Instruction_PCAddrMode when writeback,
-                    PCAddrMode_HOLD        when others;
+        PCAddrMode <= Instruction_PCAddrMode when writeback,  -- increment PC during writeback state
+                      PCAddrMode_HOLD        when others;     -- otherwise, hold PC
 
     with state select 
-      MemEnable <= Instruction_MemEnable when execute,
-                   '1'                   when fetch,
-                   '0'                   when writeback;
+        MemEnable <= Instruction_MemEnable when execute,        -- if instruction requires memory access
+                     MemEnable_ON            when fetch,        -- enable to fetch instruction
+                     MemEnable_OFF           when writeback;    -- no memory access during writeback
 
     with state select 
-      ReadWrite <= Instruction_ReadWrite when execute,
-                  '0'                    when fetch,
-                  'X'                    when writeback;
+        ReadWrite <= Instruction_ReadWrite when execute,        -- if instruction does read/write
+                     Mem_READ              when fetch,         -- read instruction during fetch
+                     'X'                   when writeback;     -- no memory access during writeback
 
     with state select 
-      MemMode <= Instruction_WordMode when execute,
-                 WordMode             when fetch,
-                 "XX"                 when others;
+        MemMode <= Instruction_WordMode when execute,       -- instruction memory mode
+                   WordMode             when fetch,         -- fetch instruction word
+                   (others => 'X')      when others;        -- no memory access during writeback
 
     with state select
-        MemSel <= Instruction_MemSel when execute,
-                  MemSel_ROM         when fetch,
-                  'X'                when others;
+        MemSel <= Instruction_MemSel when execute,      -- if instruction access RAM or ROM
+                  MemSel_ROM         when fetch,        -- access ROM to fetch instruction
+                  'X'                when others;       -- no memory access during writeback
 
     with state select
-      MemAddrSel <= Instruction_MemAddrSel when execute,
-                    MemAddrSel_PMAU        when fetch,
-                    'X'                    when others;
+        MemAddrSel <= Instruction_MemAddrSel when execute,  -- if instruction accesses PMAU or DMAU address
+                      MemAddrSel_PMAU        when fetch,    -- access program memory during fetch
+                      'X'                    when others;   -- no memory access during writeback
 
-    -- Only modify registers during execution. 
-    EnableIn <= Instruction_EnableIn when state = execute else
-                '0';
+    -- Only modify registers after execute clock
+    EnableIn <= Instruction_EnableIn when state = execute else '0';
 
-    RegAxStore <= Instruction_RegAxStore when state = execute else
-                  '0';
+    -- Only modify address registers after execute clock
+    RegAxStore <= Instruction_RegAxStore when state = execute else '0';
 
-    TFlagSel <= Instruction_TFlagSel when state = execute else
-                TFlagSel_T;
+    -- Only modify T flag bit after execute clock
+    TFlagSel <= Instruction_TFlagSel when state = execute else TFlagSel_T;
 
     decode_proc: process (IR)
       variable l : line;
     begin
-        -- Default flag values (shouldn't change CPU state)
+        -- Default flag values are set here (these shouldn't change CPU state).
+        -- This is so that not every control signal has to be set in every single
+        -- instruction case. If an instruction enables writing to memory/registers,
+        -- then ensure that the default value is set here as "disable" to prevent
+        -- writes on the clocks following an instruction.
 
         -- Not accessing memory
         Instruction_MemEnable  <= '0';
@@ -433,15 +434,17 @@ begin
         Instruction_MemSel     <= MemSel_RAM;       -- access data memory by default
         Instruction_MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default
 
-        Instruction_EnableIn    <= '0';              -- Disable Reg Array
-        Instruction_PCAddrMode  <= PCAddrMode_INC;   -- Increment PC
-        Instruction_TFlagSel    <= TFlagSel_T;       -- Keep T flag the same
-        GBRWriteEn              <= '0';              -- keep GBR
-        PRWriteEn               <= '0';              -- keep PR
+        -- Register enables
+        Instruction_EnableIn    <= '0';             -- Disable register write
+        Instruction_RegAxStore  <= '0';             -- Disable writing to address register.
+        Instruction_TFlagSel    <= TFlagSel_T;      -- Keep T flag the same
+        GBRWriteEn              <= '0';             -- keep GBR
+        PRWriteEn               <= '0';             -- keep PR
 
-        SysRegCtrl <= SysRegCtrl_NONE;
-
-        ImmediateMode <= ImmediateMode_SIGN;
+        -- Defatult behavior
+        Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+        SysRegCtrl <= SysRegCtrl_NONE;              -- system register not selected
+        ImmediateMode <= ImmediateMode_SIGN;        -- sign-extend immediates by defualt
 
         if std_match(IR, ADD_RM_RN) then
 
@@ -476,7 +479,6 @@ begin
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         -- SUB Rm, Rn
         elsif std_match(IR, SUB_RM_RN) then
@@ -507,8 +509,6 @@ begin
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
-
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         -- NEG Rm, Rn
         elsif std_match(IR, NEG_RM_RN) then
@@ -544,8 +544,6 @@ begin
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         -- ADD #imm, Rn
         elsif std_match(IR, ADD_IMM_RN) then
             -- report "Instruction: ADD #imm, Rn";
@@ -566,10 +564,9 @@ begin
             SCmd      <= "XXX";
             ALUCmd    <= ALUCmd_ADDER;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         elsif std_match(IR, LOGIC_RM_RN) then
             -- {AND, TST, OR, XOR} Rm, Rn
+            -- Uses bit decoding to distinguish between the four possible operations
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -593,8 +590,6 @@ begin
             CinCmd <= CinCmd_ZERO;
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
-
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
         elsif std_match(IR, LOGIC_IMM_R0) then
             -- {AND, TST, OR, XOR} immediate, R0
@@ -623,8 +618,6 @@ begin
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_FBLOCK;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         elsif std_match(IR, NOT_RM_RN) then
             -- NOT Rm, Rn
 
@@ -644,10 +637,9 @@ begin
             SCmd      <= "XXX";
             ALUCmd    <= ALUCmd_FBLOCK;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         elsif std_match(IR, SHIFT_RN) then
             -- {ROTL, ROTR, ROTCL, ROTCR, SHAL, SHAR, SHLL, SHLR} Rn
+            -- Uses bit decoding to compute control signals (to reduce code size)
 
             -- Register array signals
             RegASel              <= to_integer(unsigned(n_format_n));
@@ -668,16 +660,12 @@ begin
             SCmd   <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         
         -- Data Transfer Instruction -------------------------------------------
 
         -- MOV #imm, Rn
         -- ni format
         elsif std_match(IR, MOV_IMM_RN) then
-            -- report "Instruction: MOV #imm, Rn";
-
             LogWithTime(l, "sh2_control.vhd: Decoded MOV H'" & to_hstring(ni_format_i) &
                           ", R" & to_string(slv_to_int(ni_format_n)), LogFile);
           
@@ -686,15 +674,11 @@ begin
             Instruction_EnableIn <= '1';
             Immediate            <= ni_format_i;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         -- MOV.W @(disp, PC), Rn
         -- nd8 format
         -- NOTE: Testing this assumes MOV into memory works.
         --
         elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
-          -- report "Instruction: [MOV.W @(disp, PC), Rn]";
-
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(nd8_format_d) &
             ", PC), R" & to_string(slv_to_int(nd8_format_n)), LogFile);
@@ -719,15 +703,10 @@ begin
           IncDecSel    <= IncDecSel_NONE;
           DMAUOff8     <= nd8_format_d;
 
-          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
 
         -- MOV.L @(disp, PC), Rn
         -- nd8 format
         elsif std_match(IR, MOV_L_AT_DISP_PC_RN) then
-          -- report "Instruction: [MOV.L @(disp, PC), Rn] not implemented."
-          -- severity ERROR;
-
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nd8_format_d) &
             ", PC), R" & to_string(slv_to_int(nd8_format_n)), LogFile);
@@ -749,13 +728,10 @@ begin
           IncDecSel    <= IncDecSel_NONE;
           DMAUOff8     <= nd8_format_d;
 
-          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
 
         -- MOV Rm, Rn
         -- nm format
         elsif std_match(IR, MOV_RM_RN) then
-          
             LogWithTime(l, 
               "sh2_control.vhd: Decoded MOV R" & to_string(slv_to_int(nm_format_m)) &
               "R" & to_string(slv_to_int(nm_format_n)) , LogFile);
@@ -766,13 +742,9 @@ begin
             RegDataInSel         <= RegDataIn_RegB;
             Instruction_EnableIn <= '1';
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         -- MOV.B Rm, @Rn
         -- nm format
         elsif std_match(IR, MOV_B_RM_AT_RN) then
-            -- report "Instruction: [MOV.B Rm, @Rn]."
-
             LogWithTime(l, 
               "sh2_control.vhd: Decoded MOV.B R" & to_string(slv_to_int(nm_format_m)) &
               ", @R" & to_string(slv_to_int(nm_format_n)) , LogFile);
@@ -793,12 +765,8 @@ begin
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel    <= IncDecSel_NONE;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         -- MOV.W Rm, @Rn
         elsif std_match(IR, MOV_W_RM_AT_RN) then
-            -- report "Instruction: [MOV.W Rm, @Rn]"
-
             LogWithTime(l, 
               "sh2_control.vhd: Decoded MOV.W R" & to_string(slv_to_int(nm_format_m)) &
               ", @R" & to_string(slv_to_int(nm_format_n)) , LogFile);
@@ -819,12 +787,8 @@ begin
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel    <= IncDecSel_NONE;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         -- MOV.L Rm, @Rn
         elsif std_match(IR, MOV_L_RM_AT_RN) then
-            -- report "Instruction: MOV RM, @Rn";
-
             LogWithTime(l, 
               "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_int(nm_format_m)) &
               ", @R" & to_string(slv_to_int(nm_format_n)) , LogFile);
@@ -845,14 +809,9 @@ begin
             OffScalarSel <= OffScalarSel_ONE;
             IncDecSel    <= IncDecSel_NONE;
 
-            Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
         -- MOV.B @Rm, Rn
         -- nm format
         elsif std_match(IR, MOV_B_AT_RM_RN) then
-          -- report "Instruction: [MOV.B @Rm, Rn] not implemented."
-          -- severity ERROR;
-
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.B @R" & to_string(slv_to_int(nm_format_m)) &
             ", R" & to_string(slv_to_int(nm_format_n)) , LogFile);
@@ -876,14 +835,9 @@ begin
           RegDataInSel         <= RegDataIn_DB;
           Instruction_EnableIn <= '1';
 
-          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
 
         -- MOV.W @Rm, Rn
         elsif std_match(IR, MOV_W_AT_RM_RN) then
-          -- report "Instruction: [MOV.W @Rm, Rn] not implemented."
-          -- severity ERROR;
-
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.W @R" & to_string(slv_to_int(nm_format_m)) &
             ", R" & to_string(slv_to_int(nm_format_n)) , LogFile);
@@ -906,9 +860,6 @@ begin
           RegInSel             <= to_integer(unsigned(nm_format_n));
           RegDataInSel         <= RegDataIn_DB;
           Instruction_EnableIn <= '1';
-
-          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
 
         -- MOV.L @Rm, Rn
         elsif std_match(IR, MOV_L_AT_RM_RN) then
@@ -937,9 +888,6 @@ begin
           RegInSel             <= to_integer(unsigned(nm_format_n));
           RegDataInSel         <= RegDataIn_DB;
           Instruction_EnableIn <= '1';
-
-          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
 
         -- MOV.B Rm, @-Rn
         -- nm format
@@ -1159,22 +1107,25 @@ begin
         -- System Control Instructions ----------------------------------------
 
         elsif std_match(IR, CLRT) then
-            -- report "Instruction: NOP";
-            Instruction_TFlagSel <= TFlagSel_CLEAR;
+            LogWithTime(l, "sh2_control.vhd: Decoded CLRT", LogFile);
+            Instruction_TFlagSel <= TFlagSel_CLEAR;     -- clear the T flag
         elsif std_match(IR, SETT) then
-            -- report "Instruction: NOP";
-            Instruction_TFlagSel <= TFlagSel_SET;
+            LogWithTime(l, "sh2_control.vhd: Decoded SETT", LogFile);
+            Instruction_TFlagSel <= TFlagSel_SET;       -- set the T flag
         elsif std_match(IR, STC_SYS_RN) then
+            -- STC {SR, GBR, VBR}, Rn
+            -- Uses bit decoding to choose the system register to store
             RegInSel <= to_integer(unsigned(n_format_n));
             RegDataInSel <= "01" & IR(5 downto 4);
             Instruction_EnableIn <= '1';
         elsif std_match(IR, LDC_RM_SYS) then
+            -- LDC Rm, {SR, GBR, VBR}
+            -- Uses bit decoding to choose the system register to load
             RegBSel <= to_integer(unsigned(m_format_m));
             SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= IR(5 downto 4);
         elsif std_match(IR, NOP) then
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
-            -- report "Instruction: NOP";
             null;
 
         elsif not is_x(IR) then
@@ -1182,24 +1133,25 @@ begin
         end if;
     end process;
 
-    -- Register updates done on clock edges
+    -- Register updates done on clock edges. The state machine logic is also encoded here.
+    -- Currently it is a repeating cycle of:
+    --  - fetch: read the current instruction from ROM at address PC
+    --  - execute: latch the instruction into IR and decode it, performing the necessary
+    --             computations on this clock and also outputting read/write signals for memory access
+    --  - writeback: update registers with computed values (or values read from memory).
+    --               Also increment the PC to advance to the next instruction.
     state_proc: process (clock, reset)
-      variable l : line;
     begin
         if reset = '0' then
             state <= fetch;
             IR <= NOP;
         elsif rising_edge(clock) then
             if state = fetch then
-              -- LogWithTime(l, "fetch -> execute", LogFile);
                 state <= execute;
-                IR <= DB(15 downto 0); -- latch in instruction from memory
+                IR <= MemDataIn(15 downto 0); -- latch in instruction from memory
             elsif state = execute then
-              -- LogWithTime(l, "execute -> writeback", LogFile);
-                -- report "Decoding instruction: " & to_hstring(IR);
                 state <= writeback;
             elsif state = writeback then
-              -- LogWithTime(l, "writeback -> fetch", LogFile);
                 state <= fetch;
             end if;
         end if;
