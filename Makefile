@@ -14,9 +14,6 @@ build: $(SOURCES) $(TESTBENCHES)
 $(basename $(TESTBENCHES)): build $(TESTBENCHES)
 	ghdl -e $(BUILDFLAGS) $@
 
-run: $(basename $(TESTBENCHES))
-	ghdl -r sh2_cpu_tb $(RUNFLAGS)
-
 asm:
 	cd asm && $(MAKE)
 
