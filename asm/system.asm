@@ -50,6 +50,21 @@ ProgramStart:
     MOV #$14, R1;
     MOV R0, @R1;        Expect R0 = 0x000000CC
 
+    ; Test STC.L
+    MOV #$4C, R0;
+    LDC R0, SR;     SR  <- 0x0000004C
+
+    ADD #1, R0;
+    LDC R0, GBR;    GBR <- 0x0000004D
+
+    ADD #1, R0;
+    LDC R0, VBR;    VBR <- 0x0000004E
+
+    MOV #$20, R1;
+    STC.L SR, @-R1;     Expect 0x0000004C at 0x20
+    STC.L GBR, @-R1;    Expect 0x0000004D at 0x1C
+    STC.L VBR, @-R1;    Expect 0x0000004E at 0x18
+
     ; Quit test program
     MOV #-4, R0;
     MOV.B R0, @R0;
