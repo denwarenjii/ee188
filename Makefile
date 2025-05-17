@@ -1,4 +1,4 @@
-# Elaboration order:
+# Analysis order:
 #
 # utils.vhd
 # logging.vhd
@@ -40,12 +40,11 @@ BUILDFLAGS = --std=08 -O2 -Wuseless -Werror -Wruntime-error -Wnowrite -fsynopsys
 
 RUNFLAGS = --ieee-asserts=disable --wave=$(WAVEFORM)
 
-SOURCES = utils.vhd logging.vhd AnsiEscape.vhd sh2_constants.vhd mau.vhd sh2_pmau.vhd memory_interface.vhd sh2_dmau.vhd sh2_alu.vhd sh2_control.vhd sh2_reg.vhd sh2_cpu.vhd memory.vhd sh2_cpu_tb.vhd reg.vhd alu.vhd 
-
-# SOURCES = utils.vhd logging.vhd AnsiEscape.vhd sh2_constants.vhd mau.vhd sh2_pmau.vhd memory_interface.vhd sh2_dmau.vhd sh2_alu.vhd sh2_control.vhd sh2_reg.vhd sh2_cpu.vhd memory.vhd sh2_cpu_tb.vhd reg.vhd alu.vhd 
+SOURCES = utils.vhd logging.vhd AnsiEscape.vhd sh2_constants.vhd mau.vhd sh2_pmau.vhd \
+		  memory_interface.vhd sh2_dmau.vhd sh2_alu.vhd sh2_control.vhd sh2_reg.vhd \
+		  sh2_cpu.vhd memory.vhd sh2_cpu_tb.vhd reg.vhd alu.vhd 
 
 OBJECTS = $(patsubst %.vhd,$(WORKDIR)%.o,$(SOURCES))
-# OBJECTS = utils.o logging.o AnsiEscape.o sh2_constants.o mau.o sh2_pmau.o memory_interface.o sh2_dmau.o sh2_alu.o sh2_control.o sh2_reg.o sh2_cpu.o memory.o sh2_cpu_tb.o reg.o alu.o 
 
 # The top level entity
 TOPLEVEL = sh2_cpu_tb
@@ -58,18 +57,27 @@ $(TOPLEVEL): $(OBJECTS)
 
 # Dependencies:
 $(WORKDIR)sh2_pmau.o: $(WORKDIR)sh2_constants.o  $(WORKDIR)mau.o
+
 $(WORKDIR)memory_interface.o: $(WORKDIR)utils.o $(WORKDIR)logging.o
+
 $(WORKDIR)sh2_dmau.o: $(WORKDIR)mau.o $(WORKDIR)sh2_constants.o
-$(WORKDIR)sh2_control.o: $(WORKDIR)memory_interface.o $(WORKDIR)logging.o  $(WORKDIR)sh2_pmau.o $(WORKDIR)sh2_dmau.o $(WORKDIR)sh2_alu.o  $(WORKDIR)utils.o
-$(WORKDIR)sh2_cpu.o: $(WORKDIR)sh2_pmau.o $(WORKDIR)memory_interface.o $(WORKDIR)sh2_control.o $(WORKDIR)logging.o $(WORKDIR)sh2_constants.o $(WORKDIR)sh2_dmau.o $(WORKDIR)sh2_reg.o $(WORKDIR)sh2_alu.o
+
+$(WORKDIR)sh2_control.o: $(WORKDIR)memory_interface.o $(WORKDIR)logging.o  $(WORKDIR)sh2_pmau.o \
+						 $(WORKDIR)sh2_dmau.o $(WORKDIR)sh2_alu.o  $(WORKDIR)utils.o
+
+$(WORKDIR)sh2_cpu.o: $(WORKDIR)sh2_pmau.o $(WORKDIR)memory_interface.o $(WORKDIR)sh2_control.o \
+					 $(WORKDIR)logging.o $(WORKDIR)sh2_constants.o $(WORKDIR)sh2_dmau.o $(WORKDIR)sh2_reg.o $(WORKDIR)sh2_alu.o
+
 $(WORKDIR)memory.o:  $(WORKDIR)logging.o $(WORKDIR)utils.o
-$(WORKDIR)sh2_cpu_tb.o: $(WORKDIR)utils.o  $(WORKDIR)logging.o $(WORKDIR)AnsiEscape.o $(WORKDIR)sh2_cpu.o $(WORKDIR)memory.o
+
+$(WORKDIR)sh2_cpu_tb.o: $(WORKDIR)utils.o  $(WORKDIR)logging.o $(WORKDIR)AnsiEscape.o \
+						$(WORKDIR)sh2_cpu.o $(WORKDIR)memory.o
+
 $(WORKDIR)reg.o: $(WORKDIR)logging.o
 
 # Note that $> is the first prereq (ie, the source file).
 $(OBJECTS): $(WORKDIR)%.o: %.vhd
 	$(GHDL) -a $(BUILDFLAGS) $<
-
 
 asm:
 	cd asm && $(MAKE)
@@ -83,12 +91,5 @@ clean:
 
 view:
 	gtkwave $(WAVEFORM) &
-
-# $(WORKDIR)%.o: %.vhd
-# 	$(GHDL) -a $(BUILDFLAGS) $<
-
-
-#%.o: %.vhd
-#	$(GHDL) -a $(BUILDFLAGS) $<
 
 .PHONY: test clean build view asm run
