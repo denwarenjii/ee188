@@ -60,8 +60,6 @@ use work.SH2ControlConstants.all;
 use work.Logging.all;
 use work.SH2Constants.all;
 use work.SH2DmauConstants.all;
---library opcodes;
---use opcodes.opcodes.all;
 
 
 entity  SH2CPU  is
@@ -228,8 +226,6 @@ architecture structural of sh2cpu is
     -- Not implemented
     -- signal MACL             : std_logic_vector(31 downto 0);
     -- signal MACH             : std_logic_vector(31 downto 0);
-
-    signal MemDataLatch : std_logic_vector(31 downto 0);
 
     signal MemAddrSel  : std_logic;
 
@@ -416,7 +412,7 @@ begin
         ReadWrite => ReadWrite,
         MemMode   => MemMode,
         Address   => unsigned(MemAddress),
-        data_in   => MemDataOut,
+        MemDataOut=> MemDataOut,
         -- Outputs:
         RE => ReadMask,
         WE => WriteMask,
@@ -426,17 +422,18 @@ begin
     memory_rx : entity work.MemoryInterfaceRx
     port map (
         -- Inputs:
+        MemEnable => MemEnable,
         MemMode => MemMode,
         Address => unsigned(MemAddress),
         DB      => DB,
         -- Outputs:
-        data => MemDataIn
+        MemDataIn => MemDataIn
     );
 
     control_unit : entity work.SH2Control
     port map (
         -- Inputs:
-        DB    => MemDataIn,
+        MemDataIn => MemDataIn,
         clock => clock,
         reset => reset,
 
@@ -520,9 +517,6 @@ begin
             end if;
 
             LogWithTime(l, "sh2_cpu.vhd: MemDataIn: " & to_hstring(MemDataIn), LogFile);
-            if RegDataInSel = RegDataIn_DB then
-                MemDataLatch <= MemDataIn;
-            end if;
         end if;
     end process register_proc;
 
