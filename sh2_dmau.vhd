@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---	sh2_dmau.vhd
+--  sh2_dmau.vhd
 --
 -- SH-2 DMAU (Data Memory Access Unit). 
 --
@@ -33,7 +33,7 @@
 -- exist in the SH-2.
 --
 --  Revision History:
---		16 April 25		Chris M. Initial reivision.
+--    16 April 25   Chris M. Initial reivision.
 --    23 April 25   Chris M. Add seperate calculated offsets to AddrOff matrix
 --                           instead of muxing between a single offset.
 --
@@ -78,9 +78,9 @@ package SH2DmauConstants is
 
   -- OffsetScalarSel constant. What to scale the offset (or increment value) by.
   --
-  constant OffScalarSel_ONE : 	std_logic_vector(1 downto 0) := "00"; -- 0
-  constant OffScalarSel_TWO :  	std_logic_vector(1 downto 0) := "01"; -- 1
-  constant OffScalarSel_FOUR : 	std_logic_vector(1 downto 0) := "10"; -- 2
+  constant OffScalarSel_ONE  :  std_logic_vector(1 downto 0) := "00"; -- 0
+  constant OffScalarSel_TWO  :  std_logic_vector(1 downto 0) := "01"; -- 1
+  constant OffScalarSel_FOUR :  std_logic_vector(1 downto 0) := "10"; -- 2
 
   -- IncDecSel constants.
   --
@@ -238,7 +238,7 @@ architecture structural of SH2Dmau is
     constant DMAUAddrSrc_REG : integer := 0;
     constant DMAUAddrSrc_GBR : integer := 1;
     constant DMAUAddrSrc_PC  : integer := 2;
-    signal 	 DMAUSrcSel      : integer  range SRCCNT - 1 downto 0;
+    signal   DMAUSrcSel      : integer  range SRCCNT - 1 downto 0;
     
 
     -- DMAUOffsetSel constants.
@@ -246,14 +246,14 @@ architecture structural of SH2Dmau is
     constant DMAUOffsetSel_OFF4   : integer := 1;
     constant DMAUOffsetSel_OFF8   : integer := 2;
     constant DMAUOffsetSel_R0     : integer := 3;
-    signal 	 DMAUOffsetSel        : integer range OFFSETCNT - 1 downto 0;
+    signal   DMAUOffsetSel        : integer range OFFSETCNT - 1 downto 0;
 
     signal DMAUAddrOff : std_logic_array(OFFSETCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
 
 
-    constant 	DMAU_INC 			 : std_logic := '0';
-    constant 	DMAU_DEC 			 : std_logic := '1';
-    signal 		DMAUIncDecSel  : std_logic;
+    constant  DMAU_INC       : std_logic := '0';
+    constant  DMAU_DEC       : std_logic := '1';
+    signal    DMAUIncDecSel  : std_logic;
 
     -- The bit of the calculted address we want to increment or decrement.
     --    + 1 = increment bit 0
@@ -261,14 +261,14 @@ architecture structural of SH2Dmau is
     --    * 4 = increment bit 2
     signal DMAUIncDecBit  : integer range MAXINCDECBIT downto 0;
 
-    constant DMAU_PRE  		: std_logic := '0';
-    constant DMAU_POST 		: std_logic := '1';
+    constant DMAU_PRE     : std_logic := '0';
+    constant DMAU_POST    : std_logic := '1';
     signal DMAUPrePostSel : std_logic;
 
     -- The low two bits of the PC are masked if PC is selected as the base address, 
     -- Off8 is selected as the index, and the scaled factor is 4.
-    constant 	PC_MASK : std_logic_vector(SH2_WORDSIZE - 1 downto 0) := x"FFFFFFFC";
-    signal 		PCMux 	: std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    constant  PC_MASK : std_logic_vector(SH2_WORDSIZE - 1 downto 0) := x"FFFFFFFC";
+    signal    PCMux   : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
 
 
     -- Zero/sign extedned offsets.

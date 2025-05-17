@@ -192,9 +192,9 @@ architecture  dataflow  of  MemUnit  is
     signal  OutSrcAddr : std_logic_vector(wordsize - 1 downto 0);
 
 
-		signal SrcSelMux : std_logic_vector(wordsize - 1 downto 0);
+    signal SrcSelMux : std_logic_vector(wordsize - 1 downto 0);
 
-		signal AddrOffMux : std_logic_vector(wordsize - 1 downto 0);
+    signal AddrOffMux : std_logic_vector(wordsize - 1 downto 0);
 
 begin
 
@@ -235,16 +235,16 @@ begin
     idcarry(0) <= '0';                              -- there is no carry in
 
 
-		SrcSelMux <= AddrSrc(SrcSel);
+    SrcSelMux <= AddrSrc(SrcSel);
 
     IDA1:  for  i  in  AddrSrcOut'Range  generate   -- make enough AdderBits
     begin
         IDABx: AdderBit  port map  (
-					SrcSelMux(i), 
-					IncDecIn(i), 
-					idcarry(i),
+          SrcSelMux(i), 
+          IncDecIn(i), 
+          idcarry(i),
           OutSrcAddr(i), 
-					idcarry(i + 1));
+          idcarry(i + 1));
     end generate;
 
 
@@ -259,16 +259,16 @@ begin
     -- adder for adding offset to the source address
     acarry(0) <= '0';                               -- there is no carry in
 
-		AddrOffMux <= AddrOff(OffsetSel);
+    AddrOffMux <= AddrOff(OffsetSel);
 
     AA1:  for  i  in  Address'Range  generate       -- make enough AdderBits
     begin
         AABx: AdderBit  port map  (
-					SrcAddr(i), 
-					AddrOffMux(i), 
-					acarry(i),
+          SrcAddr(i), 
+          AddrOffMux(i), 
+          acarry(i),
           Address(i), 
-					acarry(i + 1));
+          acarry(i + 1));
     end generate;
 
 
