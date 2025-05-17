@@ -924,18 +924,43 @@ begin
           IncDecSel    <= IncDecSel_POST_INC;
 
         -- MOV.B RO, @(disp,Rn)
+        -- nd4 format
         elsif std_match(IR, MOV_B_R0_AT_DISP_RN) then
-          report "Instruction: [MOV.B RO, @(disp,Rn)] not implemented."
+          -- report "Instruction: [MOV.B RO, @(disp,Rn)] not implemented."
+          -- severity ERROR;
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.W R0, @(0x" & to_hstring(nd4_format_d) &
+            ", " & to_string(slv_to_int(nd4_format_n)) & ")", LogFile);
+
+          assert false
+          report "TODO"
           severity ERROR;
 
         -- MOV.W RO, @(disp,Rn)
+        -- nd4 format
         elsif std_match(IR, MOV_W_R0_AT_DISP_RN) then
-          report "Instruction: [MOV.W RO, @(disp,Rn)] not implemented."
+          -- report "Instruction: [MOV.W RO, @(disp,Rn)] not implemented."
+          -- severity ERROR;
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.L R0, @(0x" & to_hstring(nd4_format_d) &
+            ", " & to_string(slv_to_int(nd4_format_n)) & ")", LogFile);
+
+          assert false
+          report "TODO"
           severity ERROR;
 
         -- MOV.L Rm, @(disp, Rn)
+        -- nmd format
         elsif std_match(IR, MOV_L_RM_AT_DISP_RN) then
-          report "Instruction: [MOV.L Rm, @(disp, Rn)] not implemented."
+          -- report "Instruction: [MOV.L Rm, @(disp, Rn)] not implemented."
+          -- severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_int(nmd_format_m)) &
+            ", @(" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_int(nmd_format_n)), LogFile);
+
+          assert false
+          report "TODO"
           severity ERROR;
 
         -- MOV.B @(disp, Rm), R0
