@@ -88,7 +88,7 @@ end entity;
 architecture structural of MemoryInterfaceTx is
 begin
 
-    output_proc: process(MemEnable, ReadWrite, MemMode, Address, clock)
+    output_proc: process(MemEnable, ReadWrite, MemMode, Address, MemDataOut, clock)
       variable l : line;
     begin
         -- When clock goes low, if this interface is enabled and should perform
@@ -266,7 +266,7 @@ end entity;
 
 architecture structural of MemoryInterfaceRx is
 begin
-    output_proc: process(MemMode, Address, DB)
+    output_proc: process(MemEnable, MemMode, Address, DB)
     begin
         if MemEnable = MemEnable_ON then
             -- Shift and sign-extend based on the mode
