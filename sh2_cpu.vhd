@@ -416,7 +416,7 @@ begin
         ReadWrite => ReadWrite,
         MemMode   => MemMode,
         Address   => unsigned(MemAddress),
-        data_in   => MemDataOut,
+        MemDataOut=> MemDataOut,
         -- Outputs:
         RE => ReadMask,
         WE => WriteMask,
@@ -426,11 +426,12 @@ begin
     memory_rx : entity work.MemoryInterfaceRx
     port map (
         -- Inputs:
+        MemEnable => MemEnable,
         MemMode => MemMode,
         Address => unsigned(MemAddress),
         DB      => DB,
         -- Outputs:
-        data => MemDataIn
+        MemDataIn => MemDataIn
     );
 
     control_unit : entity work.SH2Control
