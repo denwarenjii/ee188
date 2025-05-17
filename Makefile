@@ -2,7 +2,8 @@ SOURCES = AnsiEscape.vhd utils.vhd mau.vhd sh2_constants.vhd logging.vhd sh2_dma
 TESTBENCHES = sh2_alu_tb.vhd sh2_reg_tb.vhd sh2_cpu_tb.vhd memory_tb.vhd
 WAVEFORM = waveform.ghw
 
-BUILDFLAGS = --std=08 -Wuseless -Werror -fsynopsys --workdir=work/
+
+BUILDFLAGS = --std=08 -Wuseless -Wall -Wruntime-error -Wnowrite -fsynopsys --workdir=work/
 RUNFLAGS = --ieee-asserts=disable --wave=$(WAVEFORM)
 
 all: $(basename $(TESTBENCHES))

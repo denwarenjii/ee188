@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---	sh2_pmau.vhd
+--  sh2_pmau.vhd
 --
 -- SH-2 PMAU (Program Memory Access Unit). 
 --
@@ -17,7 +17,7 @@
 --
 --
 --  Revision History:
---		16 April 25		Chris M. Initial reivision.
+--    16 April 25   Chris M. Initial reivision.
 --    01 May   25   Chris M. Added PRWriteEn and seperate offset signals. Made
 --                           PrePostSel in MAU be POST when we don't care.
 --    02 May   25   Chris M. Changed SignExtend function to wrap numeric_std
