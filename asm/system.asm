@@ -60,7 +60,7 @@ ProgramStart:
     ADD #1, R0;
     LDC R0, VBR;    VBR <- 0x0000004E
 
-    MOV #$20, R1;
+    MOV #$24, R1;
     STC.L SR, @-R1;     Expect 0x0000004C at 0x20
     STC.L GBR, @-R1;    Expect 0x0000004D at 0x1C
     STC.L VBR, @-R1;    Expect 0x0000004E at 0x18
