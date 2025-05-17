@@ -364,14 +364,11 @@ begin
     );
 
 
+    -- Use RegA1 (@Rn) if we are writing and RegA2 (@Rm) if we are reading.
     RegSrc <= RegA2 when ReadWrite = Mem_READ else
               RegA1 when ReadWrite = Mem_WRITE else
               (others => 'X');
-    -- Use RegA1 (@Rn) if we are writing and RegA2 (@Rm) if we are reading.
-    with ReadWrite select
-        RegSrc <= RegA1           when ReadWrite_READ,
-                  RegA2           when ReadWrite_WRITE,
-                  (others => '0') when others;
+
 
     -- Connect PCSrc to PCOut
     PCSrc <= PCOut;
