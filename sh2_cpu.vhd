@@ -213,7 +213,8 @@ architecture structural of sh2cpu is
 
     signal SysRegCtrl       : std_logic;
     signal SysRegSel        : std_logic_vector(1 downto 0);
-
+    signal SysRegSrc        : std_logic;
+    signal NextSysReg : std_logic_vector(31 downto 0);
 
     signal TNext        : std_logic;    -- Next value for T bit
 
@@ -229,6 +230,7 @@ architecture structural of sh2cpu is
     -- signal MACH             : std_logic_vector(31 downto 0);
 
     signal MemAddrSel  : std_logic;
+
 
 begin
 
@@ -362,7 +364,9 @@ begin
     );
 
 
-    RegSrc <= RegA1;
+    RegSrc <= RegA2 when ReadWrite = Mem_READ else
+              RegA1 when ReadWrite = Mem_WRITE else
+              (others => 'X');
 
     -- Connect PCSrc to PCOut
     PCSrc <= PCOut;
@@ -490,8 +494,13 @@ begin
 
         -- system control signals
         SysRegCtrl => SysRegCtrl,
-        SysRegSel => SysRegSel
+        SysRegSel => SysRegSel,
+        SysRegSrc => SysRegSrc
     );
+
+    NextSysReg <= RegB      when SysRegSrc = SysRegSrc_RegB else
+                  MemDataIn when SysRegSrc = SysRegSrc_DB else
+                  (others => 'X');
 
     register_proc: process(clock, reset)
       variable l : line;
@@ -509,11 +518,11 @@ begin
 
             if SysRegCtrl = SysRegCtrl_LOAD then
                 if SysRegSel = SysRegSel_SR then
-                    SR <= RegB;
+                    SR <= NextSysReg;
                 elsif SysRegSel = SysRegSel_GBR then
-                    GBR <= RegB;
+                    GBR <= NextSysReg;
                 elsif SysRegSel = SysRegSel_VBR then
-                    VBR <= RegB;
+                    VBR <= NextSysReg;
                 end if;
             end if;
 

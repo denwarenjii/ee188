@@ -112,6 +112,7 @@ package SH2InstructionEncodings is
 
   constant STC_SYS_RN       : Instruction := "0000----00--0010";
   constant LDC_RM_SYS       : Instruction := "0100----00--1110";
+  constant LDC_L_RM_SYS     : Instruction := "0100----00--0111";
 
 end package SH2InstructionEncodings;
 
@@ -161,14 +162,17 @@ package SH2ControlConstants is
     constant TFlagSel_SET       : std_logic_vector(2 downto 0) := "100";
     constant TFlagSel_CLEAR     : std_logic_vector(2 downto 0) := "101";
 
-    constant MemSel_ROM     : std_logic := '1';
-    constant MemSel_RAM     : std_logic := '0';
+    constant MemSel_ROM         : std_logic := '1';
+    constant MemSel_RAM         : std_logic := '0';
 
-    constant MemAddrSel_PMAU : std_logic := '0';
-    constant MemAddrSel_DMAU : std_logic := '1';
+    constant MemAddrSel_PMAU    : std_logic := '0';
+    constant MemAddrSel_DMAU    : std_logic := '1';
 
-    constant SysRegCtrl_NONE    : std_logic := '0';
-    constant SysRegCtrl_LOAD    : std_logic := '1';
+    constant SysRegCtrl_NONE    : std_logic := '0';     -- do nothing with system register
+    constant SysRegCtrl_LOAD    : std_logic := '1';     -- load system register with new value
+
+    constant SysRegSrc_RegB     : std_logic := '0';     -- load system register from register bus B
+    constant SysRegSrc_DB       : std_logic := '1';     -- load system register from data bus
 
     constant SysRegSel_SR   : std_logic_vector(1 downto 0) := "00";
     constant SysRegSel_GBR  : std_logic_vector(1 downto 0) := "01";
@@ -258,7 +262,8 @@ entity  SH2Control  is
 
         -- System control signals
         SysRegCtrl      : out std_logic;
-        SysRegSel       : out std_logic_vector(1 downto 0)
+        SysRegSel       : out std_logic_vector(1 downto 0);
+        SysRegSrc       : out std_logic
 );
     
 end  SH2Control;
@@ -368,6 +373,9 @@ architecture dataflow of sh2control is
   -- the execute state so that it is high when the rising clock of the writeback state occurs.
   signal Instruction_TFlagSel    : std_logic_vector(2 downto 0);
 
+  -- If the system register should be loaded or not
+  signal Instruction_SysRegCtrl  : std_logic;
+
 begin
 
     -- Outputs that change based on the CPU state
@@ -409,6 +417,9 @@ begin
     -- Only modify T flag bit after execute clock
     TFlagSel <= Instruction_TFlagSel when state = execute else TFlagSel_T;
 
+    -- Only update system register after execute clock (on writeback)
+    SysRegCtrl <= Instruction_SysRegCtrl when state = execute else SysRegCtrl_NONE;
+
     decode_proc: process (IR)
       variable l : line;
     begin
@@ -435,7 +446,7 @@ begin
 
         -- Defatult behavior
         Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
-        SysRegCtrl <= SysRegCtrl_NONE;              -- system register not selected
+        Instruction_SysRegCtrl <= SysRegCtrl_NONE;  -- system register not selected
         ImmediateMode <= ImmediateMode_SIGN;        -- sign-extend immediates by defualt
 
         if std_match(IR, ADD_RM_RN) then
@@ -963,11 +974,40 @@ begin
             -- LDC Rm, {SR, GBR, VBR}
             -- Uses bit decoding to choose the system register to load
 
-            LogWithTime(l, "sh2_control.vhd: Decoded LDC Rm, XXX", LogFile);
+            LogWithTime(l, "sh2_control.vhd: Decoded LDC Rm, X", LogFile);
 
             RegBSel <= to_integer(unsigned(m_format_m));
-            SysRegCtrl <= SysRegCtrl_LOAD;
+            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= IR(5 downto 4);
+            SysRegSrc <= SysRegSrc_RegB;
+        elsif std_match(IR, LDC_L_RM_SYS) then
+            -- LDC.L @Rm+, {SR, GBR, VBR}
+            -- Uses bit decoding to choose the system register to load
+
+            LogWithTime(l, "sh2_control.vhd: Decoded LDC.L @Rm+, X", LogFile);
+
+            -- Reads a longword from memory
+            Instruction_MemEnable <= '1';             -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+            Instruction_WordMode  <= LongwordMode;  -- bit decode memory mode
+
+            -- Load into a system register
+            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegSel <= IR(5 downto 4);    -- bit decode which system register to write to
+            SysRegSrc <= SysRegSrc_DB;      -- load new register value from memory
+
+            -- Read from @Rm, and save with post-incremented value
+            RegA2Sel   <= to_integer(unsigned(m_format_m));
+            RegAxInSel <= to_integer(unsigned(m_format_m));
+            Instruction_RegAxStore <= '1';
+
+            -- DMAU signals (for post-increment indirect register addressing)
+            GBRWriteEn   <= '0';
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_POST_INC;
+
         elsif std_match(IR, NOP) then
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
             null;
