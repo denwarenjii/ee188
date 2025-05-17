@@ -82,7 +82,7 @@ clean:
 	# rm -rf *.cf *.o $(WORKDIR)
 
 view:
-	gtkwave $(WAVEFORM)
+	gtkwave $(WAVEFORM) &
 
 # $(WORKDIR)%.o: %.vhd
 # 	$(GHDL) -a $(BUILDFLAGS) $<
