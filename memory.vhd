@@ -13,6 +13,7 @@
 --     29 Apr 25  Glen George       Fixed inconsistencies in byte vs word
 --                                  addressing.
 --     01 May 25  Zack Huang        Fixed compile errors
+--     16 May 25  Zack Huang        Added more documentation
 --
 ----------------------------------------------------------------------------
 
@@ -51,7 +52,6 @@
 --
 
 library ieee;
-library work;
 
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
@@ -123,6 +123,8 @@ begin
     WE  <=  WE0  and  WE1  and  WE2  and  WE3;
 
 
+    -- On input change, combinatorially compute the address and segment of RAM
+    -- that needs to be accessed.
     ram_access: process (RE, RE0, RE1, RE2, RE3, WE, WE0, WE1, WE2, WE2, MemAB) is
     begin
         -- Check that MemAB is a valid value and is within the range of the integer type
@@ -155,10 +157,13 @@ begin
     end process;
 
 
-    -- Get the 32 bits from the address being read from/written to
+    -- Get the 32 bits from the address being read from/written to (as
+    -- a extension of the ram_access process)
     MemData <= Curr_RAM(RamAddr) when RamAddr >= 0 and RamAddr < MEMSIZE else (others => 'X');
 
 
+    -- On read, simply output the (masked) bytes that were accessed
+    -- combinatorially (e.g. MemData)
     read_proc: process (RE, RE0, RE1, RE2, RE3, MemData) is
     begin
 
@@ -189,6 +194,9 @@ begin
     end process;
 
 
+    -- On write, set the desired bytes within the RAM segment being currently
+    -- accessed, at the correct address within the RAM (previously computed
+    -- combinatorially).
     write_proc: process (WE, WE0, WE1, WE2, WE3, MemAB) is
     begin
 
@@ -198,63 +206,32 @@ begin
             -- rising edge of write - write the data (check which address range)
             -- report "Writing to " & to_hstring(MemAB) & " with: " & to_hstring(MemDB);
 
-            -- write the updated value to memory (computed combinatorially above)
+            -- write the updated value to memory (computed combinatorially
+            -- above), with byte masking
             if  ((to_integer(unsigned(MemAB)) >= START_ADDR0) and
                  (to_integer(unsigned(MemAB) - START_ADDR0) < (4 * MEMSIZE)))  then
-                if (WE0 = '0') then
-                    RAMbits0(RamAddr)(7 downto 0) <= MemDB(7 downto 0);
-                end if;
-                if (WE1 = '0') then
-                    RAMbits0(RamAddr)(15 downto 8) <= MemDB(15 downto 8);
-                end if;
-                if (WE2 = '0') then
-                    RAMbits0(RamAddr)(23 downto 16) <= MemDB(23 downto 16);
-                end if;
-                if (WE3 = '0') then
-                    RAMbits0(RamAddr)(31 downto 24) <= MemDB(31 downto 24);
-                end if;
+                if (WE0 = '0') then RAMbits0(RamAddr)(7 downto 0) <= MemDB(7 downto 0); end if;
+                if (WE1 = '0') then RAMbits0(RamAddr)(15 downto 8) <= MemDB(15 downto 8); end if;
+                if (WE2 = '0') then RAMbits0(RamAddr)(23 downto 16) <= MemDB(23 downto 16); end if;
+                if (WE3 = '0') then RAMbits0(RamAddr)(31 downto 24) <= MemDB(31 downto 24); end if;
             elsif  ((to_integer(unsigned(MemAB)) >= START_ADDR1) and
                     (to_integer(unsigned(MemAB) - START_ADDR1) < (4 * MEMSIZE)))  then
-                if (WE0 = '1') then
-                    RAMbits0(RamAddr)(7 downto 0) <= MemDB(7 downto 0);
-                end if;
-                if (WE1 = '1') then
-                    RAMbits0(RamAddr)(15 downto 8) <= MemDB(15 downto 8);
-                end if;
-                if (WE2 = '1') then
-                    RAMbits0(RamAddr)(23 downto 16) <= MemDB(23 downto 16);
-                end if;
-                if (WE3 = '1') then
-                    RAMbits0(RamAddr)(31 downto 24) <= MemDB(31 downto 24);
-                end if;
+                if (WE0 = '1') then RAMbits0(RamAddr)(7 downto 0) <= MemDB(7 downto 0); end if;
+                if (WE1 = '1') then RAMbits0(RamAddr)(15 downto 8) <= MemDB(15 downto 8); end if;
+                if (WE2 = '1') then RAMbits0(RamAddr)(23 downto 16) <= MemDB(23 downto 16); end if;
+                if (WE3 = '1') then RAMbits0(RamAddr)(31 downto 24) <= MemDB(31 downto 24); end if;
             elsif  ((to_integer(unsigned(MemAB)) >= START_ADDR2) and
                     (to_integer(unsigned(MemAB) - START_ADDR2) < (4 * MEMSIZE)))  then
-                if (WE0 = '0') then
-                    RAMbits2(RamAddr)(7 downto 0) <= MemDB(7 downto 0);
-                end if;
-                if (WE1 = '0') then
-                    RAMbits2(RamAddr)(15 downto 8) <= MemDB(15 downto 8);
-                end if;
-                if (WE2 = '0') then
-                    RAMbits2(RamAddr)(23 downto 16) <= MemDB(23 downto 16);
-                end if;
-                if (WE3 = '0') then
-                    RAMbits2(RamAddr)(31 downto 24) <= MemDB(31 downto 24);
-                end if;
+                if (WE0 = '0') then RAMbits2(RamAddr)(7 downto 0) <= MemDB(7 downto 0); end if;
+                if (WE1 = '0') then RAMbits2(RamAddr)(15 downto 8) <= MemDB(15 downto 8); end if;
+                if (WE2 = '0') then RAMbits2(RamAddr)(23 downto 16) <= MemDB(23 downto 16); end if;
+                if (WE3 = '0') then RAMbits2(RamAddr)(31 downto 24) <= MemDB(31 downto 24); end if;
             elsif  ((to_integer(unsigned(MemAB)) >= START_ADDR3) and
                     (to_integer(unsigned(MemAB) - START_ADDR3) < (4 * MEMSIZE)))  then
-                if (WE0 = '0') then
-                    RAMbits3(RamAddr)(7 downto 0) <= MemDB(7 downto 0);
-                end if;
-                if (WE1 = '0') then
-                    RAMbits3(RamAddr)(15 downto 8) <= MemDB(15 downto 8);
-                end if;
-                if (WE2 = '0') then
-                    RAMbits3(RamAddr)(23 downto 16) <= MemDB(23 downto 16);
-                end if;
-                if (WE3 = '0') then
-                    RAMbits3(RamAddr)(31 downto 24) <= MemDB(31 downto 24);
-                end if;
+                if (WE0 = '0') then RAMbits3(RamAddr)(7 downto 0) <= MemDB(7 downto 0); end if;
+                if (WE1 = '0') then RAMbits3(RamAddr)(15 downto 8) <= MemDB(15 downto 8); end if;
+                if (WE2 = '0') then RAMbits3(RamAddr)(23 downto 16) <= MemDB(23 downto 16); end if;
+                if (WE3 = '0') then RAMbits3(RamAddr)(31 downto 24) <= MemDB(31 downto 24); end if;
             else
                 -- outside of any allowable address range - generate an error
                 assert (false)
