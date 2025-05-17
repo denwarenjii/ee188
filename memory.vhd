@@ -13,7 +13,7 @@
 --     29 Apr 25  Glen George       Fixed inconsistencies in byte vs word
 --                                  addressing.
 --     01 May 25  Zack Huang        Fixed compile errors
---
+--     14 May 25  Chris M.          Track locations that have been written.
 ----------------------------------------------------------------------------
 
 
@@ -105,7 +105,6 @@ architecture  behavioral  of  MEMORY32x32  is
     signal  Curr_RAM  :  RAMtype;
     signal  RamAddr   :  integer;
     signal  MemData   :  std_logic_vector(31 downto 0);
-
 
 begin
 

@@ -19,6 +19,7 @@ use std.textio.all;
 
 use work.sh2utils.all;
 use work.Logging.all;
+use work.ANSIEscape.all;
 
 entity sh2_cpu_tb is
 end sh2_cpu_tb;
@@ -91,6 +92,68 @@ architecture behavioral of sh2_cpu_tb is
     signal END_SIM    : boolean    := false;    -- if the simulation should end
 
 
+    -- vectors to keep track of written memory locations
+    signal RAMSegment0Writes : std_logic_vector(0 to 1023) := (others => '0');
+    signal RAMSegment1Writes : std_logic_vector(0 to 1023) := (others => '0');
+    signal RAMSegment2Writes : std_logic_vector(0 to 1023) := (others => '0');
+    signal RAMSegment3Writes : std_logic_vector(0 to 1023) := (others => '0');
+
+    function IntToHString(i : integer) return string is
+      variable slv     : std_logic_vector(31 downto 0);
+      variable hex_str : string(1 to 8);
+    begin
+      slv := std_logic_vector(to_unsigned(i, 32));
+      hex_str := to_hstring(slv);
+      return hex_str;
+    end function;
+
+
+    file MemLogFile : text open write_mode is "mem_log.txt";
+
+    procedure LogWrites(seg_no : integer range 0 to 3) is
+
+      variable l : line;
+      variable slv : std_logic_vector(31 downto 0);
+      variable hex_str : string(1 to 8) := (others => ' ');
+
+    begin
+
+      case seg_no is
+
+        when 0 =>
+          for i in 0 to 1023 loop
+
+            if ((i mod 8) = 0) then
+              writeline(MemLogFile, l);
+              write(l, string'(IntToHString(i) & ":"  & HT));
+            -- elsif ((i mod 2) = 0) then
+            end if;
+
+            if (RAMSegment0Writes(i) = '0') then
+              write(l, string'("UU"));
+              write(l, string'(" "));
+            else
+              write(l, string'(GREEN & "!" & ANSI_RESET));
+            end if;
+
+          end loop;
+
+        when 1 =>
+          -- TODO:
+          null;
+
+        when 2 =>
+          -- TODO:
+          null;
+
+        when 3 =>
+          -- TODO:
+          null;
+
+      end case;
+
+    end procedure;
+
 
 begin
 
@@ -101,6 +164,7 @@ begin
     TEST_WR <= TEST_WE0 and TEST_WE1 and TEST_WE2 and TEST_WE3;
 
     ROM_AB <= CPU_AB when CPU_ACTIVE else TEST_AB;
+
     RAM_AB <= CPU_AB when CPU_ACTIVE else TEST_AB;
 
     ROM_DB <= CPU_DB  when     CPU_ACTIVE and CPU_WR  = '0' and CPU_MEMSEL  = '1'  else
@@ -466,6 +530,10 @@ begin
             LogBothWithTime("Running test: " & path, LogFile);
             LoadProgram(path);      -- write program in to ROM
             RunCPU;                 -- execute program
+
+            -- Clock is stopped at this point.
+
+
             CheckOutput(path);      -- check RAM has expected values
         end procedure;
 
@@ -487,5 +555,16 @@ begin
 
         wait;
     end process;
+
+    LogRAMWrites : process(RAM_WE0, RAM_WE1, RAM_WE2, RAM_WE3)
+    begin
+      -- If the data memory is being accessed and there has been a changed to
+      -- the RAM write enable lines, log the address being written to and the
+      -- mode.
+      if (CPU_MEMSEL = '0') then
+      end if;
+
+    end process LogRAMWrites;
+
 end behavioral;
 
