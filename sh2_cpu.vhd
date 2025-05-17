@@ -15,6 +15,7 @@
 --     12 May 25  Chris M.          Add extra RegDataIn sources and connect 
 --                                  PCSrc of DMAU.
 --     14 May 25  Chris M.          Tri-state address in writeback state.
+--     16 May 25  Zack Huang        Documentation, renaming signals
 --
 ----------------------------------------------------------------------------
 
