@@ -940,8 +940,6 @@ begin
 
           Instruction_RegAxStore <= '0'; -- Disable writing to address register.
 
-          Instruction_RegAxStore <= '0'; -- Disable writing to address register.
-
 
         -- MOV.B Rm, @-Rn
         -- nm format

@@ -72,7 +72,7 @@ entity  SH2CPU  is
         INT     :  in     std_logic;                       -- maskable interrupt signal (active low)
         clock   :  in     std_logic;                       -- system clock
         AB      :  out    std_logic_vector(31 downto 0);   -- memory address bus
-        memsel  :  out    std_logic;                       -- whether to access data memory (0) or program memory (1)
+        MemSel  :  out    std_logic;                       -- whether to access data memory (0) or program memory (1)
         RE0     :  out    std_logic;                       -- first byte active low read enable
         RE1     :  out    std_logic;                       -- second byte active low read enable
         RE2     :  out    std_logic;                       -- third byte active low read enable
@@ -499,9 +499,11 @@ begin
       variable l : line;
     begin
         if reset = '0' then
-            SR <=  (others => '0');
+
+            SR  <=  (others => '0');
             GBR <=  (others => '0');
             VBR <=  (others => '0');
+
         elsif rising_edge(clock) then
             SR(0) <= TNext;
 
@@ -523,5 +525,10 @@ begin
             end if;
         end if;
     end process register_proc;
+
+   -- TODO: Remove for synthesis.
+  LogMemoryWrites : process(clock)
+  begin
+  end process LogMemoryWrites;
 
 end architecture structural;
