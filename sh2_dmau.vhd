@@ -46,6 +46,7 @@
 --                         Pre/Post logic in MAU was inverted).
 --
 --    7 May 25    Chris M. Add
+--
 -- [TODO]:
 --    - Don't allow inputs that don't correspond to addressing modes.
 --    - Make mapping from IndexSel to DMAUOffsetSel one-to-one ?

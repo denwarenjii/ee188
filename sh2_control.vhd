@@ -22,7 +22,7 @@
 --
 --  - Generate DMAU signals with vectors.
 --  - Document register output conventions.
---
+--  - Document bit decoding.
 ----------------------------------------------------------------------------
 
 library ieee;
@@ -49,6 +49,7 @@ package SH2InstructionEncodings is
   constant  MOV_RM_RN             :  Instruction := "0110--------0011";  -- MOV Rm, Rn
   constant  MOV_RM_AT_RN          :  Instruction := "0010--------00--";  -- MOV.X Rm, @Rn
   constant  MOV_AT_RM_RN          :  Instruction := "0110--------00--";  -- MOV.X @Rm, Rn
+
   constant  MOV_RM_AT_MINUS_RN    :  Instruction := "0010--------01--";  -- MOV.X Rm, @-Rn
 
   constant  MOV_B_AT_RM_PLUS_RN   :  Instruction := "0110--------0100";  -- MOV.B @Rm+, Rn
@@ -206,7 +207,7 @@ use work.Utils.all;
 entity  SH2Control  is
 
     port (
-        MemDataIn          : in  std_logic_vector(31 downto 0);    -- data read from memory
+        MemDataIn   : in  std_logic_vector(31 downto 0);    -- data read from memory
         clock       : in  std_logic;                        -- system clock
         reset       : in  std_logic;                        -- system reset (active low, async)
 
@@ -423,6 +424,7 @@ begin
     decode_proc: process (IR)
       variable l : line;
     begin
+
         -- Default flag values are set here (these shouldn't change CPU state).
         -- This is so that not every control signal has to be set in every single
         -- instruction case. If an instruction enables writing to memory/registers,
@@ -821,19 +823,96 @@ begin
             IncDecSel    <= IncDecSel_PRE_DEC;
 
         -- MOV.B @Rm+, Rn
+        -- nm format
         elsif std_match(IR, MOV_B_AT_RM_PLUS_RN) then
-          report "Instruction: [MOV.B @Rm+, Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.B @Rm+, Rn] not implemented."
+          -- severity ERROR;
+
+          -- MOV with post-increment. This Instruction reads a byte, word,
+          -- or longword from an address in Rm, into Rn. The address is
+          -- incremented and stored in Rm after the value is retrieved.
+          
+          -- Reads a byte from memory.
+          Instruction_MemEnable <= '1';             -- Uses memory.
+          Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+          Instruction_WordMode  <= ByteMode;        -- A byte.
+
+          -- Output @Rm from RegA2
+          RegA2Sel <= to_integer(unsigned(nm_format_m));
+
+          -- Write output of Data Bus to Rn
+          RegInSel             <= to_integer(unsigned(nm_format_n));
+          RegDataInSel         <= RegDataIn_DB;
+          Instruction_EnableIn <= '1';  -- Enable writing to registers.
+
+          -- Write the incremented address to Rm
+          RegAxInSel             <= to_integer(unsigned(nm_format_m));
+          Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
+          
+          -- DMAU signals for post-increment indirect register addressing (byte mode)
+          GBRWriteEn   <= '0';
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_NONE;
+          OffScalarSel <= OffScalarSel_ONE;
+          IncDecSel    <= IncDecSel_POST_INC;
 
         -- MOV.W @Rm+, Rn
         elsif std_match(IR, MOV_W_AT_RM_PLUS_RN) then
-          report "Instruction: [MOV.W @Rm+, Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.W @Rm+, Rn] not implemented."
+          -- severity ERROR;
 
-        -- MOV.W @Rm+, Rn
+          -- Reads a word from memory.
+          Instruction_MemEnable <= '1';             -- Uses memory.
+          Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+          Instruction_WordMode  <= WordMode;        -- A word.
+
+          -- Output @Rm from RegA2
+          RegA2Sel <= to_integer(unsigned(nm_format_m));
+
+          -- Write output of Data Bus to Rn
+          RegInSel             <= to_integer(unsigned(nm_format_n));
+          RegDataInSel         <= RegDataIn_DB;
+          Instruction_EnableIn <= '1';  -- Enable writing to registers.
+
+          -- Write the incremented address to Rm
+          RegAxInSel             <= to_integer(unsigned(nm_format_m));
+          Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
+          
+          -- DMAU signals for post-increment indirect register addressing (word mode)
+          GBRWriteEn   <= '0';
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_NONE;
+          OffScalarSel <= OffScalarSel_TWO;
+          IncDecSel    <= IncDecSel_POST_INC;
+
+        -- MOV.L @Rm+, Rn
         elsif std_match(IR, MOV_L_AT_RM_PLUS_RN) then
-          report "Instruction: [MOV.W @Rm+, Rn] not implemented."
-          severity ERROR;
+          -- report "Instruction: [MOV.W @Rm+, Rn] not implemented."
+          -- severity ERROR;
+
+          -- Reads a longword from memory.
+          Instruction_MemEnable <= '1';             -- Uses memory.
+          Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+          Instruction_WordMode  <= LongwordMode;    -- A longword.
+
+          -- Output @Rm from RegA2
+          RegA2Sel <= to_integer(unsigned(nm_format_m));
+
+          -- Write output of Data Bus to Rn
+          RegInSel             <= to_integer(unsigned(nm_format_n));
+          RegDataInSel         <= RegDataIn_DB;
+          Instruction_EnableIn <= '1';  -- Enable writing to registers.
+
+          -- Write the incremented address to Rm
+          RegAxInSel             <= to_integer(unsigned(nm_format_m));
+          Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
+          
+          -- DMAU signals for post-increment indirect register addressing (longword mode)
+          GBRWriteEn   <= '0';
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_NONE;
+          OffScalarSel <= OffScalarSel_FOUR;
+          IncDecSel    <= IncDecSel_POST_INC;
 
         -- MOV.B RO, @(disp,Rn)
         elsif std_match(IR, MOV_B_R0_AT_DISP_RN) then
