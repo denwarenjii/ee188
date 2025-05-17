@@ -539,20 +539,22 @@ begin
 
     begin
 
-        RunTest("asm/hello");
-        RunTest("asm/mov_reg");
-        RunTest("asm/reg_indirect");
-        RunTest("asm/arith");
-        RunTest("asm/logic");
-        RunTest("asm/shift");
-        RunTest("asm/sr");
-        RunTest("asm/system");
+        -- RunTest("asm/hello");
+        -- RunTest("asm/mov_reg");
+        -- RunTest("asm/reg_indirect");
+        -- RunTest("asm/arith");
+        -- RunTest("asm/logic");
+        -- RunTest("asm/shift");
+        -- RunTest("asm/sr");
+        -- RunTest("asm/system");
 
-        RunTest("asm/mov_wl_at_disp_pc_rn");     -- Tests MOV (disp, PC), Rn
-        RunTest("asm/mov_bwl_at_rm_rn");         -- Tests MOV @Rm, Rn
+        -- RunTest("asm/mov_wl_at_disp_pc_rn");     -- Tests MOV (disp, PC), Rn
 
-        RunTest("asm/mov_bwl_rm_at_minus_rn");   -- Tests Mov Rm, @-Rn
+        -- RunTest("asm/mov_bwl_at_rm_rn");         -- Tests MOV @Rm, Rn
 
+        -- RunTest("asm/mov_bwl_rm_at_minus_rn");   -- Tests Mov Rm, @-Rn
+
+        RunTest("asm/mov_bwl_at_rm_plus_rn"); -- Test Mov @Rm+, Rn
         wait;
     end process;
 

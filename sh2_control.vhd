@@ -816,6 +816,9 @@ begin
         elsif std_match(IR, MOV_B_AT_RM_PLUS_RN) then
           -- report "Instruction: [MOV.B @Rm+, Rn] not implemented."
           -- severity ERROR;
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.B @R" & to_string(slv_to_int(nm_format_m)) &
+            "+, R" & to_string(slv_to_int(nm_format_n)) , LogFile);
 
           -- MOV with post-increment. This Instruction reads a byte, word,
           -- or longword from an address in Rm, into Rn. The address is
@@ -849,6 +852,9 @@ begin
         elsif std_match(IR, MOV_W_AT_RM_PLUS_RN) then
           -- report "Instruction: [MOV.W @Rm+, Rn] not implemented."
           -- severity ERROR;
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.W @R" & to_string(slv_to_int(nm_format_m)) &
+            "+, R" & to_string(slv_to_int(nm_format_n)) , LogFile);
 
           -- Reads a word from memory.
           Instruction_MemEnable <= '1';             -- Uses memory.
@@ -878,6 +884,9 @@ begin
         elsif std_match(IR, MOV_L_AT_RM_PLUS_RN) then
           -- report "Instruction: [MOV.W @Rm+, Rn] not implemented."
           -- severity ERROR;
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.L @R" & to_string(slv_to_int(nm_format_m)) &
+            "+, R" & to_string(slv_to_int(nm_format_n)) , LogFile);
 
           -- Reads a longword from memory.
           Instruction_MemEnable <= '1';             -- Uses memory.

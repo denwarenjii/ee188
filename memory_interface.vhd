@@ -109,7 +109,7 @@ begin
                         RE(2) <= '0' when address mod 4 = 2 else '1';
                         RE(3) <= '0' when address mod 4 = 3 else '1';
 
-                        LogWithTime(l, "memory_interface.vhd: Reading byte at address " & to_hstring(address), LogFile);
+                        LogWithTime(l, "memory_interface.vhd: Reading byte at address 0x" & to_hstring(address), LogFile);
 
                     when WordMode =>
                         assert (address mod 2 = 0)
@@ -122,7 +122,7 @@ begin
                         RE(2) <= '0' when address mod 4 = 2 else '1';
                         RE(3) <= '0' when address mod 4 = 2 else '1';
 
-                        LogWithTime(l, "memory_interface.vhd: Reading word at address " & to_hstring(address), LogFile);
+                        LogWithTime(l, "memory_interface.vhd: Reading word at address 0x" & to_hstring(address), LogFile);
 
                     when LongwordMode =>
                         assert (address mod 4 = 0)
@@ -132,7 +132,7 @@ begin
                         -- Enable all bytes to read a longword. Address must be longword-aligned.
                         RE(3 downto 0) <= (others => '0');
 
-                        LogWithTime(l, "memory_interface.vhd: Reading longword at address " & to_hstring(address), LogFile);
+                        LogWithTime(l, "memory_interface.vhd: Reading longword at address 0x" & to_hstring(address), LogFile);
 
                     when others =>
                         assert (false)
@@ -168,8 +168,8 @@ begin
                             DB(31 downto 24) <= MemDataOut(7 downto 0);
                         end if;
 
-                        LogWithTime(l, "memory_interface.vhd: Writing byte (0x" & to_string(MemDataOut(7 downto 0)) &
-                                       ") at address " & to_hstring(address), LogFile);
+                        LogWithTime(l, "memory_interface.vhd: Writing byte (0x" & to_hstring(MemDataOut(7 downto 0)) &
+                                       ") at address 0x" & to_hstring(address), LogFile);
 
                     when WordMode =>
                         assert (address mod 2 = 0)
@@ -198,7 +198,7 @@ begin
                                             to_hstring(MemDataOut(7 downto 0) & MemDataOut(15 downto 8)), LogFile);
                         end if;
 
-                        LogWithTime(") at address " & to_hstring(address), LogFile);
+                        LogWithTime(") at address 0x" & to_hstring(address), LogFile);
 
                     when LongwordMode =>
                         assert (address mod 4 = 0)
@@ -215,7 +215,7 @@ begin
                         DB(31 downto 24) <= MemDataOut(7 downto 0);
 
                         LogWithTime(l, "memory_interface.vhd: Writing longword (0x" & to_hstring(MemDataOut) &
-                                       ") at address " & to_hstring(address), LogFile);
+                                       ") at address 0x" & to_hstring(address), LogFile);
 
                     when others =>
                         assert (false)

@@ -36,7 +36,7 @@ WORKDIR = work/
 WAVEFORM = sh2_cpu_tb.ghw
 
 # BUILDFLAGS = --std=08 -Wuseless -Werror -Wruntime-error -Wnowrite -fsynopsys --workdir=$(WORKDIR)
-BUILDFLAGS = --std=08 -O2 -Wuseless -Werror -Wruntime-error -Wnowrite -fsynopsys --workdir=$(WORKDIR)
+BUILDFLAGS = --std=08 -Wuseless -Werror -Wruntime-error -Wnowrite -fsynopsys --workdir=$(WORKDIR)
 
 RUNFLAGS = --ieee-asserts=disable --wave=$(WAVEFORM)
 

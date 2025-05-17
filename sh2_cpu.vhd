@@ -242,10 +242,10 @@ begin
     WE2 <= WriteMask(2) when (not clock) else '1';
     WE3 <= WriteMask(3) when (not clock) else '1';
 
-    with MemAddrSel select MemAddress <=
-      PCOut       when MemAddrSel_PMAU,
-      DataAddress when MemAddrSel_DMAU,
-      (others => 'Z') when others;
+    with MemAddrSel select 
+        MemAddress <=  PCOut           when MemAddrSel_PMAU,
+                       DataAddress     when MemAddrSel_DMAU,
+                       (others => 'Z') when others;
 
     AB <= MemAddress;
 
@@ -298,8 +298,8 @@ begin
     -- post-incremented address when we are in that mode. If we are not in 
     -- that mode, it is just the normal address.
     with IncDecSel select RegAxIn <=
-    AddrSrcOut  when IncDecSel_PRE_DEC | IncDecSel_POST_INC,
-    DataAddress when others;
+        AddrSrcOut  when IncDecSel_PRE_DEC | IncDecSel_POST_INC,
+        DataAddress when others;
 
     -- Route control signals and data into register array
     registers : entity work.SH2Regs
@@ -362,7 +362,11 @@ begin
     );
 
 
-    RegSrc <= RegA1;
+    -- Use RegA1 (@Rn) if we are writing and RegA2 (@Rm) if we are reading.
+    with ReadWrite select
+        RegSrc <= RegA1           when ReadWrite_READ,
+                  RegA2           when ReadWrite_WRITE,
+                  (others => '0') when others;
 
     -- Connect PCSrc to PCOut
     PCSrc <= PCOut;
