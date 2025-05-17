@@ -70,6 +70,20 @@ $(WORKDIR)reg.o: $(WORKDIR)logging.o
 $(OBJECTS): $(WORKDIR)%.o: %.vhd
 	$(GHDL) -a $(BUILDFLAGS) $<
 
+
+asm:
+	cd asm && $(MAKE)
+
+test: $(TOPLEVEL) asm
+	ghdl -r $(TOPLEVEL) $(RUNFLAGS)	
+
+clean:
+	ghdl --clean --workdir=$(WORKDIR) --std=08
+	# rm -rf *.cf *.o $(WORKDIR)
+
+view:
+	gtkwave $(WAVEFORM)
+
 # $(WORKDIR)%.o: %.vhd
 # 	$(GHDL) -a $(BUILDFLAGS) $<
 
@@ -77,4 +91,4 @@ $(OBJECTS): $(WORKDIR)%.o: %.vhd
 #%.o: %.vhd
 #	$(GHDL) -a $(BUILDFLAGS) $<
 
-# .PHONY: test clean build view asm run
+.PHONY: test clean build view asm run
