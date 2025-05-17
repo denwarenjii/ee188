@@ -112,6 +112,7 @@ package SH2InstructionEncodings is
   constant SETT             : Instruction := "0000000000011000";
 
   constant STC_SYS_RN       : Instruction := "0000----00--0010";
+  constant STC_L_SYS_RN     : Instruction := "0100----00--0011";
   constant LDC_RM_SYS       : Instruction := "0100----00--1110";
   constant LDC_L_RM_SYS     : Instruction := "0100----00--0111";
 
@@ -129,9 +130,9 @@ package SH2ControlConstants is
     constant RegDataIn_Immediate      : std_logic_vector(3 downto 0) := "0001";
     constant RegDataIn_RegA           : std_logic_vector(3 downto 0) := "0010";
     constant RegDataIn_RegB           : std_logic_vector(3 downto 0) := "0011";
-    constant RegDataIn_SR             : std_logic_vector(3 downto 0) := "0100";
-    constant RegDataIn_GBR            : std_logic_vector(3 downto 0) := "0101";
-    constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "0110";
+    constant RegDataIn_SR             : std_logic_vector(3 downto 0) := "0100"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_GBR            : std_logic_vector(3 downto 0) := "0101"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "0110"; -- BIT DECODED - DO NOT CHANGE
     constant RegDataIn_RegA_SWAP_B    : std_logic_vector(3 downto 0) := "0111";
     constant RegDataIn_RegA_SWAP_W    : std_logic_vector(3 downto 0) := "1000";
     constant RegDataIn_SignExt_B_RegA : std_logic_vector(3 downto 0) := "1001";
@@ -147,11 +148,11 @@ package SH2ControlConstants is
 
     constant MemOut_RegA    : std_logic_vector(2 downto 0) := "000";
     constant MemOut_RegB    : std_logic_vector(2 downto 0) := "001";
-    constant MemOut_SR      : std_logic_vector(2 downto 0) := "010";
-    constant MemOut_GBR     : std_logic_vector(2 downto 0) := "011";
-    constant MemOut_VBR     : std_logic_vector(2 downto 0) := "100";
-    constant MemOut_PR      : std_logic_vector(2 downto 0) := "101";
-    constant MemOut_PC      : std_logic_vector(2 downto 0) := "110";
+    constant MemOut_PR      : std_logic_vector(2 downto 0) := "010";
+    constant MemOut_PC      : std_logic_vector(2 downto 0) := "011";
+    constant MemOut_SR      : std_logic_vector(2 downto 0) := "100"; -- BIT DECODED - DO NOT CHANGE
+    constant MemOut_GBR     : std_logic_vector(2 downto 0) := "101"; -- BIT DECODED - DO NOT CHANGE
+    constant MemOut_VBR     : std_logic_vector(2 downto 0) := "110"; -- BIT DECODED - DO NOT CHANGE
 
     constant ALUOpB_RegB    : std_logic := '0';
     constant ALUOpB_Imm     : std_logic := '1';
@@ -1083,6 +1084,30 @@ begin
             RegInSel <= to_integer(unsigned(n_format_n));
             RegDataInSel <= "01" & IR(5 downto 4);
             Instruction_EnableIn <= '1';
+        elsif std_match(IR, STC_L_SYS_RN) then
+            -- STC.L {SR, GBR, VBR}, @-Rn
+            -- Uses bit decoding to choose the system register to store
+
+            LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
+
+            -- Writes a byte to memory
+            Instruction_MemEnable <= '1';               -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
+            Instruction_WordMode  <= LongwordMode;      -- bit decode memory mode
+
+            MemOutSel <= '1' & IR(5 downto 4); -- bit decode system register to output
+
+            RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
+            RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
+            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+
+            -- DMAU signals (for Pre-decrement indirect register addressing)
+            GBRWriteEn   <= '0';
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_PRE_DEC;
+
         elsif std_match(IR, LDC_RM_SYS) then
             -- LDC Rm, {SR, GBR, VBR}
             -- Uses bit decoding to choose the system register to load

@@ -78,7 +78,7 @@ package SH2DmauConstants is
   constant IndexSel_R0     : std_logic_vector(1 downto 0) := "11";   -- 3
 
   -- OffsetScalarSel constant. What to scale the offset (or increment value) by.
-  --
+  -- BIT-DECODED, DO NOT CHANGE VALUES
   constant OffScalarSel_ONE  :  std_logic_vector(1 downto 0) := "00"; -- 0
   constant OffScalarSel_TWO  :  std_logic_vector(1 downto 0) := "01"; -- 1
   constant OffScalarSel_FOUR :  std_logic_vector(1 downto 0) := "10"; -- 2

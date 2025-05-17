@@ -30,16 +30,16 @@ package  SH2ALUConstants  is
 
 
 --  Shifter command constants
-   constant SCmd_LEFT  : std_logic_vector(2 downto 0) := "0--";
-   constant SCmd_LSL   : std_logic_vector(2 downto 0) := "000";
-   constant SCmd_ASL   : std_logic_vector(2 downto 0) := "001";
-   constant SCmd_ROL   : std_logic_vector(2 downto 0) := "010";
-   constant SCmd_RLC   : std_logic_vector(2 downto 0) := "011";
-   constant SCmd_RIGHT : std_logic_vector(2 downto 0) := "1--";
-   constant SCmd_LSR   : std_logic_vector(2 downto 0) := "100";
-   constant SCmd_ASR   : std_logic_vector(2 downto 0) := "101";
-   constant SCmd_ROR   : std_logic_vector(2 downto 0) := "110";
-   constant SCmd_RRC   : std_logic_vector(2 downto 0) := "111";
+   constant SCmd_LEFT  : std_logic_vector(2 downto 0) := "0--"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_LSL   : std_logic_vector(2 downto 0) := "000"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_ASL   : std_logic_vector(2 downto 0) := "001"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_ROL   : std_logic_vector(2 downto 0) := "010"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_RLC   : std_logic_vector(2 downto 0) := "011"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_RIGHT : std_logic_vector(2 downto 0) := "1--"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_LSR   : std_logic_vector(2 downto 0) := "100"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_ASR   : std_logic_vector(2 downto 0) := "101"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_ROR   : std_logic_vector(2 downto 0) := "110"; -- BIT DECODED - DO NOT CHANGE
+   constant SCmd_RRC   : std_logic_vector(2 downto 0) := "111"; -- BIT DECODED - DO NOT CHANGE
 
 
 --  ALU command constants
