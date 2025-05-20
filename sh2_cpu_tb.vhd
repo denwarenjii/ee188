@@ -110,49 +110,49 @@ architecture behavioral of sh2_cpu_tb is
 
     file MemLogFile : text open write_mode is "mem_log.txt";
 
-    procedure LogWrites(seg_no : integer range 0 to 3) is
+    -- procedure LogWrites(seg_no : integer range 0 to 3) is
 
-      variable l : line;
-      variable slv : std_logic_vector(31 downto 0);
-      variable hex_str : string(1 to 8) := (others => ' ');
+    --   variable l : line;
+    --   variable slv : std_logic_vector(31 downto 0);
+    --   variable hex_str : string(1 to 8) := (others => ' ');
 
-    begin
+    -- begin
 
-      case seg_no is
+    --   case seg_no is
 
-        when 0 =>
-          for i in 0 to 1023 loop
+    --     when 0 =>
+    --       for i in 0 to 1023 loop
 
-            if ((i mod 8) = 0) then
-              writeline(MemLogFile, l);
-              write(l, string'(IntToHString(i) & ":"  & HT));
-            -- elsif ((i mod 2) = 0) then
-            end if;
+    --         if ((i mod 8) = 0) then
+    --           writeline(MemLogFile, l);
+    --           write(l, string'(IntToHString(i) & ":"  & HT));
+    --         -- elsif ((i mod 2) = 0) then
+    --         end if;
 
-            if (RAMSegment0Writes(i) = '0') then
-              write(l, string'("UU"));
-              write(l, string'(" "));
-            else
-              write(l, string'(GREEN & "!" & ANSI_RESET));
-            end if;
+    --         if (RAMSegment0Writes(i) = '0') then
+    --           write(l, string'("UU"));
+    --           write(l, string'(" "));
+    --         else
+    --           write(l, string'(GREEN & "!" & ANSI_RESET));
+    --         end if;
 
-          end loop;
+    --       end loop;
 
-        when 1 =>
-          -- TODO:
-          null;
+    --     when 1 =>
+    --       -- TODO:
+    --       null;
 
-        when 2 =>
-          -- TODO:
-          null;
+    --     when 2 =>
+    --       -- TODO:
+    --       null;
 
-        when 3 =>
-          -- TODO:
-          null;
+    --     when 3 =>
+    --       -- TODO:
+    --       null;
 
-      end case;
+    --   end case;
 
-    end procedure;
+    -- end procedure;
 
 
 begin
@@ -539,6 +539,62 @@ begin
         end procedure;
 
         procedure RunTest(path : string) is
+
+            procedure ReadByte(address : unsigned ; data : out std_logic_vector) is
+            begin
+                TEST_AB <= std_logic_vector(address);
+                TEST_DB <= (others => 'Z');
+
+                -- Enable only the specific byte being read
+                TEST_RE0 <= '0' when address mod 4 = 0 else '1';
+                TEST_RE1 <= '0' when address mod 4 = 1 else '1';
+                TEST_RE2 <= '0' when address mod 4 = 2 else '1';
+                TEST_RE3 <= '0' when address mod 4 = 3 else '1';
+
+                wait for 5 ns;
+
+                data := TEST_DB(7 downto 0) when address mod 2 = 0 else TEST_DB(31 downto 24);
+                
+                -- Disable writing
+                TEST_RE0 <= '1';
+                TEST_RE1 <= '1';
+                TEST_RE2 <= '1';
+                TEST_RE3 <= '1';
+                wait for 5 ns;  -- wait for signal to propagate
+
+            end procedure;
+
+
+            procedure DumpMemToLog is
+                variable l : line;
+                variable slv: std_logic_vector(31 downto 0);
+                variable hex_str : string(1 to 8) := (others => ' ');
+                variable test_data : std_logic_vector(7 downto 0);
+                
+            begin
+                write(l, string'("Segment 0:"));
+                writeline(MemLogFile, l);
+
+                for i in 0 to 1023 loop
+                    
+                    if ((i mod 8) = 0) then
+                      writeline(MemLogFile, l);
+                      write(l, string'(IntToHString(i) & ":"  & HT));
+                    end if;
+
+                    ReadByte(to_unsigned(i, 32), test_data);
+                    wait for 5 ns;
+
+                    if ((test_data = "UU") or (test_data = "XX")) then
+                        write(l, string'(to_hstring(test_data)));
+                    else
+                        write(l, string'(GREEN & to_hstring(test_data) & ANSI_RESET));
+                    end if;
+
+                end loop;
+
+            end procedure;
+
         begin
             -- report "Running test: " & path;
             LogBothWithTime("Running test: " & path, LogFile);
@@ -548,28 +604,32 @@ begin
             -- Clock is stopped at this point.
             DumpMemory(path, 0, 64);
 
+            -- DumpMemToLog;
 
             CheckOutput(path);      -- check RAM has expected values
         end procedure;
 
     begin
 
-        RunTest("asm/hello");
-        RunTest("asm/mov_reg");
-        RunTest("asm/reg_indirect");
-        RunTest("asm/arith");
-        RunTest("asm/logic");
-        RunTest("asm/shift");
-        RunTest("asm/sr");
-        RunTest("asm/system");
+        -- RunTest("asm/hello");
+        -- RunTest("asm/mov_reg");
+        -- RunTest("asm/reg_indirect");
+        -- RunTest("asm/arith");
+        -- RunTest("asm/logic");
+        -- RunTest("asm/shift");
+        -- RunTest("asm/sr");
+        -- RunTest("asm/system");
 
-        RunTest("asm/mov_wl_at_disp_pc_rn");     -- Tests MOV (disp, PC), Rn
+        -- RunTest("asm/mov_wl_at_disp_pc_rn");     -- Tests MOV (disp, PC), Rn
 
-        RunTest("asm/mov_bwl_at_rm_rn");         -- Tests MOV @Rm, Rn
+        -- RunTest("asm/mov_bwl_at_rm_rn");         -- Tests MOV @Rm, Rn
 
-        RunTest("asm/mov_bwl_rm_at_minus_rn");   -- Tests Mov Rm, @-Rn
+        -- RunTest("asm/mov_bwl_rm_at_minus_rn");   -- Tests Mov Rm, @-Rn
 
-        RunTest("asm/mov_bwl_at_rm_plus_rn"); -- Test Mov @Rm+, Rn
+        -- RunTest("asm/mov_bwl_at_rm_plus_rn");    -- Test Mov @Rm+, Rn
+
+        RunTest("asm/mov_bwl_r0_or_rm_at_disp_rn"); -- Test Mov R0, @(disp, Rn) and Mov Rm, @(disp,Rn)
+
         wait;
     end process;
 

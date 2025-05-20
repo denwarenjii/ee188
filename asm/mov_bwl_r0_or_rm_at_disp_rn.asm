@@ -17,18 +17,22 @@ Start:
     MOV Var, R0 ; Move 0x12345678 into R0
 
     MOV #04, R1
-    MOV.B R0, @(4, R1)  ; Target address = 0x04 + zeroExtend(0x04) = 0x08
+    MOV.B R0, @(4,R1)  ; Target address = 0x04 + zeroExtend(0x04) = 0x08
                         ; We expected 0x78 at 0x08
 
     MOV #2, R1
-    MOV.W R0, @(4, R1)  ; Target address = 0x02 + zeroExtend(0x04) * 2 = 0x0A
+    MOV.W R0, @(8,R1)  ; Target address = 0x02 + zeroExtend(0x04) * 2 = 0x0A
                         ; We expect 0x5678 at 0x0A
 
     MOV Var, R1 ; Move 0x12345678 into R1
 
     MOV #$04, R2
-    MOV.L R1, @(4, R2)  ; Target address = 0x04 + zeroExtend(0x04) * 4 = 0x14
-                        ; We expect 0x12345678 at 0x14
+    MOV.L R1, @(16,R2)   ; Target address = 0x04 + zeroExtend(0x04) * 4 = 0x14
+                         ; We expect 0x12345678 at 0x14
+
+    ; 00000008 78000000
+    ; 0000000A 78560000
+    ; 00000014 12345678
 
 Done:
     ; The test bench interprets a read of 0xFFFFFFFC (-4) 
