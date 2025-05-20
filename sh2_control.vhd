@@ -57,7 +57,7 @@ package SH2InstructionEncodings is
   constant  MOV_L_AT_RM_PLUS_RN   :  Instruction := "0110--------0110";  -- MOV.W @Rm+, Rn
 
   constant  MOV_B_R0_AT_DISP_RN   :  Instruction := "10000000--------";  -- MOV.B RO, @(disp,Rn)
-  constant  MOV_W_R0_AT_DISP_RN   :  Instruction := "10000000--------";  -- MOV.W RO, @(disp,Rn)
+  constant  MOV_W_R0_AT_DISP_RN   :  Instruction := "10000001--------";  -- MOV.W RO, @(disp,Rn)
   constant  MOV_L_RM_AT_DISP_RN   :  Instruction := "0001------------";  -- MOV.L Rm, @(disp, Rn)
 
   constant  MOV_B_AT_DISP_RM_R0   :  Instruction := "10000100--------";  -- MOV.B @(disp, Rm), R0
@@ -696,7 +696,7 @@ begin
 
           RegASel <= to_integer(unsigned(nd8_format_n));
 
-          -- Instruction reads from word memory.
+          -- Instruction reads word from program memory (ROM).
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_READ; 
           Instruction_WordMode  <= WordMode;
@@ -894,8 +894,7 @@ begin
 
         -- MOV.L @Rm+, Rn
         elsif std_match(IR, MOV_L_AT_RM_PLUS_RN) then
-          -- report "Instruction: [MOV.W @Rm+, Rn] not implemented."
-          -- severity ERROR;
+
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.L @R" & to_string(slv_to_int(nm_format_m)) &
             "+, R" & to_string(slv_to_int(nm_format_n)) , LogFile);
@@ -926,43 +925,107 @@ begin
 
         -- MOV.B RO, @(disp,Rn)
         -- nd4 format
+        -- Note that the displacement depends on the mode of the address, so in
+        -- byte mode, the displacement represents bytes, in word mode it represents
+        -- words, etc. This is done to maximize it's range.
         elsif std_match(IR, MOV_B_R0_AT_DISP_RN) then
-          -- report "Instruction: [MOV.B RO, @(disp,Rn)] not implemented."
-          -- severity ERROR;
+
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.W R0, @(0x" & to_hstring(nd4_format_d) &
+            "sh2_control.vhd: Decoded MOV.B R0, @(0x" & to_hstring(nd4_format_d) &
             ", " & to_string(slv_to_int(nd4_format_n)) & ")", LogFile);
 
-          assert false
-          report "TODO"
-          severity ERROR;
+          -- Instruction writes a byte to data memory.
+          Instruction_MemEnable   <= '1';
+          Instruction_ReadWrite   <= ReadWrite_WRITE;
+          Instruction_WordMode    <= ByteMode;
+          Instruction_MemSel      <= MemSel_RAM;
+          
+          -- Output RegB (R0) to memory data bus
+          MemOutSel <= MemOut_RegB;
+
+          -- Output R0 to RegB
+          RegBSel <= 0;
+          
+          -- Output Rn to RegA1. The DMAU will use this to calculate the address
+          -- to write to.
+          RegA1Sel <= to_integer(unsigned(nd4_format_n));
+
+
+          -- DMAU signals for Indirect register addressing with displacement (byte mode)
+          GBRWriteEn    <=  '0';
+          BaseSel       <=  BaseSel_REG;
+          IndexSel      <=  IndexSel_OFF4;
+          OffScalarSel  <=  OffScalarSel_ONE;
+          IncDecSel     <=  IncDecSel_NONE;
+          DMAUOff4      <=  nd4_format_d;
+
 
         -- MOV.W RO, @(disp,Rn)
         -- nd4 format
         elsif std_match(IR, MOV_W_R0_AT_DISP_RN) then
-          -- report "Instruction: [MOV.W RO, @(disp,Rn)] not implemented."
-          -- severity ERROR;
+
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L R0, @(0x" & to_hstring(nd4_format_d) &
+            "sh2_control.vhd: Decoded MOV.W R0, @(0x" & to_hstring(nd4_format_d) &
             ", " & to_string(slv_to_int(nd4_format_n)) & ")", LogFile);
 
-          assert false
-          report "TODO"
-          severity ERROR;
+          -- Instruction writes a word to memory.
+          Instruction_MemEnable   <= '1';
+          Instruction_ReadWrite   <= ReadWrite_WRITE;
+          Instruction_WordMode    <= WordMode;
+
+          -- Output R0 to RegB
+          RegBSel <= 0;
+          
+          -- Output Rn to RegA1. The DMAU will use this to calculate the address
+          -- to write to.
+          RegA1Sel <= to_integer(unsigned(nd4_format_n));
+
+          -- Output RegB (R0) to memory data bus
+          MemOutSel <= MemOut_RegB;
+          
+          -- DMAU signals for Indirect register addressing with displacement (word mode)
+          GBRWriteEn   <= '0';
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_OFF4;
+          OffScalarSel <= OffScalarSel_TWO;
+          IncDecSel    <= IncDecSel_NONE;
+          DMAUOff4     <=  nd4_format_d;
+
 
         -- MOV.L Rm, @(disp, Rn)
         -- nmd format
         elsif std_match(IR, MOV_L_RM_AT_DISP_RN) then
-          -- report "Instruction: [MOV.L Rm, @(disp, Rn)] not implemented."
-          -- severity ERROR;
 
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_int(nmd_format_m)) &
-            ", @(" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_int(nmd_format_n)), LogFile);
+            ", @(0x" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_int(nmd_format_n)) & ")", LogFile);
 
-          assert false
-          report "TODO"
-          severity ERROR;
+          -- The displacment is wrong here ??? 
+          LogWithTime(l,
+             "IR is " & to_hstring(IR), LogFile);
+
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_WRITE;
+          Instruction_WordMode  <= LongwordMode;
+
+          -- Output Rm to RegB.
+          RegBSel <= to_integer(unsigned(nmd_format_m));
+
+          -- Output Rn to RegA1. The DMAU will use this to calculate the address
+          -- to write to.
+          RegA1Sel <= to_integer(unsigned(nmd_format_n));
+
+          -- Output RegB (Rm) to memory data bus. This will be written to memory.
+          MemOutSel <= MemOut_RegB;
+
+          -- DMAU signals for Indirect register addressing with displacement (longword mode)
+          GBRWriteEn   <= '0';
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_OFF4;
+          OffScalarSel <= OffScalarSel_FOUR;
+          IncDecSel    <= IncDecSel_NONE;
+          DMAUOff4     <= nmd_format_d;
+
 
         -- MOV.B @(disp, Rm), R0
         elsif std_match(IR, MOV_B_AT_DISP_RM_R0) then
@@ -1153,6 +1216,7 @@ begin
         elsif not is_x(IR) then
             report "Unrecognized instruction: " & to_hstring(IR);
         end if;
+
     end process;
 
     -- Register updates done on clock edges. The state machine logic is also encoded here.

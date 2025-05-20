@@ -258,7 +258,7 @@ begin
                   VBR   when MemOutSel = MemOut_VBR  else
                   PROut when MemOutSel = MemOut_PR   else
                   PCOut when MemOutSel = MemOut_PC   else
-                  (others => 'X');
+                  (others => 'Z');
 
     ImmediateExt(7 downto 0) <= Immediate;
     ImmediateExt(31 downto 8) <= (others => Immediate(7)) when ImmediateMode = ImmediateMode_SIGN else
