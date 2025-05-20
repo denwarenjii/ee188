@@ -1026,19 +1026,102 @@ begin
 
 
         -- MOV.B @(disp, Rm), R0
+        -- md format
+        -- Note that these instructions are very similar to MOV @(disp, PC), Rn
+        --
         elsif std_match(IR, MOV_B_AT_DISP_RM_R0) then
-          report "Instruction: [MOV.B @(disp, Rm), R0] not implemented."
-          severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.B @(0x" & to_hstring(md_format_d) &
+            ", R" & to_string(slv_to_int(md_format_m)) & "), R0", LogFile);
+
+            -- Writing sign-extended byte from data bus to R0.
+            RegInSel             <= 0;             -- Select R0 to write to.
+            RegDataInSel         <= RegDataIn_DB;  -- Write DataBus to reg.
+            Instruction_EnableIn <= '1';           -- Enable Reg writing for this instruction.
+
+            -- Output @Rm from RegA2
+            RegA2Sel <= to_integer(unsigned(md_format_m));
+
+            Instruction_MemEnable  <=  '1';            -- Instr uses memory.
+            Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
+            Instruction_WordMode   <=  ByteMode;       -- Reads byte.
+            Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
+
+            -- DMAU signals for Indirect register addressing with displacement (byte mode)
+            GBRWriteEn   <= '0';
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_OFF4;
+            OffScalarSel <= OffScalarSel_ONE;
+            IncDecSel    <= IncDecSel_NONE;
+            DMAUOff4     <= md_format_d;
+
 
         -- MOV.W @(disp, Rm), R0
+        -- md format
+        -- Note that these instructions are very similar to MOV @(disp, PC), Rn
+        --
         elsif std_match(IR, MOV_W_AT_DISP_RM_R0) then
-          report "Instruction: [MOV.W @(disp, Rm), R0] not implemented."
-          severity ERROR;
+
+            LogWithTime(l, 
+                "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(md_format_d) &
+                ", R" & to_string(slv_to_int(md_format_m)) & "), R0", LogFile);
+
+            -- Writing sign-extended word from data bus to R0.
+            RegInSel             <= 0;             -- Select R0 to write to.
+            RegDataInSel         <= RegDataIn_DB;  -- Write DataBus to reg.
+            Instruction_EnableIn <= '1';           -- Enable Reg writing for this instruction.
+
+            -- Output @Rm from RegA2
+            RegA2Sel <= to_integer(unsigned(md_format_m));
+
+            Instruction_MemEnable  <=  '1';            -- Instr uses memory.
+            Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
+            Instruction_WordMode   <=  WordMode;       -- Reads word.
+            Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
+
+            -- DMAU signals for Indirect register addressing with displacement (word mode)
+            GBRWriteEn   <= '0';
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_OFF4;
+            OffScalarSel <= OffScalarSel_TWO;
+            IncDecSel    <= IncDecSel_NONE;
+            DMAUOff4     <= md_format_d;
+
+
+
 
         -- MOV.L @(disp, Rm), Rn
+        -- nmd
         elsif std_match(IR, MOV_L_AT_DISP_RM_RN) then
-          report "Instruction: [MOV.L @(disp, Rm), Rn] not implemented."
-          severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nmd_format_d) &
+            ", R" & to_string(slv_to_int(nmd_format_m)) & "), R" & to_string(slv_to_int(nmd_format_n))
+            , LogFile);
+
+          -- Writing longword from data bus to Rn.
+          RegInSel             <= to_integer(unsigned(nmd_format_n));   -- Select Rn to write to.
+          RegDataInSel         <= RegDataIn_DB;                         -- Write DataBus to reg.
+          Instruction_EnableIn <= '1';                                  -- Enable Reg writing for this instruction.
+
+           -- Output @Rm from RegA2
+           RegA2Sel <= to_integer(unsigned(nmd_format_m));
+
+          Instruction_MemEnable  <=  '1';               -- Instr uses memory.
+          Instruction_ReadWrite  <=  ReadWrite_READ;    -- Reads.
+          Instruction_WordMode   <=  LongwordMode;      -- Reads longword.
+          Instruction_MemSel     <=  MemSel_RAM;        -- Reads from RAM
+
+
+          -- DMAU signals for Indirect register addressing with displacement (longword mode)
+          GBRWriteEn   <= '0';
+          BaseSel      <= BaseSel_REG;
+          IndexSel     <= IndexSel_OFF4;
+          OffScalarSel <= OffScalarSel_FOUR;
+          IncDecSel    <= IncDecSel_NONE;
+          DMAUOff4     <= nmd_format_d;
+
 
         -- MOV.B Rm, @(R0, Rn)
         elsif std_match(IR, MOV_B_RM_AT_R0_RN) then

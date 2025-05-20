@@ -22,6 +22,7 @@ package ANSIEscape is
   constant CYAN           : string :=  ESC & '[' & '3' & '6' & 'm';  -- ESC[36m
   constant WHITE          : string :=  ESC & '[' & '3' & '7' & 'm';  -- ESC[37m
   constant DEFAULT_COLOR  : string :=  ESC & '[' & '3' & '7' & 'm';  -- ESC[37m
-
+  constant GREY           : string :=  ESC & '[' & '9' & '0' & 'm';  -- ESC[90m
+  constant LIGHT_GREY     : string :=  ESC & '[' & '3' & '8' & ';' & '5' & ';' & '2' & '5' & '0' & 'm';  -- ESC[38;5;250m
 end ANSIEscape;
 

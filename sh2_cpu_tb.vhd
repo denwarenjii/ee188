@@ -456,6 +456,7 @@ begin
             variable curr_line : line;
             variable curr_addr   : unsigned(31 downto 0);
             variable data_out    : std_logic_vector(31 downto 0);
+            variable curr_byte   : std_logic_vector(7 downto 0);
         begin
             -- Access RAM
             CPU_ACTIVE <= false;
@@ -463,14 +464,29 @@ begin
 
             file_open(out_file, path & ".dump", write_mode);
 
+            write(curr_line, YELLOW & "Memory dump for " & path & ANSI_RESET);
+            writeline(out_file, curr_line);
+
             curr_addr := to_unsigned(start, 32);
             for i in 1 to length loop
                 ReadLongword(curr_addr, data_out);
 
+
                 write(curr_line, to_hstring(curr_addr) & " ");
+
                 for j in 3 downto 0 loop
-                    write(curr_line, to_hstring(data_out(7 + 8 * j downto 8 * j)) & " ");
+                    curr_byte := data_out(7 + 8 * j downto 8 * j);
+
+                    if (curr_byte = "XXXXXXXX" or   curr_byte = "UUUUUUUU") then
+                        -- Color unitialized memory grey.
+                        write(curr_line, GREY);
+                    end if;
+
+                    write(curr_line, to_hstring(curr_byte) & " ");
+                    write(curr_line, ANSI_RESET);
+
                 end loop;
+
                 writeline(out_file, curr_line);
 
                 curr_addr := curr_addr + 4;
@@ -604,8 +620,6 @@ begin
             -- Clock is stopped at this point.
             DumpMemory(path, 0, 64);
 
-            -- DumpMemToLog;
-
             CheckOutput(path);      -- check RAM has expected values
         end procedure;
 
@@ -629,6 +643,8 @@ begin
         RunTest("asm/mov_bwl_at_rm_plus_rn");    -- Test Mov @Rm+, Rn
 
         RunTest("asm/mov_bwl_r0_or_rm_at_disp_rn"); -- Test Mov R0, @(disp, Rn) and Mov Rm, @(disp,Rn)
+
+        RunTest("asm/mov_bwl_at_disp_rm_r0_or_rn"); -- Test Mov @(disp, Rm), R0 and Mov @(disp, Rm), Rn
 
         wait;
     end process;

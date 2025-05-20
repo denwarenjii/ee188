@@ -33,13 +33,13 @@ Start:
                         ; We expected 0x78 at 0x08
 
     MOV #04, R1
-    MOV.W R0, @(8,R1)   ; Target address = 0x04 + zeroExtend(0x04) * 2 = 0x0C
+    MOV.W R0, @(8,R1)   ; Target address = 0x04 + zeroExtend(0x08) = 0x0C
                         ; We expect 0x5678 at 0x0C
 
     MOV Var, R1 ; Move 0x12345678 into R1
 
     MOV #$04, R2
-    MOV.L R1, @(16,R2)   ; Target address = 0x04 + zeroExtend(0x04) * 4 = 0x14
+    MOV.L R1, @(16,R2)   ; Target address = 0x04 + zeroExtend(0x16) = 0x14
                          ; We expect 0x12345678 at 0x14
 
     ; 00000008 78000000
