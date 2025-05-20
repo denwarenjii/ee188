@@ -451,15 +451,29 @@ begin
             file_close(char_file);
         end procedure;
 
-        procedure ReadMemory(start : integer; length : integer) is
-            variable curr_pc     : unsigned(31 downto 0);
-            variable data_out    : std_logic_vector(15 downto 0);
+        procedure DumpMemory(path : string; start : integer; length : integer) is
+            file out_file : text;
+            variable curr_line : line;
+            variable curr_addr   : unsigned(31 downto 0);
+            variable data_out    : std_logic_vector(31 downto 0);
         begin
-            curr_pc := to_unsigned(start, 32);
+            -- Access RAM
+            CPU_ACTIVE <= false;
+            TEST_MEMSEL <= '0';
+
+            file_open(out_file, path & ".dump", write_mode);
+
+            curr_addr := to_unsigned(start, 32);
             for i in 1 to length loop
-                ReadWord(curr_pc, data_out);
-                report to_hstring(curr_pc) & " " & to_hstring(data_out);
-                curr_pc := curr_pc + 2;
+                ReadLongword(curr_addr, data_out);
+
+                write(curr_line, to_hstring(curr_addr) & " ");
+                for j in 3 downto 0 loop
+                    write(curr_line, to_hstring(data_out(7 + 8 * j downto 8 * j)) & " ");
+                end loop;
+                writeline(out_file, curr_line);
+
+                curr_addr := curr_addr + 4;
             end loop;
         end procedure;
 
@@ -532,6 +546,7 @@ begin
             RunCPU;                 -- execute program
 
             -- Clock is stopped at this point.
+            DumpMemory(path, 0, 64);
 
 
             CheckOutput(path);      -- check RAM has expected values
