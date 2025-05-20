@@ -14,15 +14,27 @@
 
 Start:
 
+    ; Zero out words at 0x08, 0x0C, and 0x14
+    MOV ZeroVar, R0
+
+    MOV #$08, R1
+    MOV R0, @R1
+
+    MOV #$0C, R1
+    MOV R0, @R1
+
+    MOV #$14, R1
+    MOV R0, @R1
+
     MOV Var, R0 ; Move 0x12345678 into R0
 
     MOV #04, R1
-    MOV.B R0, @(4,R1)  ; Target address = 0x04 + zeroExtend(0x04) = 0x08
+    MOV.B R0, @(4,R1)   ; Target address = 0x04 + zeroExtend(0x04) = 0x08
                         ; We expected 0x78 at 0x08
 
-    MOV #2, R1
-    MOV.W R0, @(8,R1)  ; Target address = 0x02 + zeroExtend(0x04) * 2 = 0x0A
-                        ; We expect 0x5678 at 0x0A
+    MOV #04, R1
+    MOV.W R0, @(8,R1)   ; Target address = 0x04 + zeroExtend(0x04) * 2 = 0x0C
+                        ; We expect 0x5678 at 0x0C
 
     MOV Var, R1 ; Move 0x12345678 into R1
 
@@ -43,6 +55,9 @@ Done:
     align 4
     LTORG
 
-; Var: dc.l $12345678
 Var: dc.w $1234
      dc.w $5678
+
+ZeroVar: dc.w $0000
+         dc.w $0000
+

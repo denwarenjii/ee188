@@ -938,7 +938,6 @@ begin
           Instruction_MemEnable   <= '1';
           Instruction_ReadWrite   <= ReadWrite_WRITE;
           Instruction_WordMode    <= ByteMode;
-          Instruction_MemSel      <= MemSel_RAM;
           
           -- Output RegB (R0) to memory data bus
           MemOutSel <= MemOut_RegB;
@@ -949,7 +948,6 @@ begin
           -- Output Rn to RegA1. The DMAU will use this to calculate the address
           -- to write to.
           RegA1Sel <= to_integer(unsigned(nd4_format_n));
-
 
           -- DMAU signals for Indirect register addressing with displacement (byte mode)
           GBRWriteEn    <=  '0';
