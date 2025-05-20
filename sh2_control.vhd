@@ -1216,7 +1216,7 @@ begin
           MemOutSel <= MemOut_RegB;
 
 
-          -- DMAU Signals for Indirect Register Addressing
+          -- DMAU Signals for Indirect indexed Register Addressing
           GBRWriteEn    <= '0';
           BaseSel       <= BaseSel_REG;
           IndexSel      <= IndexSel_R0;
@@ -1225,19 +1225,100 @@ begin
 
 
         -- MOV.B @(R0, Rm), Rn
+        -- nm format
         elsif std_match(IR, MOV_B_AT_R0_RM_RN) then
-          report "Instruction: [MOV.B @(R0, Rm), Rn] not implemented."
-          severity ERROR;
+
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.B @(R0, R" & to_string(slv_to_uint(nm_format_m)) &
+              "), R" & to_string(slv_to_uint(nm_format_n)), LogFile);
+
+            -- Writing sign-extended byte from data bus to Rn.
+            RegInSel             <= slv_to_uint(nm_format_n);     -- Select Rn to write to.
+            RegDataInSel         <= RegDataIn_DB;                 -- Write DataBus to reg.
+            Instruction_EnableIn <= '1';                          -- Enable Reg writing for this instruction.
+
+            -- Output @Rm from RegA2
+            RegA2Sel <= slv_to_uint(nm_format_m);
+
+            -- Output @R0 from RegA1
+            RegA1Sel <= 0;
+
+            Instruction_MemEnable  <=  '1';            -- Instr uses memory.
+            Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
+            Instruction_WordMode   <=  ByteMode;       -- Reads byte.
+            Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
+
+            -- DMAU Signals for Indirect indexed Register Addressing
+            GBRWriteEn    <= '0';
+            BaseSel       <= BaseSel_REG;
+            IndexSel      <= IndexSel_R0;
+            OffScalarSel  <= OffScalarSel_ONE;
+            IncDecSel     <= IncDecSel_NONE;
+          
+          
 
         -- MOV.W @(R0, Rm), Rn
         elsif std_match(IR, MOV_W_AT_R0_RM_RN) then
-          report "Instruction: [MOV.W @(R0, Rm), Rn] not implemented."
-          severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.W @(R0, R" & to_string(slv_to_uint(nm_format_m)) &
+            "), R" & to_string(slv_to_uint(nm_format_n)), LogFile);
+
+            -- Writing sign-extended word from data bus to Rn.
+            RegInSel             <= slv_to_uint(nm_format_n);     -- Select Rn to write to.
+            RegDataInSel         <= RegDataIn_DB;                 -- Write DataBus to reg.
+            Instruction_EnableIn <= '1';                          -- Enable Reg writing for this instruction.
+
+            -- Output @Rm from RegA2
+            RegA2Sel <= slv_to_uint(nm_format_m);
+
+            -- Output @R0 from RegA1
+            RegA1Sel <= 0;
+
+            Instruction_MemEnable  <=  '1';            -- Instr uses memory.
+            Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
+            Instruction_WordMode   <=  WordMode;       -- Reads Word.
+            Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
+
+            -- DMAU Signals for Indirect indexed Register Addressing
+            GBRWriteEn    <= '0';
+            BaseSel       <= BaseSel_REG;
+            IndexSel      <= IndexSel_R0;
+            OffScalarSel  <= OffScalarSel_ONE;
+            IncDecSel     <= IncDecSel_NONE;
+           
 
         -- MOV.L @(R0, Rm), Rn
         elsif std_match(IR, MOV_L_AT_R0_RM_RN) then
-          report "Instruction: [MOV.L @(R0, Rm), Rn] not implemented."
-          severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.L @(R0, R" & to_string(slv_to_uint(nm_format_m)) &
+            "), R" & to_string(slv_to_uint(nm_format_n)), LogFile);
+
+            -- Writing longword from data bus to Rn.
+            RegInSel             <= slv_to_uint(nm_format_n);     -- Select Rn to write to.
+            RegDataInSel         <= RegDataIn_DB;                 -- Write DataBus to reg.
+            Instruction_EnableIn <= '1';                          -- Enable Reg writing for this instruction.
+
+            -- Output @Rm from RegA2
+            RegA2Sel <= slv_to_uint(nm_format_m);
+
+            -- Output @R0 from RegA1
+            RegA1Sel <= 0;
+
+            Instruction_MemEnable  <=  '1';             -- Instr uses memory.
+            Instruction_ReadWrite  <=  ReadWrite_READ;  -- Reads.
+            Instruction_WordMode   <=  LongwordMode;    -- Reads longword.
+            Instruction_MemSel     <=  MemSel_RAM;      -- Reads from RAM
+
+            -- DMAU Signals for Indirect indexed Register Addressing
+            GBRWriteEn    <= '0';
+            BaseSel       <= BaseSel_REG;
+            IndexSel      <= IndexSel_R0;
+            OffScalarSel  <= OffScalarSel_ONE;
+            IncDecSel     <= IncDecSel_NONE;
+          
+
 
         -- MOV.B R0, @(disp, GBR)
         elsif std_match(IR, MOV_B_R0_AT_DISP_GBR) then
