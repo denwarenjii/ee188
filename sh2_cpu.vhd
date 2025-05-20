@@ -16,7 +16,7 @@
 --                                  PCSrc of DMAU.
 --     14 May 25  Chris M.          Tri-state address in writeback state.
 --     16 May 25  Zack Huang        Documentation, renaming signals
---
+--     19 May 25  Chris M.          Connect R0Src to DMAU.
 ----------------------------------------------------------------------------
 
 
@@ -365,13 +365,19 @@ begin
 
 
     -- Use RegA1 (@Rn) if we are writing and RegA2 (@Rm) if we are reading.
-    RegSrc <= RegA2 when ReadWrite = Mem_READ else
-              RegA1 when ReadWrite = Mem_WRITE else
-              (others => 'X');
-
+    with ReadWrite select
+        RegSrc <= RegA2           when Mem_READ,
+                  RegA1           when Mem_WRITE,
+                  (others => 'X') when others;
 
     -- Connect PCSrc to PCOut
     PCSrc <= PCOut;
+
+    -- R0 comes from RegA2 when we are reading and RegA1 when we are writing.
+    with ReadWrite select
+        R0Src <= RegA1            when Mem_READ,
+                 RegA2            when Mem_WRITE,
+                 (others => 'X')  when others;
 
     dmau : entity work.sh2dmau
     port map (

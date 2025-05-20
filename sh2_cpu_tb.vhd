@@ -646,6 +646,8 @@ begin
 
         RunTest("asm/mov_bwl_at_disp_rm_r0_or_rn"); -- Test Mov @(disp, Rm), R0 and Mov @(disp, Rm), Rn
 
+        RunTest("asm/mov_rm_at_r0_rn"); -- Test Mov Rm, @(R0, Rn)
+
         wait;
     end process;
 

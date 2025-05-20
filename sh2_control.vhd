@@ -673,7 +673,7 @@ begin
         -- ni format
         elsif std_match(IR, MOV_IMM_RN) then
             LogWithTime(l, "sh2_control.vhd: Decoded MOV H'" & to_hstring(ni_format_i) &
-                          ", R" & to_string(slv_to_int(ni_format_n)), LogFile);
+                          ", R" & to_string(slv_to_uint(ni_format_n)), LogFile);
           
             RegInSel             <= to_integer(unsigned(ni_format_n));
             RegDataInSel         <= RegDataIn_Immediate;
@@ -687,7 +687,7 @@ begin
         elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(nd8_format_d) &
-            ", PC), R" & to_string(slv_to_int(nd8_format_n)), LogFile);
+            ", PC), R" & to_string(slv_to_uint(nd8_format_n)), LogFile);
 
 
           RegInSel             <= to_integer(unsigned(nd8_format_n));   -- Writing to register n 
@@ -715,7 +715,7 @@ begin
         elsif std_match(IR, MOV_L_AT_DISP_PC_RN) then
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nd8_format_d) &
-            ", PC), R" & to_string(slv_to_int(nd8_format_n)), LogFile);
+            ", PC), R" & to_string(slv_to_uint(nd8_format_n)), LogFile);
 
           RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
           RegDataInSel         <= RegDataIn_DB;                        -- Writing output of data bus to register. 
@@ -739,8 +739,8 @@ begin
         -- nm format
         elsif std_match(IR, MOV_RM_RN) then
             LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV R" & to_string(slv_to_int(nm_format_m)) &
-              "R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+              "sh2_control.vhd: Decoded MOV R" & to_string(slv_to_uint(nm_format_m)) &
+              "R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- report "Instruction: MOV Rm, Rn";
             RegBSel              <= to_integer(unsigned(nm_format_m));
@@ -752,8 +752,8 @@ begin
         -- nm format
         elsif std_match(IR, MOV_RM_AT_RN) then
             LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_int(nm_format_m)) &
-              ", @R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+              "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_uint(nm_format_m)) &
+              ", @R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- Writes a byte to memory to memory
             Instruction_MemEnable <= '1';             -- Uses memory.
@@ -775,8 +775,8 @@ begin
         -- nm format
         elsif std_match(IR, MOV_AT_RM_RN) then
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.X @R" & to_string(slv_to_int(nm_format_m)) &
-            ", R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+            "sh2_control.vhd: Decoded MOV.X @R" & to_string(slv_to_uint(nm_format_m)) &
+            ", R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
           -- Instruction reads byte from memory.
           Instruction_MemEnable <= '1';            -- Instr does memory access.
@@ -801,8 +801,8 @@ begin
         -- nm format
         elsif std_match(IR, MOV_RM_AT_MINUS_RN) then
             LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_int(nm_format_m)) &
-              ", @-R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+              "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_uint(nm_format_m)) &
+              ", @-R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- Writes a byte to memory
             Instruction_MemEnable <= '1';             -- Uses memory.
@@ -829,8 +829,8 @@ begin
           -- report "Instruction: [MOV.B @Rm+, Rn] not implemented."
           -- severity ERROR;
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.B @R" & to_string(slv_to_int(nm_format_m)) &
-            "+, R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+            "sh2_control.vhd: Decoded MOV.B @R" & to_string(slv_to_uint(nm_format_m)) &
+            "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
           -- MOV with post-increment. This Instruction reads a byte, word,
           -- or longword from an address in Rm, into Rn. The address is
@@ -865,8 +865,8 @@ begin
           -- report "Instruction: [MOV.W @Rm+, Rn] not implemented."
           -- severity ERROR;
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.W @R" & to_string(slv_to_int(nm_format_m)) &
-            "+, R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+            "sh2_control.vhd: Decoded MOV.W @R" & to_string(slv_to_uint(nm_format_m)) &
+            "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
           -- Reads a word from memory.
           Instruction_MemEnable <= '1';             -- Uses memory.
@@ -896,8 +896,8 @@ begin
         elsif std_match(IR, MOV_L_AT_RM_PLUS_RN) then
 
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L @R" & to_string(slv_to_int(nm_format_m)) &
-            "+, R" & to_string(slv_to_int(nm_format_n)) , LogFile);
+            "sh2_control.vhd: Decoded MOV.L @R" & to_string(slv_to_uint(nm_format_m)) &
+            "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
           -- Reads a longword from memory.
           Instruction_MemEnable <= '1';             -- Uses memory.
@@ -932,7 +932,7 @@ begin
 
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.B R0, @(0x" & to_hstring(nd4_format_d) &
-            ", " & to_string(slv_to_int(nd4_format_n)) & ")", LogFile);
+            ", " & to_string(slv_to_uint(nd4_format_n)) & ")", LogFile);
 
           -- Instruction writes a byte to data memory.
           Instruction_MemEnable   <= '1';
@@ -964,7 +964,7 @@ begin
 
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.W R0, @(0x" & to_hstring(nd4_format_d) &
-            ", " & to_string(slv_to_int(nd4_format_n)) & ")", LogFile);
+            ", " & to_string(slv_to_uint(nd4_format_n)) & ")", LogFile);
 
           -- Instruction writes a word to memory.
           Instruction_MemEnable   <= '1';
@@ -995,12 +995,8 @@ begin
         elsif std_match(IR, MOV_L_RM_AT_DISP_RN) then
 
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_int(nmd_format_m)) &
-            ", @(0x" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_int(nmd_format_n)) & ")", LogFile);
-
-          -- The displacment is wrong here ??? 
-          LogWithTime(l,
-             "IR is " & to_hstring(IR), LogFile);
+            "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_uint(nmd_format_m)) &
+            ", @(0x" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_uint(nmd_format_n)) & ")", LogFile);
 
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_WRITE;
@@ -1033,7 +1029,7 @@ begin
 
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.B @(0x" & to_hstring(md_format_d) &
-            ", R" & to_string(slv_to_int(md_format_m)) & "), R0", LogFile);
+            ", R" & to_string(slv_to_uint(md_format_m)) & "), R0", LogFile);
 
             -- Writing sign-extended byte from data bus to R0.
             RegInSel             <= 0;             -- Select R0 to write to.
@@ -1065,7 +1061,7 @@ begin
 
             LogWithTime(l, 
                 "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(md_format_d) &
-                ", R" & to_string(slv_to_int(md_format_m)) & "), R0", LogFile);
+                ", R" & to_string(slv_to_uint(md_format_m)) & "), R0", LogFile);
 
             -- Writing sign-extended word from data bus to R0.
             RegInSel             <= 0;             -- Select R0 to write to.
@@ -1097,7 +1093,7 @@ begin
 
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nmd_format_d) &
-            ", R" & to_string(slv_to_int(nmd_format_m)) & "), R" & to_string(slv_to_int(nmd_format_n))
+            ", R" & to_string(slv_to_uint(nmd_format_m)) & "), R" & to_string(slv_to_uint(nmd_format_n))
             , LogFile);
 
           -- Writing longword from data bus to Rn.
@@ -1124,19 +1120,109 @@ begin
 
 
         -- MOV.B Rm, @(R0, Rn)
+        -- nm format
         elsif std_match(IR, MOV_B_RM_AT_R0_RN) then
-          report "Instruction: [MOV.B Rm, @(R0, Rn)] not implemented."
-          severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.B R" & to_string(slv_to_uint(nm_format_m)) &
+            ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
+
+          -- Instr writes a byte to memory.
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_WRITE;
+          Instruction_WordMode  <= ByteMode;
+
+          -- Output Rm to RegB.
+          RegBSel <= to_integer(unsigned(nm_format_m));
+
+          -- Output Rn to RegA1. The DMAU will use this to calculate the address
+          -- to write to.
+          RegA1Sel <= to_integer(unsigned(nm_format_n));
+
+          -- Output R0 to RegA2.
+          RegA2Sel <= 0;
+
+          -- Output RegB (Rm) to memory data bus. This will be written to memory.
+          MemOutSel <= MemOut_RegB;
+
+          -- DMAU Signals for Indirect Register Addressing
+          GBRWriteEn    <= '0';
+          BaseSel       <= BaseSel_REG;
+          IndexSel      <= IndexSel_R0;
+          OffScalarSel  <= OffScalarSel_ONE;
+          IncDecSel     <= IncDecSel_NONE;
+        
 
         -- MOV.W Rm, @(R0, Rn)
+        -- nm format
         elsif std_match(IR, MOV_W_RM_AT_R0_RN) then
-          report "Instruction: [MOV.W Rm, @(R0, Rn)] not implemented."
-          severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.W R" & to_string(slv_to_uint(nm_format_m)) &
+            ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
+
+          -- Instr writes a word to memory.
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_WRITE;
+          Instruction_WordMode  <= WordMode;
+
+          -- Output Rm to RegB.
+          RegBSel <= to_integer(unsigned(nm_format_m));
+
+          -- Output Rn to RegA1. The DMAU will use this to calculate the address
+          -- to write to.
+          RegA1Sel <= to_integer(unsigned(nm_format_n));
+
+          -- Output R0 to RegA2.
+          RegA2Sel <= 0;
+
+          -- Output RegB (Rm) to memory data bus. This will be written to memory.
+          MemOutSel <= MemOut_RegB;
+
+
+          -- DMAU Signals for Indirect Register Addressing
+          GBRWriteEn    <= '0';
+          BaseSel       <= BaseSel_REG;
+          IndexSel      <= IndexSel_R0;
+          OffScalarSel  <= OffScalarSel_ONE;
+          IncDecSel     <= IncDecSel_NONE;
+        
+
 
         -- MOV.L Rm, @(R0, Rn)
+        -- nm format
         elsif std_match(IR, MOV_L_RM_AT_R0_RN) then
-          report "Instruction: [MOV.L Rm, @(R0, Rn)] not implemented."
-          severity ERROR;
+
+          LogWithTime(l, 
+            "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_uint(nm_format_m)) &
+            ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
+
+          -- Instr writes a longword to memory.
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_WRITE;
+          Instruction_WordMode  <= LongwordMode;
+
+          -- Output Rm to RegB.
+          RegBSel <= to_integer(unsigned(nm_format_m));
+
+          -- Output Rn to RegA1. The DMAU will use this to calculate the address
+          -- to write to.
+          RegA1Sel <= to_integer(unsigned(nm_format_n));
+
+          -- Output R0 to RegA2.
+          RegA2Sel <= 0;
+
+          -- Output RegB (Rm) to memory data bus. This will be written to memory.
+          MemOutSel <= MemOut_RegB;
+
+
+          -- DMAU Signals for Indirect Register Addressing
+          GBRWriteEn    <= '0';
+          BaseSel       <= BaseSel_REG;
+          IndexSel      <= IndexSel_R0;
+          OffScalarSel  <= OffScalarSel_ONE;
+          IncDecSel     <= IncDecSel_NONE;
+
 
         -- MOV.B @(R0, Rm), Rn
         elsif std_match(IR, MOV_B_AT_R0_RM_RN) then
