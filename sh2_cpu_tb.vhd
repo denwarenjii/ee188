@@ -650,7 +650,7 @@ begin
 
         -- RunTest("asm/mov_b_at_r0_rm_rn");              -- Test Mov @(R0, Rm), Rn 
 
-        RunTest("asm/mov_b_r0_at_disp_gbr")              -- Test Mov R0, @(disp, GBR)
+        RunTest("asm/mov_b_r0_at_disp_gbr");              -- Test Mov R0, @(disp, GBR)
 
         wait;
     end process;
