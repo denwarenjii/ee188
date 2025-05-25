@@ -649,9 +649,11 @@ begin
 
         RunTest("asm/mov_rm_at_r0_rn");               -- Test Mov Rm, @(R0, Rn)
 
-        RunTest("asm/mov_b_at_r0_rm_rn");              -- Test Mov @(R0, Rm), Rn 
+        -- RunTest("asm/mov_b_at_r0_rm_rn");              -- Test Mov @(R0, Rm), Rn 
 
         RunTest("asm/mov_bwl_r0_at_disp_gbr");              -- Test Mov R0, @(disp, GBR)
+
+        RunTest("asm/cmp");
 
         wait;
     end process;

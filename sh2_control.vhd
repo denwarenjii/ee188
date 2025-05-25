@@ -1,4 +1,4 @@
----------------------------------------------------------------------------
+------------- --------------------------------------------------------------
 --
 --  Control Unit
 --
@@ -111,6 +111,10 @@ package SH2InstructionEncodings is
   constant SUB_RM_RN     : Instruction := "0011--------10--";
   constant NEG_RM_RN     : Instruction := "0110--------101-";
 
+  constant CMP_EQ_IMM    : Instruction := "10001000--------";   -- CMP/EQ #imm, R0
+  constant CMP_RM_RN     : Instruction := "0011--------0---";   -- CMP/{EQ,HS,GE,HI,GT} Rm, Rn
+  constant CMP_RN        : Instruction := "0100----00010-01";   -- CMP/{PL/PZ}
+
   -- Logical Operations:
   constant LOGIC_RM_RN   : Instruction := "0010--------10--";  -- AND, TST, OR, XOR
   constant LOGIC_IMM_R0  : Instruction := "110010----------";  -- AND, TST, OR, XOR
@@ -200,12 +204,20 @@ package SH2ControlConstants is
     constant ALUOpB_RegB    : std_logic := '0';
     constant ALUOpB_Imm     : std_logic := '1';
 
-    constant TFlagSel_T         : std_logic_vector(2 downto 0) := "000";
-    constant TFlagSel_Zero      : std_logic_vector(2 downto 0) := "001";
-    constant TFlagSel_Carry     : std_logic_vector(2 downto 0) := "010";
-    constant TFlagSel_Overflow  : std_logic_vector(2 downto 0) := "011";
-    constant TFlagSel_SET       : std_logic_vector(2 downto 0) := "100";
-    constant TFlagSel_CLEAR     : std_logic_vector(2 downto 0) := "101";
+    constant TFlagSel_T         : std_logic_vector(2 downto 0) := "000";    -- Have T retain its value
+    constant TFlagSel_Zero      : std_logic_vector(2 downto 0) := "001";    -- Set T to the ALU zero flag
+    constant TFlagSel_Carry     : std_logic_vector(2 downto 0) := "010";    -- Set T to the ALU carry flag
+    constant TFlagSel_Overflow  : std_logic_vector(2 downto 0) := "011";    -- Set T to the ALU overflow flag
+    constant TFlagSel_SET       : std_logic_vector(2 downto 0) := "100";    -- clear T (to 0)
+    constant TFlagSel_CLEAR     : std_logic_vector(2 downto 0) := "101";    -- set T (to 1)
+    constant TFlagSel_CMP       : std_logic_vector(2 downto 0) := "110";    -- set T to a value computed from
+                                                                            -- the ALU flags
+
+    constant TCMP_EQ            : std_logic_vector(2 downto 0) := "000";
+    constant TCMP_HS            : std_logic_vector(2 downto 0) := "010";
+    constant TCMP_GE            : std_logic_vector(2 downto 0) := "011";
+    constant TCMP_HI            : std_logic_vector(2 downto 0) := "110";
+    constant TCMP_GT            : std_logic_vector(2 downto 0) := "111";
 
     constant MemSel_ROM         : std_logic := '1';
     constant MemSel_RAM         : std_logic := '0';
@@ -280,6 +292,7 @@ entity  SH2Control  is
         ALUCmd      : out std_logic_vector(1 downto 0);     -- ALU result select
 
         TSel        : out std_logic_vector(2 downto 0);     -- if T should be updated to a new value (T/C/V/0/1)
+        TCmpSel     : out std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
 
         -- register array control signals
         RegDataInSel: out std_logic_vector(3 downto 0);     -- source for register input data
@@ -699,6 +712,70 @@ begin
             CinCmd    <= CinCmd_ZERO;
             SCmd      <= "XXX";
             ALUCmd    <= ALUCmd_FBLOCK;
+
+        elsif std_match(IR, CMP_EQ_IMM) then
+            -- report "Instruction: CMP/EQ #Imm, R0";
+
+            -- Register array signals
+            RegASel <= 0;
+
+            Immediate            <= i_format_i;
+            ImmediateMode        <= ImmediateMode_ZERO;
+
+            -- Compute T flag based on ALU flags
+            Instruction_TFlagSel <= TFlagSel_CMP;
+            TCMPSel <= TCmp_EQ;
+
+            -- ALU Instructions that perform a subtraction (Rn - immediate) so that
+            -- the ALU output flags can be used to compute the T flag
+            ALUOpBSel <= ALUOpB_Imm;
+            LoadA     <= '1';
+            FCmd      <= FCmd_BNOT;
+            CinCmd <= CinCmd_ONE;
+            SCmd   <= "XXX";
+            ALUCmd <= ALUCmd_ADDER;
+
+        elsif std_match(IR, CMP_RM_RN) then
+            -- report "Instruction: CMP/XX Rm, Rn";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            -- Compute T flag based on ALU flags
+            Instruction_TFlagSel <= TFlagSel_CMP;
+            TCMPSel <= IR(2 downto 0);              -- bit decode T flag CMP condition
+
+            -- ALU Instructions that perform a subtraction (Rn - Rm) so that
+            -- the ALU output flags can be used to compute the T flag
+            ALUOpBSel <= ALUOpB_RegB;
+            LoadA     <= '1';
+            FCmd      <= FCmd_BNOT;
+            CinCmd <= CinCmd_ONE;
+            SCmd   <= "XXX";
+            ALUCmd <= ALUCmd_ADDER;
+
+        elsif std_match(IR, CMP_RN) then
+            -- report "Instruction: CMP/{PL/PZ} Rn";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+
+            -- Compare to 0
+            Immediate <= (others => '0');
+
+            -- Compute T flag based on ALU flags
+            Instruction_TFlagSel <= TFlagSel_CMP;
+            TCMPSel <= IR(2) & "11";                -- bit decode CMP mode (either GT or GE)
+
+            -- ALU Instructions that perform a subtraction (Rn - 0) so that
+            -- the ALU output flags can be used to compute the T flag
+            ALUOpBSel <= ALUOpB_Imm;
+            LoadA     <= '1';
+            FCmd      <= FCmd_BNOT;
+            CinCmd <= CinCmd_ONE;
+            SCmd   <= "XXX";
+            ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, SHIFT_RN) then
             -- {ROTL, ROTR, ROTCL, ROTCR, SHAL, SHAR, SHLL, SHLR} Rn

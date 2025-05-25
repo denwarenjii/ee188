@@ -235,6 +235,9 @@ architecture structural of sh2cpu is
 
     signal MemAddrSel  : std_logic;
 
+    signal TCmp         : std_logic;
+    signal TCmpSel      : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
+
 
 begin
 
@@ -347,13 +350,25 @@ begin
 
     TIn <= SR(0);
 
+    -- Compute T flag value based on ALU output flags. Used for operations
+    -- of the form CMP/XX.
+    with TCmpSel select
+        TCmp <= Zero                                when TCMP_EQ,   -- 1 if Rn = Rm
+                Cout                                when TCMP_HS,   -- 1 if Rn >= Rm, unsigned
+                not (Sign xor Overflow)             when TCMP_GE,   -- 1 if Rn >= Rm, signed
+                Cout and (not Zero)                 when TCMP_HI,   -- 1 if Rn >  Rm, unsigned
+                not ((Sign xor Overflow) or Zero)   when TCMP_GT,   -- 1 if Rn >  Rm, signed
+                'X' when others;
+
+
     with TFlagSel select
-        TNext <=  SR(0)      when TFlagSel_T,
-                  Cout       when TFlagSel_Carry,
-                  Overflow   when TFlagSel_Overflow,
-                  Zero       when TFlagSel_Zero,
-                  '0'        when TFlagSel_CLEAR,
-                  '1'        when TFlagSel_SET,
+        TNext <=  SR(0)      when TFlagSel_T,           -- retain T flag
+                  Cout       when TFlagSel_Carry,       -- Set T flag to ALU carry flag
+                  Overflow   when TFlagSel_Overflow,    -- Set T flag to ALU overflow flag
+                  Zero       when TFlagSel_Zero,        -- set T flag to ALU Zero flag
+                  '0'        when TFlagSel_CLEAR,       -- clear T flag
+                  '1'        when TFlagSel_SET,         -- set T flag
+                  TCMP       when TFlagSel_CMP,         -- compute T flag based on compare result
                   'X'        when others;
 
     alu : entity work.sh2alu
@@ -484,6 +499,7 @@ begin
         SCmd         => SCmd,
         ALUCmd       => ALUCmd,
         TSel         => TSel,
+        TCmpSel      => TCmpSel,
 
         -- Register Array control signals:
         RegDataInSel => RegDataInSel,
