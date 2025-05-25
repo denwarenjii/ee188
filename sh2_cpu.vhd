@@ -90,17 +90,14 @@ end  SH2CPU;
 architecture structural of sh2cpu is
 
     pure function SignExtend(slv : std_logic_vector) return std_logic_vector is
-      variable result : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
     begin
       -- slv -> signed, resize to sign-extend, then convert to slv. 
-      result := std_logic_vector(resize(signed(slv), SH2_WORDSIZE));
-      return result;
+      return std_logic_vector(resize(signed(slv), SH2_WORDSIZE));
     end function;
 
     pure function ZeroExtend(slv : std_logic_vector) return std_logic_vector is
-      variable result : std_logic_vector(SH2_WORDSIZE - 1 downto 0);
     begin
-      result := std_logic_vector(resize(unsigned(slv), SH2_WORDSIZE));
+      return std_logic_vector(resize(unsigned(slv), SH2_WORDSIZE));
     end function;
 
     pure function LowByte(slv : std_logic_vector) return std_logic_vector is
@@ -299,10 +296,10 @@ begin
                      VBR                        when  RegDataIn_VBR,
                      RegASwapB                  when  RegDataIn_RegA_SWAP_B,
                      RegASwapW                  when  RegDataIn_RegA_SWAP_W,
-                     SignExtend(LowByte(RegA))  when  RegDataIn_SignExt_B_RegA,
-                     SignExtend(LowWord(RegA))  when  RegDataIn_SignExt_W_RegA,
-                     ZeroExtend(LowByte(RegA))  when  RegDataIn_ZeroExt_B_RegA,
-                     ZeroExtend(LowWord(RegA))  when  RegDataIn_ZeroExt_W_RegA,
+                     SignExtend(LowByte(RegB))  when  RegDataIn_SignExt_B_RegA,
+                     SignExtend(LowWord(RegB))  when  RegDataIn_SignExt_W_RegA,
+                     ZeroExtend(LowByte(RegB))  when  RegDataIn_ZeroExt_B_RegA,
+                     ZeroExtend(LowWord(RegB))  when  RegDataIn_ZeroExt_W_RegA,
                      MemDataIn                  when  RegDataIn_DB,
 
                      -- Extract the T bit from the status register.

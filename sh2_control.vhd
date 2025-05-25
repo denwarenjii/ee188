@@ -111,6 +111,7 @@ package SH2InstructionEncodings is
   constant SUB_RM_RN     : Instruction := "0011--------10--";
   constant NEG_RM_RN     : Instruction := "0110--------101-";
   constant DT_RN         : Instruction := "0100----00010000";
+  constant EXT_RM_RN     : Instruction := "0110--------11--";
 
   constant CMP_EQ_IMM    : Instruction := "10001000--------";   -- CMP/EQ #imm, R0
   constant CMP_RM_RN     : Instruction := "0011--------0---";   -- CMP/{EQ,HS,GE,HI,GT} Rm, Rn
@@ -184,13 +185,13 @@ package SH2ControlConstants is
     constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "0110"; -- BIT DECODED - DO NOT CHANGE
     constant RegDataIn_RegA_SWAP_B    : std_logic_vector(3 downto 0) := "0111";
     constant RegDataIn_RegA_SWAP_W    : std_logic_vector(3 downto 0) := "1000";
-    constant RegDataIn_SignExt_B_RegA : std_logic_vector(3 downto 0) := "1001";
-    constant RegDataIn_SignExt_W_RegA : std_logic_vector(3 downto 0) := "1010";
-    constant RegDataIn_ZeroExt_B_RegA : std_logic_vector(3 downto 0) := "1011";
-    constant RegDataIn_ZeroExt_W_RegA : std_logic_vector(3 downto 0) := "1100";
-    constant RegDataIn_DB             : std_logic_vector(3 downto 0) := "1101";
-    constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "1110";
-    constant RegDataIn_PR             : std_logic_vector(3 downto 0) := "1111";
+    constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "1001";
+    constant RegDataIn_PR             : std_logic_vector(3 downto 0) := "1010";
+    constant RegDataIn_DB             : std_logic_vector(3 downto 0) := "1011";
+    constant RegDataIn_SignExt_B_RegA : std_logic_vector(3 downto 0) := "1110"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_SignExt_W_RegA : std_logic_vector(3 downto 0) := "1111"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_ZeroExt_B_RegA : std_logic_vector(3 downto 0) := "1100"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_ZeroExt_W_RegA : std_logic_vector(3 downto 0) := "1101"; -- BIT DECODED - DO NOT CHANGE
 
     constant ReadWrite_READ     : std_logic := '0';
     constant ReadWrite_WRITE    : std_logic := '1';
@@ -645,6 +646,17 @@ begin
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
+
+        elsif std_match(IR, EXT_RM_RN) then
+            -- report "Instruction: EXT(U/S).(B/W) Rm, Rn";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= "11" & IR(1 downto 0);  -- bit-decode type of extension
+            Instruction_EnableIn <= '1';
 
         -- ADD #imm, Rn
         elsif std_match(IR, ADD_IMM_RN) then
