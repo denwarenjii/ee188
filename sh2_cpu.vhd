@@ -268,9 +268,12 @@ begin
 
     ImmediateExt(7 downto 0) <= Immediate;
 
-    ImmediateExt(31 downto 8) <= (others => Immediate(7)) when ImmediateMode = ImmediateMode_SIGN else
-                                 (others => '0')          when ImmediateMode = ImmediateMode_ZERO else
-                                 (others => 'X');
+    with ImmediateMode select
+        ImmediateExt(31 downto 8) <= (others => Immediate(7)) when ImmediateMode_SIGN,
+                                     (others => '0')          when ImmediateMode_ZERO,
+                                     (others => 'X')          when others;
+                                 
+                                 
 
     -- RegA with the high and low bytes swapped.
     RegASwapB <= RegA(3 downto 0) & RegA(27 downto 4) & RegA(31 downto 28);
@@ -281,34 +284,34 @@ begin
 
     -- Select the data to write the the register based on the decoded instruction.
     --
-    with RegDataInSel select RegDataIn <=
-      Result                    when RegDataIn_ALUResult,
-      ImmediateExt              when RegDataIn_Immediate,
-      RegA                      when RegDataIn_RegA,
-      RegB                      when RegDataIn_RegB,
-      SR                        when RegDataIn_SR,
-      GBROut                    when RegDataIn_GBR,
-      VBR                       when RegDataIn_VBR,
-      RegASwapB                 when RegDataIn_RegA_SWAP_B,
-      RegASwapW                 when RegDataIn_RegA_SWAP_W,
-      SignExtend(LowByte(RegA)) when RegDataIn_SignExt_B_RegA,
-      SignExtend(LowWord(RegA)) when RegDataIn_SignExt_W_RegA,
-      ZeroExtend(LowByte(RegA)) when RegDataIn_ZeroExt_B_RegA,
-      ZeroExtend(LowWord(RegA)) when RegDataIn_ZeroExt_W_RegA,
-      MemDataIn                 when RegDataIn_DB,
+    with RegDataInSel select 
+        RegDataIn <= Result                     when  RegDataIn_ALUResult,
+                     ImmediateExt               when  RegDataIn_Immediate,
+                     RegA                       when  RegDataIn_RegA,
+                     RegB                       when  RegDataIn_RegB,
+                     SR                         when  RegDataIn_SR,
+                     GBROut                     when  RegDataIn_GBR,
+                     VBR                        when  RegDataIn_VBR,
+                     RegASwapB                  when  RegDataIn_RegA_SWAP_B,
+                     RegASwapW                  when  RegDataIn_RegA_SWAP_W,
+                     SignExtend(LowByte(RegA))  when  RegDataIn_SignExt_B_RegA,
+                     SignExtend(LowWord(RegA))  when  RegDataIn_SignExt_W_RegA,
+                     ZeroExtend(LowByte(RegA))  when  RegDataIn_ZeroExt_B_RegA,
+                     ZeroExtend(LowWord(RegA))  when  RegDataIn_ZeroExt_W_RegA,
+                     MemDataIn                  when  RegDataIn_DB,
 
-      -- Extract the T bit from the status register.
-      SR and x"00000001"        when RegDataIn_SR_TBit,
-      PROut                     when RegDataIn_PR,
-      (others => 'X')           when others;
+                     -- Extract the T bit from the status register.
+                     SR and x"00000001"         when  RegDataIn_SR_TBit,
+                     PROut                      when  RegDataIn_PR,
+                     (others => 'X')            when  others;
 
 
     -- The address being stored to a register is the pre-decremented or 
     -- post-incremented address when we are in that mode. If we are not in 
     -- that mode, it is just the normal address.
-    with IncDecSel select RegAxIn <=
-        AddrSrcOut  when IncDecSel_PRE_DEC | IncDecSel_POST_INC,
-        DataAddress when others;
+    with IncDecSel select 
+        RegAxIn <= AddrSrcOut  when IncDecSel_PRE_DEC | IncDecSel_POST_INC,
+                   DataAddress when others;
 
     -- Route control signals and data into register array
     registers : entity work.SH2Regs
@@ -337,19 +340,21 @@ begin
     -- ALU Input mux
     OperandA <= RegA;
 
-    OperandB <= RegB            when ALUOpBSel = ALUOpB_RegB else
-                ImmediateExt    when ALUOpBSel = ALUOpB_Imm  else
-                (others => 'X');
+    with ALUOpBSel select
+        OperandB <=  RegB            when ALUOpB_RegB,
+                     ImmediateExt    when ALUOpB_Imm,
+                     (others => 'X') when others;
 
     TIn <= SR(0);
 
-    TNext <= SR(0)      when TFlagSel = TFlagSel_T else
-             Cout       when TFlagSel = TFlagSel_Carry else
-             Overflow   when TFlagSel = TFlagSel_Overflow else
-             Zero       when TFlagSel = TFlagSel_Zero else
-             '0'        when TFlagSel = TFlagSel_CLEAR else
-             '1'        when TFlagSel = TFlagSel_SET else
-             'X';
+    with TFlagSel select
+        TNext <=  SR(0)      when TFlagSel_T,
+                  Cout       when TFlagSel_Carry,
+                  Overflow   when TFlagSel_Overflow,
+                  Zero       when TFlagSel_Zero,
+                  '0'        when TFlagSel_CLEAR,
+                  '1'        when TFlagSel_SET,
+                  'X'        when others;
 
     alu : entity work.sh2alu
     port map (
