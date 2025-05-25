@@ -110,6 +110,7 @@ package SH2InstructionEncodings is
   constant ADD_IMM_RN    : Instruction := "0111------------";
   constant SUB_RM_RN     : Instruction := "0011--------10--";
   constant NEG_RM_RN     : Instruction := "0110--------101-";
+  constant DT_RN         : Instruction := "0100----00010000";
 
   constant CMP_EQ_IMM    : Instruction := "10001000--------";   -- CMP/EQ #imm, R0
   constant CMP_RM_RN     : Instruction := "0011--------0---";   -- CMP/{EQ,HS,GE,HI,GT} Rm, Rn
@@ -586,6 +587,28 @@ begin
                 CinCmd <= CinCmd_ONE;       -- SUB, SUBV
             end if;
 
+            SCmd   <= "XXX";
+            ALUCmd <= ALUCmd_ADDER;
+
+        elsif std_match(IR, DT_RN) then
+            -- report "Instruction: DT Rn";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            Immediate <= (others => '0');
+
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            -- Bit-decoding T flag select (None, Carry, Overflow)
+            Instruction_TFlagSel <= TFlagSel_Zero;
+
+            -- ALU signals to subtract 1 from Rn
+            ALUOpBSel <= ALUOpB_Imm;
+            LoadA     <= '1';
+            FCmd      <= FCmd_BNOT;
+            CinCmd <= CinCmd_ZERO;
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
