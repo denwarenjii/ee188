@@ -154,6 +154,23 @@ ProgramStart:
     MOV #$4C, R3;
     MOV R0, @R3;    Expect R0 = 00000000
 
+    ; Test CMP/STR
+    MOV #$0, R1;
+    MOV #-1, R2;
+    CMP/STR R0, R2;
+    STC SR, R0;
+    AND #1, R0;
+    MOV #$50, R3;
+    MOV R0, @R3;    Expect R0 = 00000000
+
+    MOV #$0, R1;
+    MOV #$A, R2;
+    CMP/STR R0, R2;
+    STC SR, R0;
+    AND #1, R0;
+    MOV #$54, R3;
+    MOV R0, @R3;    Expect R0 = 00000001
+
     ; Quit test program
     MOV #-4, R0;
     MOV.B R0, @R0;

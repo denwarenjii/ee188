@@ -238,6 +238,8 @@ architecture structural of sh2cpu is
     signal TCmp         : std_logic;
     signal TCmpSel      : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
 
+    signal StrCmp       : std_logic;    -- used to compare the bytes of RegA and RegB
+
 
 begin
 
@@ -348,6 +350,12 @@ begin
                      ImmediateExt    when ALUOpB_Imm,
                      (others => 'X') when others;
 
+    StrCmp <= '1' when (RegA(31 downto 24) = RegB(31 downto 24)) or
+                       (RegA(23 downto 16) = RegB(23 downto 16)) or
+                       (RegA(15 downto 8)  = RegB(15 downto 8))  or
+                       (RegA(7 downto 0)   = RegB(7 downto 0))
+                   else '0';
+
     TIn <= SR(0);
 
     -- Compute T flag value based on ALU output flags. Used for operations
@@ -358,6 +366,7 @@ begin
                 not (Sign xor Overflow)             when TCMP_GE,   -- 1 if Rn >= Rm, signed
                 Cout and (not Zero)                 when TCMP_HI,   -- 1 if Rn >  Rm, unsigned
                 not ((Sign xor Overflow) or Zero)   when TCMP_GT,   -- 1 if Rn >  Rm, signed
+                StrCmp                              when TCMP_STR,  -- 1 if Rn byte matches Rm byte
                 'X' when others;
 
 

@@ -114,6 +114,7 @@ package SH2InstructionEncodings is
   constant CMP_EQ_IMM    : Instruction := "10001000--------";   -- CMP/EQ #imm, R0
   constant CMP_RM_RN     : Instruction := "0011--------0---";   -- CMP/{EQ,HS,GE,HI,GT} Rm, Rn
   constant CMP_RN        : Instruction := "0100----00010-01";   -- CMP/{PL/PZ}
+  constant CMP_STR_RM_RN : Instruction := "0010--------1100";   -- CMP/STR
 
   -- Logical Operations:
   constant LOGIC_RM_RN   : Instruction := "0010--------10--";  -- AND, TST, OR, XOR
@@ -213,11 +214,13 @@ package SH2ControlConstants is
     constant TFlagSel_CMP       : std_logic_vector(2 downto 0) := "110";    -- set T to a value computed from
                                                                             -- the ALU flags
 
+    -- BIT DECODED - DO NOT CHANGE
     constant TCMP_EQ            : std_logic_vector(2 downto 0) := "000";
     constant TCMP_HS            : std_logic_vector(2 downto 0) := "010";
     constant TCMP_GE            : std_logic_vector(2 downto 0) := "011";
     constant TCMP_HI            : std_logic_vector(2 downto 0) := "110";
     constant TCMP_GT            : std_logic_vector(2 downto 0) := "111";
+    constant TCMP_STR           : std_logic_vector(2 downto 0) := "100";
 
     constant MemSel_ROM         : std_logic := '1';
     constant MemSel_RAM         : std_logic := '0';
@@ -754,6 +757,17 @@ begin
             CinCmd <= CinCmd_ONE;
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
+
+        elsif std_match(IR, CMP_STR_RM_RN) then
+            -- report "Instruction: CMP/STR Rm, Rn";
+
+            -- Register array signals
+            RegASel <= to_integer(unsigned(nm_format_n));
+            RegBSel <= to_integer(unsigned(nm_format_m));
+
+            -- Compute T flag based on ALU flags
+            Instruction_TFlagSel <= TFlagSel_CMP;
+            TCMPSel <= TCMP_STR;
 
         elsif std_match(IR, CMP_RN) then
             -- report "Instruction: CMP/{PL/PZ} Rn";
