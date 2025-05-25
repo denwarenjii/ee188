@@ -17,6 +17,8 @@
 --     14 May 25  Chris M.          Tri-state address in writeback state.
 --     16 May 25  Zack Huang        Documentation, renaming signals
 --     19 May 25  Chris M.          Connect R0Src to DMAU.
+--     24 May 25  Chris M.          Add GBRIn mux.
+--
 ----------------------------------------------------------------------------
 
 
@@ -208,13 +210,15 @@ architecture structural of sh2cpu is
     signal ALUOpBSel        : std_logic;
 
     signal SR               : std_logic_vector(31 downto 0);
-    signal GBR              : std_logic_vector(31 downto 0);
     signal VBR              : std_logic_vector(31 downto 0);
 
     signal SysRegCtrl       : std_logic;
     signal SysRegSel        : std_logic_vector(1 downto 0);
     signal SysRegSrc        : std_logic;
-    signal NextSysReg : std_logic_vector(31 downto 0);
+
+    signal GBRInSel : std_logic_vector(1 downto 0); -- What will be written to the GBR.
+
+    signal NextSysReg       : std_logic_vector(31 downto 0);
 
     signal TNext        : std_logic;    -- Next value for T bit
 
@@ -251,16 +255,19 @@ begin
 
     AB <= MemAddress;
 
-    MemDataOut <= RegA  when MemOutSel = MemOut_RegA else
-                  RegB  when MemOutSel = MemOut_RegB else
-                  SR    when MemOutSel = MemOut_SR   else
-                  GBR   when MemOutSel = MemOut_GBR  else
-                  VBR   when MemOutSel = MemOut_VBR  else
-                  PROut when MemOutSel = MemOut_PR   else
-                  PCOut when MemOutSel = MemOut_PC   else
-                  (others => 'Z');
+    -- What to output to the data bus (to be written to an address).
+    with MemOutSel select
+        MemDataOut <=   RegA            when MemOut_RegA,
+                        RegB            when MemOut_RegB,
+                        SR              when MemOut_SR,
+                        GBROut          when MemOut_GBR,
+                        VBR             when MemOut_VBR,
+                        PROut           when MemOut_PR,
+                        PCOut           when MemOut_PC,
+                        (others => 'Z') when others;
 
     ImmediateExt(7 downto 0) <= Immediate;
+
     ImmediateExt(31 downto 8) <= (others => Immediate(7)) when ImmediateMode = ImmediateMode_SIGN else
                                  (others => '0')          when ImmediateMode = ImmediateMode_ZERO else
                                  (others => 'X');
@@ -280,7 +287,7 @@ begin
       RegA                      when RegDataIn_RegA,
       RegB                      when RegDataIn_RegB,
       SR                        when RegDataIn_SR,
-      GBR                       when RegDataIn_GBR,
+      GBROut                    when RegDataIn_GBR,
       VBR                       when RegDataIn_VBR,
       RegASwapB                 when RegDataIn_RegA_SWAP_B,
       RegASwapW                 when RegDataIn_RegA_SWAP_W,
@@ -503,8 +510,17 @@ begin
         -- system control signals
         SysRegCtrl => SysRegCtrl,
         SysRegSel => SysRegSel,
-        SysRegSrc => SysRegSrc
+        SysRegSrc => SysRegSrc,
+        GBRInSel => GBRInSel
     );
+
+    -- Mux GBRIn based on GBRInSel. Note that GBRWriteEn must be enabled 
+    -- seperately.
+    with GBRInSel select
+        GBRIn <= MemDataIn       when  GBRInSel_DB,
+                 RegB            when  GBRInSel_RegB,
+                 (others => '0') when others;
+
 
     NextSysReg <= RegB      when SysRegSrc = SysRegSrc_RegB else
                   MemDataIn when SysRegSrc = SysRegSrc_DB else
@@ -516,7 +532,7 @@ begin
         if reset = '0' then
 
             SR  <=  (others => '0');
-            GBR <=  (others => '0');
+            -- GBR <=  (others => '0');
             VBR <=  (others => '0');
 
         elsif rising_edge(clock) then
@@ -527,8 +543,8 @@ begin
             if SysRegCtrl = SysRegCtrl_LOAD then
                 if SysRegSel = SysRegSel_SR then
                     SR <= NextSysReg;
-                elsif SysRegSel = SysRegSel_GBR then
-                    GBR <= NextSysReg;
+                -- elsif SysRegSel = SysRegSel_GBR then
+                --     GBR <= NextSysReg;
                 elsif SysRegSel = SysRegSel_VBR then
                     VBR <= NextSysReg;
                 end if;
@@ -537,10 +553,5 @@ begin
             LogWithTime(l, "sh2_cpu.vhd: MemDataIn: " & to_hstring(MemDataIn), LogFile);
         end if;
     end process register_proc;
-
-   -- TODO: Remove for synthesis.
-  LogMemoryWrites : process(clock)
-  begin
-  end process LogMemoryWrites;
 
 end architecture structural;

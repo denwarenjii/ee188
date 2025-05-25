@@ -17,6 +17,8 @@
 --    RegA2 is always @(Rn).
 --
 -- TODO:
+--  - Bit decode all movs.
+--  - Remove redundant assignment of default signals.
 --  - Better names for:
 --      Instruction_EnableIn, EnableIn
 --
@@ -43,14 +45,26 @@ package SH2InstructionEncodings is
   -- TODO: Bit decode when possible.
   constant  MOV_IMM_RN            :  Instruction := "1110------------";  -- MOV #imm, Rn
 
+  constant  MOV_AT_DISP_PC_RN     :  Instruction := "1-01------------";  -- MOV.X @(disp, PC), Rn (for bit decoding.)
   constant  MOV_W_AT_DISP_PC_RN   :  Instruction := "1001------------";  -- MOV.W @(disp, PC), Rn
   constant  MOV_L_AT_DISP_PC_RN   :  Instruction := "1101------------";  -- MOV.L @(disp, PC), Rn
 
   constant  MOV_RM_RN             :  Instruction := "0110--------0011";  -- MOV Rm, Rn
-  constant  MOV_RM_AT_RN          :  Instruction := "0010--------00--";  -- MOV.X Rm, @Rn
-  constant  MOV_AT_RM_RN          :  Instruction := "0110--------00--";  -- MOV.X @Rm, Rn
 
-  constant  MOV_RM_AT_MINUS_RN    :  Instruction := "0010--------01--";  -- MOV.X Rm, @-Rn
+  constant  MOV_RM_AT_RN          :  Instruction := "0010--------00--";  -- MOV.X Rm, @Rn (for bit decoding).
+  constant  MOV_B_RM_AT_RN        :  Instruction := "0010--------0000";  -- MOV.B Rm, @Rn
+  constant  MOV_W_RM_AT_RN        :  Instruction := "0010--------0001";  -- MOV.W Rm, @Rn
+  constant  MOV_L_RM_AT_RN        :  Instruction := "0010--------0010";  -- MOV.L Rm, @Rn
+
+  constant  MOV_AT_RM_RN          :  Instruction := "0110--------00--";  -- MOV.X @Rm, Rn (for bit decoding).
+  constant  MOV_B_AT_RM_RN        :  Instruction := "0110--------0000";  -- MOV.B @Rm, Rn
+  constant  MOV_W_AT_RM_RN        :  Instruction := "0110--------0001";  -- MOV.W @Rm, Rn
+  constant  MOV_L_AT_RM_RN        :  Instruction := "0110--------0010";  -- MOV.L @Rm, Rn
+
+  constant  MOV_RM_AT_MINUS_RN    :  Instruction := "0010--------01--";  -- MOV.X Rm, @-Rn (for bit decoding).
+  constant  MOV_B_RM_AT_MINUS_RN  :  Instruction := "0010--------0100";  -- MOV.B Rm, @-Rn
+  constant  MOV_W_RM_AT_MINUS_RN  :  Instruction := "0010--------0101";  -- MOV.W Rm, @-Rn
+  constant  MOV_L_RM_AT_MINUS_RN  :  Instruction := "0010--------0110";  -- MOV.L Rm, @-Rn
 
   constant  MOV_B_AT_RM_PLUS_RN   :  Instruction := "0110--------0100";  -- MOV.B @Rm+, Rn
   constant  MOV_W_AT_RM_PLUS_RN   :  Instruction := "0110--------0101";  -- MOV.W @Rm+, Rn
@@ -92,29 +106,58 @@ package SH2InstructionEncodings is
 
 
   -- Arithmetic Instructions:
-  constant ADD_RM_RN        : Instruction := "0011--------11--";
-  constant ADD_IMM_RN       : Instruction := "0111------------";
-  constant SUB_RM_RN        : Instruction := "0011--------10--";
-  constant NEG_RM_RN        : Instruction := "0110--------101-";
+  constant ADD_RM_RN     : Instruction := "0011--------11--";
+  constant ADD_IMM_RN    : Instruction := "0111------------";
+  constant SUB_RM_RN     : Instruction := "0011--------10--";
+  constant NEG_RM_RN     : Instruction := "0110--------101-";
 
   -- Logical Operations:
-  constant LOGIC_RM_RN      : Instruction := "0010--------10--";  -- AND, TST, OR, XOR
-  constant LOGIC_IMM_R0     : Instruction := "110010----------";  -- AND, TST, OR, XOR
-  constant NOT_RM_RN        : Instruction := "0110--------0111";  -- NOT
+  constant LOGIC_RM_RN   : Instruction := "0010--------10--";  -- AND, TST, OR, XOR
+  constant LOGIC_IMM_R0  : Instruction := "110010----------";  -- AND, TST, OR, XOR
+  constant NOT_RM_RN     : Instruction := "0110--------0111";  -- NOT
 
   -- Shift Instruction:
-  constant SHIFT_RN         : Instruction := "0100----00-00-0-";
+  constant SHIFT_RN      : Instruction := "0100----00-00-0-";
 
   -- Branch Instructions:
-  -- System Control:
-  constant NOP              : Instruction := "0000000000001001";
-  constant CLRT             : Instruction := "0000000000001000";
-  constant SETT             : Instruction := "0000000000011000";
+  constant BF     :   Instruction := "10001011--------"; -- BF   <label>
+  constant BF_S   :   Instruction := "10001111--------"; -- BF/S <label>
+  constant BT     :   Instruction := "10001001--------"; -- BT   <label>
+  constant BT_S   :   Instruction := "10001101--------"; -- BT/S <label>
+  constant BRA    :   Instruction := "1010------------"; -- BRA  <label>
+  constant BRAF   :   Instruction := "0000----00100011"; -- BRAF Rm
+  constant BSR    :   Instruction := "1011------------"; -- BSR  <label>
+  constant BSRF   :   Instruction := "0000----00000011"; -- BSRF Rm
+  constant JMP    :   Instruction := "0100----00101011"; -- JMP @Rm
+  constant JSR    :   Instruction := "0100----00001011"; -- JSR @Rm
+  constant RTS    :   Instruction := "0000000000001011"; -- RTS
 
-  constant STC_SYS_RN       : Instruction := "0000----00--0010";
-  constant STC_L_SYS_RN     : Instruction := "0100----00--0011";
-  constant LDC_RM_SYS       : Instruction := "0100----00--1110";
-  constant LDC_L_RM_SYS     : Instruction := "0100----00--0111";
+
+  -- System Control:
+  constant NOP  : Instruction := "0000000000001001";
+  constant CLRT : Instruction := "0000000000001000";
+  constant SETT : Instruction := "0000000000011000";
+
+  constant STC_SYS_RN             : Instruction := "0000----00--0010";  -- STC {SR, GBR, VBR}, Rn
+  constant STC_SR_RN              : Instruction := "0000----00000010";  -- STC SR,  Rn
+  constant STC_GBR_RN             : Instruction := "0000----00010010";  -- STC GBR, Rn
+  constant STC_VBR_RN             : Instruction := "0000----00100010";  -- STC VBR, Rn
+
+  constant STC_L_SYS_RN           : Instruction := "0100----00--0011";  -- STC.L {SR, GBR, VBR}, @-Rn
+  constant STC_L_SR_AT_MINUS_RN   : Instruction := "0100----00000011";  -- STC.L SR, @-Rn
+  constant STC_L_GBR_AT_MINUS_RN  : Instruction := "0100----00010011";  -- STC.L GBR, @-Rn
+  constant STC_L_VBR_AT_MINUS_RN  : Instruction := "0100----00100011";  -- STC.L VBR, @-Rn
+  
+  constant LDC_RM_SYS             : Instruction := "0100----00--1110";  -- LDC Rm, {SR, GBR, VBR}
+  constant LDC_RM_SR              : Instruction := "0100----00001110";  -- LDC Rm, SR
+  constant LDC_RM_GBR             : Instruction := "0100----00011110";  -- LDC Rm, GBR
+  constant LDC_RM_VBR             : Instruction := "0100----00101110";  -- LDC Rm, VBR
+
+  constant LDC_L_RM_SYS           : Instruction := "0100----00--0111"; -- LDC.L @Rm+, {SR, GBR, VBR}
+  constant LDC_L_AT_RM_PLUS_SR    : Instruction := "0100----00000111"; -- LDC.L @Rm+, SR
+  constant LDC_L_AT_RM_PLUS_GBR   : Instruction := "0100----00010111"; -- LDC.L @Rm+, GBR
+  constant LDC_L_AT_RM_PLUS_VBR   : Instruction := "0100----00100111"; -- LDC.L @Rm+, VBR
+
 
 end package SH2InstructionEncodings;
 
@@ -180,6 +223,9 @@ package SH2ControlConstants is
     constant SysRegSel_GBR  : std_logic_vector(1 downto 0) := "01";
     constant SysRegSel_VBR  : std_logic_vector(1 downto 0) := "10";
     constant SysRegSel_PR   : std_logic_vector(1 downto 0) := "11";
+
+    constant GBRInSel_RegB : std_logic_vector(1 downto 0) := "00";
+    constant GBRInSel_DB   : std_logic_vector(1 downto 0) := "01";
 
     -- Whether to sign or zero extend the immediate into a 32-bit word.
     constant ImmediateMode_SIGN     : std_logic := '0';
@@ -265,7 +311,9 @@ entity  SH2Control  is
         -- System control signals
         SysRegCtrl      : out std_logic;
         SysRegSel       : out std_logic_vector(1 downto 0);
-        SysRegSrc       : out std_logic
+        SysRegSrc       : out std_logic;
+
+        GBRInSel        : out std_logic_vector(1 downto 0)  -- Select GBRIn source.
 );
     
 end  SH2Control;
@@ -444,8 +492,8 @@ begin
         Instruction_EnableIn    <= '0';             -- Disable register write
         Instruction_RegAxStore  <= '0';             -- Disable writing to address register.
         Instruction_TFlagSel    <= TFlagSel_T;      -- Keep T flag the same
-        GBRWriteEn              <= '0';             -- keep GBR
-        PRWriteEn               <= '0';             -- keep PR
+        GBRWriteEn              <= '0';             -- Don't write to GBR.
+        PRWriteEn               <= '0';             -- Don't write to PR.
 
         -- Defatult behavior
         Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
@@ -1319,21 +1367,86 @@ begin
             IncDecSel     <= IncDecSel_NONE;
           
 
-
         -- MOV.B R0, @(disp, GBR)
+        -- d format
         elsif std_match(IR, MOV_B_R0_AT_DISP_GBR) then
-          report "Instruction: [MOV.B R0, @(disp, GBR)] not implemented."
-          severity ERROR;
+
+          LogWithTime(l,
+            "sh2_control.vhd: Decoded MOV.B R0, @(0x" & to_hstring(d_format_d) &
+            ", GBR)", LogFile);
+
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_WRITE;
+          Instruction_WordMode  <= ByteMode;
+
+          -- Output R0 to RegB.
+          RegBSel <= 0;
+
+          -- Output RegB (Rm) to memory data bus. This will be written to memory.
+          MemOutSel <= MemOut_RegB;
+
+          -- DMAU signals for Indirect GBR addressing with displacement (Byte Mode)
+          GBRWriteEn    <=  '0';
+          BaseSel       <=  BaseSel_GBR;
+          IndexSel      <=  IndexSel_OFF8;
+          OffScalarSel  <=  OffScalarSel_ONE;
+          IncDecSel     <=  IncDecSel_NONE;
+          DMAUOff8      <=  d_format_d;
+
 
         -- MOV.W R0, @(disp, GBR)
+        -- d format
         elsif std_match(IR, MOV_W_R0_AT_DISP_GBR) then
-          report "Instruction: [MOV.W R0, @(disp, GBR)] not implemented."
-          severity ERROR;
+
+          LogWithTime(l,
+            "sh2_control.vhd: Decoded MOV.W R0, @(0x" & to_hstring(d_format_d) &
+            ", GBR)", LogFile);
+
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_WRITE;
+          Instruction_WordMode  <= WordMode;
+
+          -- Output R0 to RegB.
+          RegBSel <= 0;
+
+          -- Output RegB (Rm) to memory data bus. This will be written to memory.
+          MemOutSel <= MemOut_RegB;
+
+          -- DMAU signals for Indirect GBR addressing with displacement (Word Mode)
+          GBRWriteEn    <=  '0';
+          BaseSel       <=  BaseSel_GBR;
+          IndexSel      <=  IndexSel_OFF8;
+          OffScalarSel  <=  OffScalarSel_TWO;
+          IncDecSel     <=  IncDecSel_NONE;
+          DMAUOff8      <=  d_format_d;
 
         -- MOV.L R0, @(disp, GBR)
+        -- d format
         elsif std_match(IR, MOV_L_R0_AT_DISP_GBR) then
-          report "Instruction: [MOV.L R0, @(disp, GBR)] not implemented."
-          severity ERROR;
+
+          LogWithTime(l,
+            "sh2_control.vhd: Decoded MOV.L R0, @(0x" & to_hstring(d_format_d) &
+            ", GBR)", LogFile);
+
+          Instruction_MemEnable <= '1';
+          Instruction_ReadWrite <= ReadWrite_WRITE;
+          Instruction_WordMode  <= LongwordMode;
+
+          -- Output R0 to RegB.
+          RegBSel <= 0;
+
+          -- Output RegB (Rm) to memory data bus. This will be written to memory.
+          MemOutSel <= MemOut_RegB;
+
+
+          -- DMAU signals for Indirect GBR addressing with displacement (LongwordMode Mode)
+          GBRWriteEn   <=  '0';
+          BaseSel      <=  BaseSel_GBR;
+          IndexSel     <=  IndexSel_OFF8;
+          OffScalarSel <=  OffScalarSel_FOUR;
+          IncDecSel    <=  IncDecSel_NONE;
+          DMAUOff8     <=  d_format_d;
+
 
         -- MOV.B @(disp, GBR), R0
         elsif std_match(IR, MOV_B_AT_DISP_GBR_R0) then
@@ -1379,83 +1492,152 @@ begin
         -- System Control Instructions ----------------------------------------
 
         elsif std_match(IR, CLRT) then
+
             LogWithTime(l, "sh2_control.vhd: Decoded CLRT", LogFile);
 
             Instruction_TFlagSel <= TFlagSel_CLEAR;     -- clear the T flag
+
         elsif std_match(IR, SETT) then
+
             LogWithTime(l, "sh2_control.vhd: Decoded SETT", LogFile);
 
             Instruction_TFlagSel <= TFlagSel_SET;       -- set the T flag
+
         elsif std_match(IR, STC_SYS_RN) then
+
             -- STC {SR, GBR, VBR}, Rn
             -- Uses bit decoding to choose the system register to store
 
             LogWithTime(l, "sh2_control.vhd: Decoded STC XXX, Rn", LogFile);
 
             RegInSel <= to_integer(unsigned(n_format_n));
+
+            -- TODO (Zack): Document this pls.
             RegDataInSel <= "01" & IR(5 downto 4);
             Instruction_EnableIn <= '1';
+
+
+
         elsif std_match(IR, STC_L_SYS_RN) then
-            -- STC.L {SR, GBR, VBR}, @-Rn
-            -- Uses bit decoding to choose the system register to store
 
-            LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
+                -- STC.L {SR, GBR, VBR}, @-Rn
+                -- Uses bit decoding to choose the system register to store
+                LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
 
-            -- Writes a byte to memory
-            Instruction_MemEnable <= '1';               -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
-            Instruction_WordMode  <= LongwordMode;      -- bit decode memory mode
+                -- Writes a byte to memory
+                Instruction_MemEnable <= '1';               -- Uses memory.
+                Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
+                Instruction_WordMode  <= LongwordMode;      -- bit decode memory mode
 
-            MemOutSel <= '1' & IR(5 downto 4); -- bit decode system register to output
+                MemOutSel <= '1' & IR(5 downto 4); -- bit decode system register to output
 
-            RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
-            RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
-            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+                RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
+                RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
+                Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
 
-            -- DMAU signals (for Pre-decrement indirect register addressing)
-            GBRWriteEn   <= '0';
-            BaseSel      <= BaseSel_REG;
-            IndexSel     <= IndexSel_NONE;
-            OffScalarSel <= OffScalarSel_FOUR;
-            IncDecSel    <= IncDecSel_PRE_DEC;
+                -- DMAU signals (for Pre-decrement indirect register addressing)
+                GBRWriteEn   <= '0';
+                BaseSel      <= BaseSel_REG;
+                IndexSel     <= IndexSel_NONE;
+                OffScalarSel <= OffScalarSel_FOUR;
+                IncDecSel    <= IncDecSel_PRE_DEC;
+
 
         elsif std_match(IR, LDC_RM_SYS) then
-            -- LDC Rm, {SR, GBR, VBR}
-            -- Uses bit decoding to choose the system register to load
 
-            LogWithTime(l, "sh2_control.vhd: Decoded LDC Rm, X", LogFile);
+            -- LDC Rm, GBR must actually load into the GBR in the DMAU for later instructions
+            -- to work. Must modify other system control register loads to load to their actual
+            -- locations as well.
+            if (std_match(IR, LDC_RM_GBR)) then
 
-            RegBSel <= to_integer(unsigned(m_format_m));
-            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
-            SysRegSel <= IR(5 downto 4);
-            SysRegSrc <= SysRegSrc_RegB;
+                -- LDC Rm, GBR
+
+                LogWithTime(l, 
+                    "sh2_control.vhd: Decoded LDC " & to_string(slv_to_uint(m_format_m)) &
+                    ", GBR", LogFile);
+
+                RegBSel    <= to_integer(unsigned(m_format_m));
+                GBRInSel   <= GBRInSel_RegB;
+                GBRWriteEn <= '1'; 
+
+            else
+
+                -- LDC Rm, {SR, GBR, VBR}
+                -- Uses bit decoding to choose the system register to load
+
+                LogWithTime(l, "sh2_control.vhd: Decoded LDC Rm, X", LogFile);
+
+                RegBSel <= to_integer(unsigned(m_format_m));
+                Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+                SysRegSel <= IR(5 downto 4);
+                SysRegSrc <= SysRegSrc_RegB;
+
+                        
+            end if;
+
+
         elsif std_match(IR, LDC_L_RM_SYS) then
-            -- LDC.L @Rm+, {SR, GBR, VBR}
-            -- Uses bit decoding to choose the system register to load
 
-            LogWithTime(l, "sh2_control.vhd: Decoded LDC.L @Rm+, X", LogFile);
+            if (std_match(IR, LDC_L_AT_RM_PLUS_GBR)) then
 
-            -- Reads a longword from memory
-            Instruction_MemEnable <= '1';             -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-            Instruction_WordMode  <= LongwordMode;  -- bit decode memory mode
+                -- LDC.L @Rm+, GBR
+                LogWithTime(l,
+                    "sh2_control.vhd: Decoded LDC.L @R" & to_string(slv_to_uint(m_format_m)) & 
+                    "+, GBR", LogFile);
 
-            -- Load into a system register
-            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
-            SysRegSel <= IR(5 downto 4);    -- bit decode which system register to write to
-            SysRegSrc <= SysRegSrc_DB;      -- load new register value from memory
+                -- Reads a longword from memory
+                Instruction_MemEnable <= '1';             -- Uses memory.
+                Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+                Instruction_WordMode  <= LongwordMode;    -- bit decode memory mode
 
-            -- Read from @Rm, and save with post-incremented value
-            RegA2Sel   <= to_integer(unsigned(m_format_m));
-            RegAxInSel <= to_integer(unsigned(m_format_m));
-            Instruction_RegAxStore <= '1';
+                -- Write data bus to GBR.
+                GBRInSel   <= GBRInSel_DB;
+                GBRWriteEn <= '1';
 
-            -- DMAU signals (for post-increment indirect register addressing)
-            GBRWriteEn   <= '0';
-            BaseSel      <= BaseSel_REG;
-            IndexSel     <= IndexSel_NONE;
-            OffScalarSel <= OffScalarSel_FOUR;
-            IncDecSel    <= IncDecSel_POST_INC;
+                -- Read from @Rm, and save with post-incremented value
+                RegA2Sel               <= to_integer(unsigned(m_format_m));
+                RegAxInSel             <= to_integer(unsigned(m_format_m));
+                Instruction_RegAxStore <= '1';
+
+                -- DMAU signals (for post-increment indirect register addressing)
+                GBRWriteEn   <= '0';
+                BaseSel      <= BaseSel_REG;
+                IndexSel     <= IndexSel_NONE;
+                OffScalarSel <= OffScalarSel_FOUR;
+                IncDecSel    <= IncDecSel_POST_INC;
+
+
+            else
+                
+                -- LDC.L @Rm+, {SR, GBR, VBR}
+                -- Uses bit decoding to choose the system register to load
+
+                LogWithTime(l, "sh2_control.vhd: Decoded LDC.L @Rm+, X", LogFile);
+
+                -- Reads a longword from memory
+                Instruction_MemEnable <= '1';             -- Uses memory.
+                Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+                Instruction_WordMode  <= LongwordMode;    -- bit decode memory mode
+
+                -- Load into a system register
+                Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+                SysRegSel <= IR(5 downto 4);    -- bit decode which system register to write to
+                SysRegSrc <= SysRegSrc_DB;      -- load new register value from memory
+
+                -- Read from @Rm, and save with post-incremented value
+                RegA2Sel   <= to_integer(unsigned(m_format_m));
+                RegAxInSel <= to_integer(unsigned(m_format_m));
+                Instruction_RegAxStore <= '1';
+
+                -- DMAU signals (for post-increment indirect register addressing)
+                GBRWriteEn   <= '0';
+                BaseSel      <= BaseSel_REG;
+                IndexSel     <= IndexSel_NONE;
+                OffScalarSel <= OffScalarSel_FOUR;
+                IncDecSel    <= IncDecSel_POST_INC;
+
+            end if;
+
 
         elsif std_match(IR, NOP) then
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
