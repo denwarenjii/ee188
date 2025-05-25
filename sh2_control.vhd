@@ -425,6 +425,10 @@ architecture dataflow of sh2control is
 
   -- If the system register should be loaded or not
   signal Instruction_SysRegCtrl  : std_logic;
+  
+  -- If the GBR register should be updated or not. Output during execute state so it is
+  -- high for the rising clock edge of writeback.
+  signal Instruction_GBRWriteEn  : std_logic;
 
 begin
 
@@ -457,6 +461,10 @@ begin
         MemAddrSel <= Instruction_MemAddrSel when execute,  -- if instruction accesses PMAU or DMAU address
                       MemAddrSel_PMAU        when fetch,    -- access program memory during fetch
                       'X'                    when others;   -- no memory access during writeback
+
+    with state select 
+        GBRWriteEn <= Instruction_GBRWriteEn when execute,      -- if instruction updates GBR
+                      '0'                    when others;       -- don't change GBR
 
     -- Only modify registers after execute clock
     EnableIn <= Instruction_EnableIn when state = execute else '0';
@@ -492,7 +500,8 @@ begin
         Instruction_EnableIn    <= '0';             -- Disable register write
         Instruction_RegAxStore  <= '0';             -- Disable writing to address register.
         Instruction_TFlagSel    <= TFlagSel_T;      -- Keep T flag the same
-        GBRWriteEn              <= '0';             -- Don't write to GBR.
+        Instruction_GBRWriteEn  <= '0';             -- Don't write to GBR.
+        -- GBRWriteEn              <= '0';             -- Don't write to GBR.
         PRWriteEn               <= '0';             -- Don't write to PR.
 
         -- Defatult behavior
@@ -865,7 +874,6 @@ begin
             Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
 
             -- DMAU signals (for Pre-decrement indirect register addressing)
-            GBRWriteEn   <= '0';
             BaseSel      <= BaseSel_REG;
             IndexSel     <= IndexSel_NONE;
             OffScalarSel <= IR(1 downto 0);         -- bit decode offset scalar factor
@@ -902,7 +910,6 @@ begin
           Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
           
           -- DMAU signals for post-increment indirect register addressing (byte mode)
-          GBRWriteEn   <= '0';
           BaseSel      <= BaseSel_REG;
           IndexSel     <= IndexSel_NONE;
           OffScalarSel <= OffScalarSel_ONE;
@@ -934,7 +941,6 @@ begin
           Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
           
           -- DMAU signals for post-increment indirect register addressing (word mode)
-          GBRWriteEn   <= '0';
           BaseSel      <= BaseSel_REG;
           IndexSel     <= IndexSel_NONE;
           OffScalarSel <= OffScalarSel_TWO;
@@ -965,7 +971,6 @@ begin
           Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
           
           -- DMAU signals for post-increment indirect register addressing (longword mode)
-          GBRWriteEn   <= '0';
           BaseSel      <= BaseSel_REG;
           IndexSel     <= IndexSel_NONE;
           OffScalarSel <= OffScalarSel_FOUR;
@@ -998,7 +1003,6 @@ begin
           RegA1Sel <= to_integer(unsigned(nd4_format_n));
 
           -- DMAU signals for Indirect register addressing with displacement (byte mode)
-          GBRWriteEn    <=  '0';
           BaseSel       <=  BaseSel_REG;
           IndexSel      <=  IndexSel_OFF4;
           OffScalarSel  <=  OffScalarSel_ONE;
@@ -1030,7 +1034,6 @@ begin
           MemOutSel <= MemOut_RegB;
           
           -- DMAU signals for Indirect register addressing with displacement (word mode)
-          GBRWriteEn   <= '0';
           BaseSel      <= BaseSel_REG;
           IndexSel     <= IndexSel_OFF4;
           OffScalarSel <= OffScalarSel_TWO;
@@ -1061,7 +1064,6 @@ begin
           MemOutSel <= MemOut_RegB;
 
           -- DMAU signals for Indirect register addressing with displacement (longword mode)
-          GBRWriteEn   <= '0';
           BaseSel      <= BaseSel_REG;
           IndexSel     <= IndexSel_OFF4;
           OffScalarSel <= OffScalarSel_FOUR;
@@ -1093,7 +1095,6 @@ begin
             Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
             -- DMAU signals for Indirect register addressing with displacement (byte mode)
-            GBRWriteEn   <= '0';
             BaseSel      <= BaseSel_REG;
             IndexSel     <= IndexSel_OFF4;
             OffScalarSel <= OffScalarSel_ONE;
@@ -1125,7 +1126,6 @@ begin
             Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
             -- DMAU signals for Indirect register addressing with displacement (word mode)
-            GBRWriteEn   <= '0';
             BaseSel      <= BaseSel_REG;
             IndexSel     <= IndexSel_OFF4;
             OffScalarSel <= OffScalarSel_TWO;
@@ -1159,7 +1159,6 @@ begin
 
 
           -- DMAU signals for Indirect register addressing with displacement (longword mode)
-          GBRWriteEn   <= '0';
           BaseSel      <= BaseSel_REG;
           IndexSel     <= IndexSel_OFF4;
           OffScalarSel <= OffScalarSel_FOUR;
@@ -1194,7 +1193,6 @@ begin
           MemOutSel <= MemOut_RegB;
 
           -- DMAU Signals for Indirect Register Addressing
-          GBRWriteEn    <= '0';
           BaseSel       <= BaseSel_REG;
           IndexSel      <= IndexSel_R0;
           OffScalarSel  <= OffScalarSel_ONE;
@@ -1229,7 +1227,6 @@ begin
 
 
           -- DMAU Signals for Indirect Register Addressing
-          GBRWriteEn    <= '0';
           BaseSel       <= BaseSel_REG;
           IndexSel      <= IndexSel_R0;
           OffScalarSel  <= OffScalarSel_ONE;
@@ -1265,7 +1262,6 @@ begin
 
 
           -- DMAU Signals for Indirect indexed Register Addressing
-          GBRWriteEn    <= '0';
           BaseSel       <= BaseSel_REG;
           IndexSel      <= IndexSel_R0;
           OffScalarSel  <= OffScalarSel_ONE;
@@ -1297,7 +1293,6 @@ begin
             Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
             -- DMAU Signals for Indirect indexed Register Addressing
-            GBRWriteEn    <= '0';
             BaseSel       <= BaseSel_REG;
             IndexSel      <= IndexSel_R0;
             OffScalarSel  <= OffScalarSel_ONE;
@@ -1329,7 +1324,6 @@ begin
             Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
             -- DMAU Signals for Indirect indexed Register Addressing
-            GBRWriteEn    <= '0';
             BaseSel       <= BaseSel_REG;
             IndexSel      <= IndexSel_R0;
             OffScalarSel  <= OffScalarSel_ONE;
@@ -1360,7 +1354,6 @@ begin
             Instruction_MemSel     <=  MemSel_RAM;      -- Reads from RAM
 
             -- DMAU Signals for Indirect indexed Register Addressing
-            GBRWriteEn    <= '0';
             BaseSel       <= BaseSel_REG;
             IndexSel      <= IndexSel_R0;
             OffScalarSel  <= OffScalarSel_ONE;
@@ -1386,7 +1379,6 @@ begin
           MemOutSel <= MemOut_RegB;
 
           -- DMAU signals for Indirect GBR addressing with displacement (Byte Mode)
-          GBRWriteEn    <=  '0';
           BaseSel       <=  BaseSel_GBR;
           IndexSel      <=  IndexSel_OFF8;
           OffScalarSel  <=  OffScalarSel_ONE;
@@ -1413,7 +1405,6 @@ begin
           MemOutSel <= MemOut_RegB;
 
           -- DMAU signals for Indirect GBR addressing with displacement (Word Mode)
-          GBRWriteEn    <=  '0';
           BaseSel       <=  BaseSel_GBR;
           IndexSel      <=  IndexSel_OFF8;
           OffScalarSel  <=  OffScalarSel_TWO;
@@ -1440,7 +1431,6 @@ begin
 
 
           -- DMAU signals for Indirect GBR addressing with displacement (LongwordMode Mode)
-          GBRWriteEn   <=  '0';
           BaseSel      <=  BaseSel_GBR;
           IndexSel     <=  IndexSel_OFF8;
           OffScalarSel <=  OffScalarSel_FOUR;
@@ -1512,11 +1502,9 @@ begin
 
             RegInSel <= to_integer(unsigned(n_format_n));
 
-            -- TODO (Zack): Document this pls.
+            -- selects data source to store to a register through bit decoding
             RegDataInSel <= "01" & IR(5 downto 4);
             Instruction_EnableIn <= '1';
-
-
 
         elsif std_match(IR, STC_L_SYS_RN) then
 
@@ -1536,7 +1524,6 @@ begin
                 Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
 
                 -- DMAU signals (for Pre-decrement indirect register addressing)
-                GBRWriteEn   <= '0';
                 BaseSel      <= BaseSel_REG;
                 IndexSel     <= IndexSel_NONE;
                 OffScalarSel <= OffScalarSel_FOUR;
@@ -1558,7 +1545,7 @@ begin
 
                 RegBSel    <= to_integer(unsigned(m_format_m));
                 GBRInSel   <= GBRInSel_RegB;
-                GBRWriteEn <= '1'; 
+                Instruction_GBRWriteEn <= '1'; 
 
             else
 
@@ -1592,15 +1579,14 @@ begin
 
                 -- Write data bus to GBR.
                 GBRInSel   <= GBRInSel_DB;
-                GBRWriteEn <= '1';
+                Instruction_GBRWriteEn <= '1';
 
                 -- Read from @Rm, and save with post-incremented value
-                RegA2Sel               <= to_integer(unsigned(m_format_m));
+                -- RegA2Sel               <= to_integer(unsigned(m_format_m));
                 RegAxInSel             <= to_integer(unsigned(m_format_m));
                 Instruction_RegAxStore <= '1';
 
                 -- DMAU signals (for post-increment indirect register addressing)
-                GBRWriteEn   <= '0';
                 BaseSel      <= BaseSel_REG;
                 IndexSel     <= IndexSel_NONE;
                 OffScalarSel <= OffScalarSel_FOUR;
@@ -1630,7 +1616,6 @@ begin
                 Instruction_RegAxStore <= '1';
 
                 -- DMAU signals (for post-increment indirect register addressing)
-                GBRWriteEn   <= '0';
                 BaseSel      <= BaseSel_REG;
                 IndexSel     <= IndexSel_NONE;
                 OffScalarSel <= OffScalarSel_FOUR;
