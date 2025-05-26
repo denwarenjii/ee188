@@ -10,6 +10,7 @@
 --     10 May 25  Zack Huang        Implementing ALU instruction
 --     14 May 25  Chris M.          Formatting.
 --     16 May 25  Zack Huang        Documentation, renaming signals
+--     25 May 25  Zack Huang        Finishing ALU and system instructions
 --
 -- Notes:
 --  - When reading/writing to registers, RegB is always Rm and RegA is always Rn
@@ -393,7 +394,6 @@ architecture dataflow of sh2control is
   -- nd8 format: xxxx nnnn dddd dddd
   -- i format:   xxxx xxxx iiii iiii
   -- ni format:  xxxx nnnn iiii iiii
-  --
 
   -- n format
   alias n_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
@@ -1929,6 +1929,5 @@ begin
             end if;
         end if;
     end process state_proc;
-
 
 end dataflow;
