@@ -24,7 +24,9 @@
 --
 --  - Generate DMAU signals with vectors.
 --  - Document register output conventions.
---  - Document bit decoding.
+--  - Document bit decoding.
+--  - Add short instruction operation to std_match case.
+--
 ----------------------------------------------------------------------------
 
 library ieee;
@@ -260,7 +262,8 @@ package SH2ControlConstants is
     constant SysRegSel_VBR      : std_logic_vector(2 downto 0) := "010";
     constant SysRegSel_Control  : std_logic_vector(2 downto 0) := "1--";
     constant SysRegSel_MACH     : std_logic_vector(2 downto 0) := "100";
-    constant SysRegSel_MACL     : std_logic_vector(2 downto 0) := "101";
+    constant
+    SysRegSel_MACL     : std_logic_vector(2 downto 0) := "101";
     constant SysRegSel_PR       : std_logic_vector(2 downto 0) := "110";
 
     -- Whether to sign or zero extend the immediate into a 32-bit word.
@@ -1608,19 +1611,74 @@ begin
 
 
         -- MOV.B @(disp, GBR), R0
+        -- d format
         elsif std_match(IR, MOV_B_AT_DISP_GBR_R0) then
-          report "Instruction: [MOV.B @(disp, GBR), R0] not implemented."
-          severity ERROR;
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded MOV.B @(0x" & to_hstring(d_format_d) &
+                ", GBR), R0", LogFile);
+
+           RegInSel             <= 0;             -- Write to R0
+           RegDataInSel         <= RegDataIn_DB;  -- Write Data bus to R0
+           Instruction_EnableIn <= '1';           -- Enable register writing for this instruction.
+           
+           Instruction_MemEnable <= '1';    
+           Instruction_ReadWrite <= ReadWrite_READ;
+           Instruction_WordMode  <= ByteMode;
+
+          -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
+          BaseSel      <=  BaseSel_GBR;
+          IndexSel     <=  IndexSel_OFF8;
+          OffScalarSel <=  OffScalarSel_ONE;
+          IncDecSel    <=  IncDecSel_NONE;
+          DMAUOff8     <=  d_format_d;
+
 
         -- MOV.W @(disp, GBR), R0
         elsif std_match(IR, MOV_W_AT_DISP_GBR_R0) then
-          report "Instruction: [MOV.W @(disp, GBR), R0] not implemented."
-          severity ERROR;
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(d_format_d) &
+                ", GBR), R0", LogFile);
+
+           RegInSel             <= 0;             -- Write to R0
+           RegDataInSel         <= RegDataIn_DB;  -- Write Data bus to R0
+           Instruction_EnableIn <= '1';           -- Enable register writing for this instruction.
+           
+           Instruction_MemEnable <= '1';    
+           Instruction_ReadWrite <= ReadWrite_READ;
+           Instruction_WordMode  <= WordMode;
+
+          -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
+          BaseSel      <=  BaseSel_GBR;
+          IndexSel     <=  IndexSel_OFF8;
+          OffScalarSel <=  OffScalarSel_TWO;
+          IncDecSel    <=  IncDecSel_NONE;
+          DMAUOff8     <=  d_format_d;
+
 
         -- MOV.L @(disp, GBR), R0
         elsif std_match(IR, MOV_L_AT_DISP_GBR_R0) then
-          report "Instruction: [MOV.L @(disp, GBR), R0] not implemented."
-          severity ERROR;
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(d_format_d) &
+                ", GBR), R0", LogFile);
+
+           RegInSel             <= 0;             -- Write to R0
+           RegDataInSel         <= RegDataIn_DB;  -- Write Data bus to R0
+           Instruction_EnableIn <= '1';           -- Enable register writing for this instruction.
+           
+           Instruction_MemEnable <= '1';    
+           Instruction_ReadWrite <= ReadWrite_READ;
+           Instruction_WordMode  <= LongwordMode;
+
+          -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
+          BaseSel      <=  BaseSel_GBR;
+          IndexSel     <=  IndexSel_OFF8;
+          OffScalarSel <=  OffScalarSel_FOUR;
+          IncDecSel    <=  IncDecSel_NONE;
+          DMAUOff8     <=  d_format_d;
+
 
         -- MOVA @(disp, PC), R0
         elsif std_match(IR, MOVA_AT_DISP_PC_R0) then
