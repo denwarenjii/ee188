@@ -124,7 +124,8 @@ package SH2InstructionEncodings is
   constant NOT_RM_RN     : Instruction := "0110--------0111";  -- NOT
 
   -- Shift Instruction:
-  constant SHIFT_RN      : Instruction := "0100----00-00-0-";
+  constant SHIFT_RN      : Instruction := "0100----00-00-0-";  -- shift/rotate instructions
+  constant BSHIFT_RN     : Instruction := "0100----00--100-";  -- barrel shifter instructions
 
   -- Branch Instructions:
   constant BF     :   Instruction := "10001011--------"; -- BF   <label>
@@ -849,6 +850,22 @@ begin
             SCmd   <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
 
+        elsif std_match(IR, BSHIFT_RN) then
+            -- {SHLL,SHLR}{2,8,16} Rn
+            -- Uses bit decoding to compute control signals (to reduce code size)
+
+            -- Register array signals
+            RegASel              <= to_integer(unsigned(n_format_n));
+            RegInSel             <= to_integer(unsigned(n_format_n));
+            RegDataInSel         <= RegDataIn_ALUResult;
+            Instruction_EnableIn <= '1';
+
+            Instruction_TFlagSel <= TFlagSel_T;
+
+            -- ALU signals
+            LoadA     <= '1';
+            SCmd   <= IR(5) & IR(4) & IR(0);  -- bit-decode barrel shift operation
+            ALUCmd <= ALUCmd_BSHIFT;
         
         -- Data Transfer Instruction -------------------------------------------
 

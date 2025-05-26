@@ -41,11 +41,19 @@ package  SH2ALUConstants  is
    constant SCmd_ROR   : std_logic_vector(2 downto 0) := "110"; -- BIT DECODED - DO NOT CHANGE
    constant SCmd_RRC   : std_logic_vector(2 downto 0) := "111"; -- BIT DECODED - DO NOT CHANGE
 
+   -- Barrel shifter command constants
+   constant BSCmd_L2  : std_logic_vector(2 downto 0) := "000"; -- BIT DECODED - DO NOT CHANGE
+   constant BSCmd_R2  : std_logic_vector(2 downto 0) := "001"; -- BIT DECODED - DO NOT CHANGE
+   constant BSCmd_L8  : std_logic_vector(2 downto 0) := "010"; -- BIT DECODED - DO NOT CHANGE
+   constant BSCmd_R8  : std_logic_vector(2 downto 0) := "011"; -- BIT DECODED - DO NOT CHANGE
+   constant BSCmd_L16 : std_logic_vector(2 downto 0) := "100"; -- BIT DECODED - DO NOT CHANGE
+   constant BSCmd_R16 : std_logic_vector(2 downto 0) := "101"; -- BIT DECODED - DO NOT CHANGE
 
 --  ALU command constants
    constant ALUCmd_FBLOCK  : std_logic_vector(1 downto 0) := "00";
    constant ALUCmd_ADDER   : std_logic_vector(1 downto 0) := "01";
    constant ALUCmd_SHIFT   : std_logic_vector(1 downto 0) := "10";
+   constant ALUCmd_BSHIFT  : std_logic_vector(1 downto 0) := "11";
 
 
     constant OpA_Zero     : std_logic_vector(1 downto 0) := "00"; -- clear OperandA before using it in a computation
@@ -69,6 +77,7 @@ end package;
 library ieee;
 use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
+use work.SH2ALUConstants.all;
 
 -- Set the SH2 ALU control signals as follows for each instruction:
 -- It is assumed that single-operand instructions operate on OperandB,
@@ -228,7 +237,9 @@ architecture structural of sh2alu is
         );
     end component ALU;
 
-    signal OperandAMux : std_logic_vector(31 downto 0);
+    signal BarrelShifter : std_logic_vector(31 downto 0);
+
+    signal ALUResult : std_logic_vector(31 downto 0);
 
 begin
     -- We use a generic ALU to implement all of the SH-2 ALU operations. We
@@ -247,11 +258,24 @@ begin
             SCmd     => SCmd,
             AluCmd   => AluCmd,
             CinCmd   => CinCmd,
-            Result   => Result,
+            Result   => ALUResult,
             Cout     => Cout,
             Overflow => Overflow,
             Zero     => Zero,
             Sign     => Sign
         );
+
+    -- We also add in a barrel shifter to implement extra-credit instructions
+    -- For convenience, we will re-use the SCmd bits to control this barrel shifter.
+    with SCmd select
+        BarrelShifter <= OperandA(29 downto 0) & "00"                   when BSCmd_L2,
+                         "00" & OperandA(31 downto 2)                   when BSCmd_R2,
+                         OperandA(23 downto 0) & "00000000"             when BSCmd_L8,
+                         "00000000" & OperandA(31 downto 8)             when BSCmd_R8,
+                         OperandA(15 downto 0) & "0000000000000000"     when BSCmd_L16,
+                         "0000000000000000" & OperandA(31 downto 16)    when BSCmd_R16,
+                         (others => 'X') when others;
+
+    Result <= BarrelShifter when ALUCmd = ALUCmd_BSHIFT else ALUResult;
 
 end architecture structural;
