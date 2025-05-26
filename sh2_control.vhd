@@ -207,7 +207,7 @@ package SH2ControlConstants is
     constant RegDataIn_SysReg         : std_logic_vector(3 downto 0) := "0100";
     constant RegDataIn_RegA_SWAP_B    : std_logic_vector(3 downto 0) := "0111";
     constant RegDataIn_RegA_SWAP_W    : std_logic_vector(3 downto 0) := "1000";
-    constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "1001";
+    constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "1001"; -- TODO: rename this.
     constant RegDataIn_PR             : std_logic_vector(3 downto 0) := "1010";
     constant RegDataIn_DB             : std_logic_vector(3 downto 0) := "1011";
     constant RegDataIn_Ext            : std_logic_vector(3 downto 0) := "1110";
@@ -1706,9 +1706,17 @@ begin
 
 
         -- MOVT Rn
+        -- n format.
         elsif std_match(IR, MOVT_RN) then
-          report "Instruction: [MOVT Rn] not implemented."
-          severity ERROR;
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded MOVT R" & to_string(slv_to_uint(n_format_n)), 
+                LogFile);
+            
+            RegInSel             <= to_integer(unsigned(n_format_n));
+            RegDataInSel         <= RegDataIn_SR_TBit;
+            Instruction_EnableIn <= '1';
+
 
         -- SWAP.B Rm, Rn
         elsif std_match(IR, SWAP_B_RM_RN) then

@@ -87,7 +87,8 @@ test: $(TOPLEVEL) asm
 
 clean:
 	ghdl --clean --workdir=$(WORKDIR) --std=08
-	# rm -rf *.cf *.o $(WORKDIR)
+	rm -rf asm/*.bin
+# rm -rf *.cf *.o $(WORKDIR)
 
 view:
 	gtkwave $(WAVEFORM) &

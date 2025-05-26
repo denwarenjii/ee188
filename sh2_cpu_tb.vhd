@@ -645,10 +645,12 @@ begin
         RunTest("asm/mov_bwl_r0_at_disp_gbr");              -- Test Mov R0, @(disp, GBR)
         RunTest("asm/mov_at_disp_gbr_r0");                  -- Test Mov @(disp, GBR), R0
         RunTest("asm/mova_at_disp_pc_r0");                  -- Test Mova @(disp, PC), R0
+        RunTest("asm/movt_rn");                             -- Test Movt Rn
 
         RunTest("asm/cmp");     -- Test CMP operations
         RunTest("asm/ext");     -- Test zero/sign extension instructions
         RunTest("asm/bshift");  -- Test barrel shift instructions
+
         wait;
     end process;
 
