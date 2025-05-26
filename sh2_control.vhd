@@ -200,17 +200,18 @@ use ieee.numeric_std.all;
 package SH2ControlConstants is
 
     -- Internal control signals for controlling muxes within the CPU
-    constant RegDataIn_ALUResult      : std_logic_vector(3 downto 0) := "0000";
-    constant RegDataIn_Immediate      : std_logic_vector(3 downto 0) := "0001";
-    constant RegDataIn_RegA           : std_logic_vector(3 downto 0) := "0010";
-    constant RegDataIn_RegB           : std_logic_vector(3 downto 0) := "0011";
-    constant RegDataIn_SysReg         : std_logic_vector(3 downto 0) := "0100";
-    constant RegDataIn_RegA_SWAP_B    : std_logic_vector(3 downto 0) := "0111";
-    constant RegDataIn_RegA_SWAP_W    : std_logic_vector(3 downto 0) := "1000";
-    constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "1001"; -- TODO: rename this.
-    constant RegDataIn_PR             : std_logic_vector(3 downto 0) := "1010";
-    constant RegDataIn_DB             : std_logic_vector(3 downto 0) := "1011";
-    constant RegDataIn_Ext            : std_logic_vector(3 downto 0) := "1110";
+    constant RegDataIn_ALUResult        : std_logic_vector(3 downto 0) := "0000";
+    constant RegDataIn_Immediate        : std_logic_vector(3 downto 0) := "0001";
+    constant RegDataIn_RegA             : std_logic_vector(3 downto 0) := "0010";
+    constant RegDataIn_RegB             : std_logic_vector(3 downto 0) := "0011";
+    constant RegDataIn_SysReg           : std_logic_vector(3 downto 0) := "0100";
+    constant RegDataIn_RegA_SWAP_B      : std_logic_vector(3 downto 0) := "0111";
+    constant RegDataIn_RegA_SWAP_W      : std_logic_vector(3 downto 0) := "1000";
+    constant RegDataIn_REGB_REGA_CENTER : std_logic_vector(3 downto 0) := "1001";
+    constant RegDataIn_SR_TBit          : std_logic_vector(3 downto 0) := "1010"; -- TODO: rename this.
+    constant RegDataIn_PR               : std_logic_vector(3 downto 0) := "1011";
+    constant RegDataIn_DB               : std_logic_vector(3 downto 0) := "1100";
+    constant RegDataIn_Ext              : std_logic_vector(3 downto 0) := "1101";
 
     constant Ext_Sign_B_RegA : std_logic_vector(1 downto 0) := "10"; -- BIT DECODED - DO NOT CHANGE
     constant Ext_Sign_W_RegA : std_logic_vector(1 downto 0) := "11"; -- BIT DECODED - DO NOT CHANGE
@@ -1712,7 +1713,10 @@ begin
             LogWithTime(l,
                 "sh2_control.vhd: Decoded MOVT R" & to_string(slv_to_uint(n_format_n)), 
                 LogFile);
-            
+
+            -- TODO: This is not consistent with the convention that RegB is 
+            -- always Rm !!!
+            --
             RegInSel             <= to_integer(unsigned(n_format_n));
             RegDataInSel         <= RegDataIn_SR_TBit;
             Instruction_EnableIn <= '1';
@@ -1744,6 +1748,9 @@ begin
                 "sh2_control.vhd: Decoded SWAP.W R" & to_string(slv_to_uint(nm_format_m))
                 & ", R" & to_string(nm_format_n), LogFile);
 
+            -- TODO: This is not consistent with the convention that RegB is 
+            -- always Rm !!!
+            --
             RegASel      <= slv_to_uint(nm_format_m);
             RegInSel     <= slv_to_uint(nm_format_n);
             RegDataInSel <= RegDataIn_RegA_SWAP_W;
@@ -1752,9 +1759,23 @@ begin
 
 
         -- XTRCT Rm, Rn
+        -- nm format
+        -- Center 32 bits of Rm and Rn -> Rn
         elsif std_match(IR, XTRCT_RM_RN) then
-          report "Instruction: [XTRCT Rm, Rn] not implemented."
-          severity ERROR;
+        
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded XTRCT R" & to_string(slv_to_uint(nm_format_m))
+                & ", R" & to_string(nm_format_n), LogFile);
+
+            RegASel <= slv_to_uint(nm_format_n);
+            RegBSel <= slv_to_uint(nm_format_m);
+
+            RegInSel <= slv_to_uint(nm_format_n); -- Write to Rn
+
+            RegDataInSel <= RegDataIn_REGB_REGA_CENTER;
+
+            Instruction_EnableIn <= '1';
+            
 
 
         -- System Control Instructions ----------------------------------------

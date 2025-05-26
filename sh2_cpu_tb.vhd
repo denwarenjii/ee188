@@ -648,8 +648,8 @@ begin
         RunTest("asm/mov_at_disp_gbr_r0");                  -- Test Mov @(disp, GBR), R0
         RunTest("asm/mova_at_disp_pc_r0");                  -- Test Mova @(disp, PC), R0
         RunTest("asm/movt_rn");                             -- Test Movt Rn
-
         RunTest("asm/swap");                                -- Test SWAP.B Rm, Rn and SWAP.W Rm, Rn
+        RunTest("asm/xtrct");                               -- Test XTRCT Rm, Rn
 
         RunTest("asm/cmp");     -- Test CMP operations
         RunTest("asm/ext");     -- Test zero/sign extension instructions

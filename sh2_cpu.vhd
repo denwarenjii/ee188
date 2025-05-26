@@ -19,7 +19,9 @@
 --     19 May 25  Chris M.          Connect R0Src to DMAU.
 --     24 May 25  Chris M.          Add GBRIn mux.
 --     25 May 25  Zack Huang        Finishing ALU and system instructions
---
+--     26 May 25  Chris M.          Add internal signal for XTRCT instruction
+--                                  register manipulation. Also added this
+--                                  as possible input to RegDataIn.
 ----------------------------------------------------------------------------
 
 
@@ -230,6 +232,8 @@ architecture structural of sh2cpu is
     -- RegA with the high and low words swapped (for the SWAP.W instruction).
     signal RegASwapW : std_logic_vector(31 downto 0);
 
+    -- The center 32-bits of RegB and RegA (ie, low word of RegB and high word of RegA).
+    signal RegB_RegA_Center : std_logic_vector(31 downto 0);
 
     signal MemAddrSel  : std_logic;
 
@@ -278,12 +282,14 @@ begin
                                  
 
     -- RegA with the high and low bytes swapped.
-
     RegASwapB <= RegA(31 downto 16) & RegA(7 downto 0) & RegA(15 downto 8);
 
     -- RegA with the high and low words swapped.
     RegASwapW <= RegA(15 downto 0) & RegA(31 downto 16);
 
+    -- The center 32-bits of RegB and RegA (ie, low word of RegB and high word of RegA).
+    RegB_RegA_Center <= RegB(15 downto 0) & RegA(31 downto 16);
+    
     with ExtMode select
         ExtendedReg <= SignExtend(LowByte(RegB))  when  Ext_Sign_B_RegA,
                        SignExtend(LowWord(RegB))  when  Ext_Sign_W_RegA,
@@ -309,6 +315,7 @@ begin
                      SysReg                     when  RegDataIn_SysReg,
                      RegASwapB                  when  RegDataIn_RegA_SWAP_B,
                      RegASwapW                  when  RegDataIn_RegA_SWAP_W,
+                     RegB_RegA_Center           when  RegDataIn_REGB_REGA_CENTER,
                      ExtendedReg                when  RegDataIn_Ext,
                      MemDataIn                  when  RegDataIn_DB,
 
