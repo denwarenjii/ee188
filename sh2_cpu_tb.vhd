@@ -641,7 +641,7 @@ begin
         RunTest("asm/mov_bwl_r0_or_rm_at_disp_rn");   -- Test Mov R0, @(disp, Rn) and Mov Rm, @(disp,Rn)
         RunTest("asm/mov_bwl_at_disp_rm_r0_or_rn");   -- Test Mov @(disp, Rm), R0 and Mov @(disp, Rm), Rn
         RunTest("asm/mov_rm_at_r0_rn");               -- Test Mov Rm, @(R0, Rn)
-        -- RunTest("asm/mov_b_at_r0_rm_rn");              -- Test Mov @(R0, Rm), Rn 
+        RunTest("asm/mov_b_at_r0_rm_rn");              -- Test Mov @(R0, Rm), Rn 
         RunTest("asm/mov_bwl_r0_at_disp_gbr");              -- Test Mov R0, @(disp, GBR)
         RunTest("asm/cmp");     -- Test CMP operations
         RunTest("asm/ext");     -- Test zero/sign extension instructions
