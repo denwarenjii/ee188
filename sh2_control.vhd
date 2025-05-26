@@ -1778,6 +1778,124 @@ begin
             
 
 
+        -- Branch Instruction -------------------------------------------------
+
+        -- BF <label> (where label is disp*2 + PC)
+        -- d format
+        elsif std_match(IR, BF) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BF (label=" & to_hstring(d_format_d) &
+                "*2 + PC)", LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- BF/S <label> (where label is disp*2 + PC)
+        -- d format
+        elsif std_match(IR, BF_S) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BF/S (label=" & to_hstring(d_format_d) &
+                "*2 + PC)", LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- BT <label> (where label is disp*2 + PC)
+        -- d format
+        elsif std_match(IR, BT) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BT (label=" & to_hstring(d_format_d) &
+                "*2 + PC)", LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- BT/S <label> (where label is disp*2 + PC)
+        -- d format
+        elsif std_match(IR, BT_S) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d_format_d) &
+                "*2 + PC)", LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- BRA <label> (where label is disp*2 + PC)
+        -- d12 format
+        elsif std_match(IR, BRA) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d12_format_d) &
+                "*2 + PC)", LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- BRAF Rm
+        -- m format
+        elsif std_match(IR, BRAF) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- BSR <label> (where label is disp*2)
+        -- d12 format
+        elsif std_match(IR, BSR) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
+                "*2 + PC)", LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- BSRF Rm
+        -- m format
+        elsif std_match(IR, BSRF) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BSRF R" & to_string(slv_to_uint(m_format_m)), LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- JMP @Rm
+        -- m format
+        elsif std_match(IR, JMP) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded JMP @R" & to_string(slv_to_uint(m_format_m)), LogFile);
+
+            assert false
+            severity ERROR;
+
+        -- JSR @Rm
+        -- m format
+        elsif
+        std_match(IR, JSR) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded JSR @R" & to_string(slv_to_uint(m_format_m)), LogFile);
+
+            assert false
+            severity ERROR;
+
+        elsif std_match(IR, RTS) then
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded RTS", LogFile);
+
+            assert false
+            severity ERROR;
+
+
         -- System Control Instructions ----------------------------------------
 
         elsif std_match(IR, CLRT) then
