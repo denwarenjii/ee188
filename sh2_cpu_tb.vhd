@@ -633,6 +633,7 @@ begin
         RunTest("asm/shift");
         RunTest("asm/sr");
         RunTest("asm/system");
+        RunTest("asm/control");
         RunTest("asm/mov_wl_at_disp_pc_rn");          -- Tests MOV (disp, PC), Rn
         RunTest("asm/mov_bwl_at_rm_rn");              -- Tests MOV @Rm, Rn
         RunTest("asm/mov_bwl_rm_at_minus_rn");        -- Tests Mov Rm, @-Rn

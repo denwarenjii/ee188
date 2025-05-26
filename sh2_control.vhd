@@ -161,10 +161,30 @@ package SH2InstructionEncodings is
   constant LDC_RM_GBR             : Instruction := "0100----00011110";  -- LDC Rm, GBR
   constant LDC_RM_VBR             : Instruction := "0100----00101110";  -- LDC Rm, VBR
 
-  constant LDC_L_RM_SYS           : Instruction := "0100----00--0111"; -- LDC.L @Rm+, {SR, GBR, VBR}
-  constant LDC_L_AT_RM_PLUS_SR    : Instruction := "0100----00000111"; -- LDC.L @Rm+, SR
-  constant LDC_L_AT_RM_PLUS_GBR   : Instruction := "0100----00010111"; -- LDC.L @Rm+, GBR
-  constant LDC_L_AT_RM_PLUS_VBR   : Instruction := "0100----00100111"; -- LDC.L @Rm+, VBR
+  constant LDC_L_RM_SYS           : Instruction := "0100----00--0111";  -- LDC.L @Rm+, {SR, GBR, VBR}
+  constant LDC_L_AT_RM_PLUS_SR    : Instruction := "0100----00000111";  -- LDC.L @Rm+, SR
+  constant LDC_L_AT_RM_PLUS_GBR   : Instruction := "0100----00010111";  -- LDC.L @Rm+, GBR
+  constant LDC_L_AT_RM_PLUS_VBR   : Instruction := "0100----00100111";  -- LDC.L @Rm+, VBR
+
+  constant LDS_RM_SYS             : Instruction := "0100----00--1010";  -- LDS Rm, {MACH, MACL, PR}
+  constant LDS_RM_MACH            : Instruction := "0100----00001010";  -- LDS Rm, MACH
+  constant LDS_RM_MACL            : Instruction := "0100----00011010";  -- LDS Rm, MACL
+  constant LDS_RM_PR              : Instruction := "0100----00101010";  -- LDS Rm, PR
+
+  constant LDS_L_RM_SYS           : Instruction := "0100----00--0110";  -- LDS.L @Rm+, {MACH, MACL, PR}
+  constant LDS_L_AT_RM_PLUS_MACH  : Instruction := "0100----00000110";  -- LDS.L @Rm+, MACH
+  constant LDS_L_AT_RM_PLUS_MACL  : Instruction := "0100----00010110";  -- LDS.L @Rm+, MACL
+  constant LDS_L_AT_RM_PLUS_PR    : Instruction := "0100----00100110";  -- LDS.L @Rm+, PR
+
+  constant STS_SYS_RN             : Instruction := "0000----00--1010";  -- STS Rm, {MACH, MACL, PR}
+  constant STS_MACH_RN            : Instruction := "0000----00001010";  -- STS Rm, MACH
+  constant STS_MACL_RN            : Instruction := "0000----00011010";  -- STS Rm, MACL
+  constant STS_PR_RN              : Instruction := "0000----00101010";  -- STS Rm, PR
+
+  constant STS_L_SYS_RN           : Instruction := "0100----00--0010";  -- STS.L @Rm+, {MACH, MACL, PR}
+  constant STS_L_AT_RM_PLUS_MACH  : Instruction := "0100----00000010";  -- STS.L @Rm+, MACH
+  constant STS_L_AT_RM_PLUS_MACL  : Instruction := "0100----00010010";  -- STS.L @Rm+, MACL
+  constant STS_L_AT_RM_PLUS_PR    : Instruction := "0100----00100010";  -- STS.L @Rm+, PR
 
 
 end package SH2InstructionEncodings;
@@ -181,29 +201,25 @@ package SH2ControlConstants is
     constant RegDataIn_Immediate      : std_logic_vector(3 downto 0) := "0001";
     constant RegDataIn_RegA           : std_logic_vector(3 downto 0) := "0010";
     constant RegDataIn_RegB           : std_logic_vector(3 downto 0) := "0011";
-    constant RegDataIn_SR             : std_logic_vector(3 downto 0) := "0100"; -- BIT DECODED - DO NOT CHANGE
-    constant RegDataIn_GBR            : std_logic_vector(3 downto 0) := "0101"; -- BIT DECODED - DO NOT CHANGE
-    constant RegDataIn_VBR            : std_logic_vector(3 downto 0) := "0110"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_SysReg         : std_logic_vector(3 downto 0) := "0100";
     constant RegDataIn_RegA_SWAP_B    : std_logic_vector(3 downto 0) := "0111";
     constant RegDataIn_RegA_SWAP_W    : std_logic_vector(3 downto 0) := "1000";
     constant RegDataIn_SR_TBit        : std_logic_vector(3 downto 0) := "1001";
     constant RegDataIn_PR             : std_logic_vector(3 downto 0) := "1010";
     constant RegDataIn_DB             : std_logic_vector(3 downto 0) := "1011";
-    constant RegDataIn_SignExt_B_RegA : std_logic_vector(3 downto 0) := "1110"; -- BIT DECODED - DO NOT CHANGE
-    constant RegDataIn_SignExt_W_RegA : std_logic_vector(3 downto 0) := "1111"; -- BIT DECODED - DO NOT CHANGE
-    constant RegDataIn_ZeroExt_B_RegA : std_logic_vector(3 downto 0) := "1100"; -- BIT DECODED - DO NOT CHANGE
-    constant RegDataIn_ZeroExt_W_RegA : std_logic_vector(3 downto 0) := "1101"; -- BIT DECODED - DO NOT CHANGE
+    constant RegDataIn_Ext            : std_logic_vector(3 downto 0) := "1110";
+
+    constant Ext_Sign_B_RegA : std_logic_vector(1 downto 0) := "10"; -- BIT DECODED - DO NOT CHANGE
+    constant Ext_Sign_W_RegA : std_logic_vector(1 downto 0) := "11"; -- BIT DECODED - DO NOT CHANGE
+    constant Ext_Zero_B_RegA : std_logic_vector(1 downto 0) := "00"; -- BIT DECODED - DO NOT CHANGE
+    constant Ext_Zero_W_RegA : std_logic_vector(1 downto 0) := "01"; -- BIT DECODED - DO NOT CHANGE
 
     constant ReadWrite_READ     : std_logic := '0';
     constant ReadWrite_WRITE    : std_logic := '1';
 
     constant MemOut_RegA    : std_logic_vector(2 downto 0) := "000";
     constant MemOut_RegB    : std_logic_vector(2 downto 0) := "001";
-    constant MemOut_PR      : std_logic_vector(2 downto 0) := "010";
-    constant MemOut_PC      : std_logic_vector(2 downto 0) := "011";
-    constant MemOut_SR      : std_logic_vector(2 downto 0) := "100"; -- BIT DECODED - DO NOT CHANGE
-    constant MemOut_GBR     : std_logic_vector(2 downto 0) := "101"; -- BIT DECODED - DO NOT CHANGE
-    constant MemOut_VBR     : std_logic_vector(2 downto 0) := "110"; -- BIT DECODED - DO NOT CHANGE
+    constant MemOut_SysReg  : std_logic_vector(2 downto 0) := "010";
 
     constant ALUOpB_RegB    : std_logic := '0';
     constant ALUOpB_Imm     : std_logic := '1';
@@ -237,13 +253,15 @@ package SH2ControlConstants is
     constant SysRegSrc_RegB     : std_logic := '0';     -- load system register from register bus B
     constant SysRegSrc_DB       : std_logic := '1';     -- load system register from data bus
 
-    constant SysRegSel_SR   : std_logic_vector(1 downto 0) := "00";
-    constant SysRegSel_GBR  : std_logic_vector(1 downto 0) := "01";
-    constant SysRegSel_VBR  : std_logic_vector(1 downto 0) := "10";
-    constant SysRegSel_PR   : std_logic_vector(1 downto 0) := "11";
-
-    constant GBRInSel_RegB : std_logic_vector(1 downto 0) := "00";
-    constant GBRInSel_DB   : std_logic_vector(1 downto 0) := "01";
+    -- BIT DECODED - DO NOT CHANGE
+    constant SysRegSel_System   : std_logic_vector(2 downto 0) := "0--";
+    constant SysRegSel_SR       : std_logic_vector(2 downto 0) := "000";
+    constant SysRegSel_GBR      : std_logic_vector(2 downto 0) := "001";
+    constant SysRegSel_VBR      : std_logic_vector(2 downto 0) := "010";
+    constant SysRegSel_Control  : std_logic_vector(2 downto 0) := "1--";
+    constant SysRegSel_MACH     : std_logic_vector(2 downto 0) := "100";
+    constant SysRegSel_MACL     : std_logic_vector(2 downto 0) := "101";
+    constant SysRegSel_PR       : std_logic_vector(2 downto 0) := "110";
 
     -- Whether to sign or zero extend the immediate into a 32-bit word.
     constant ImmediateMode_SIGN     : std_logic := '0';
@@ -288,6 +306,7 @@ entity  SH2Control  is
         ImmediateMode   : out std_logic;                    -- Immediate extension mode
         MemOutSel   : out std_logic_vector(2 downto 0);     -- what should be output to memory
         TFlagSel    : out std_logic_vector(2 downto 0);     -- source for next value of T flag
+        ExtMode     : out std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
 
         -- ALU control signals
         ALUOpBSel   : out std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
@@ -329,10 +348,8 @@ entity  SH2Control  is
 
         -- System control signals
         SysRegCtrl      : out std_logic;
-        SysRegSel       : out std_logic_vector(1 downto 0);
-        SysRegSrc       : out std_logic;
-
-        GBRInSel        : out std_logic_vector(1 downto 0)  -- Select GBRIn source.
+        SysRegSel       : out std_logic_vector(2 downto 0);
+        SysRegSrc       : out std_logic
 );
     
 end  SH2Control;
@@ -449,6 +466,10 @@ architecture dataflow of sh2control is
   -- high for the rising clock edge of writeback.
   signal Instruction_GBRWriteEn  : std_logic;
 
+  -- If the PR register should be updated or not. Output during execute state so it is
+  -- high for the rising clock edge of writeback.
+  signal Instruction_PRWriteEn  : std_logic;
+
 begin
 
     -- Outputs that change based on the CPU state
@@ -483,6 +504,10 @@ begin
 
     with state select 
         GBRWriteEn <= Instruction_GBRWriteEn when execute,      -- if instruction updates GBR
+                      '0'                    when others;       -- don't change GBR
+
+    with state select 
+        PRWriteEn  <= Instruction_PRWriteEn  when execute,      -- if instruction updates GBR
                       '0'                    when others;       -- don't change GBR
 
     -- Only modify registers after execute clock
@@ -520,13 +545,13 @@ begin
         Instruction_RegAxStore  <= '0';             -- Disable writing to address register.
         Instruction_TFlagSel    <= TFlagSel_T;      -- Keep T flag the same
         Instruction_GBRWriteEn  <= '0';             -- Don't write to GBR.
-        -- GBRWriteEn              <= '0';             -- Don't write to GBR.
-        PRWriteEn               <= '0';             -- Don't write to PR.
+        Instruction_PRWriteEn   <= '0';             -- Don't write to PR.
 
         -- Defatult behavior
         Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
         Instruction_SysRegCtrl <= SysRegCtrl_NONE;  -- system register not selected
         ImmediateMode <= ImmediateMode_SIGN;        -- sign-extend immediates by defualt
+        ExtMode       <= Ext_Sign_B_RegA;
 
         if std_match(IR, ADD_RM_RN) then
 
@@ -656,7 +681,8 @@ begin
             RegBSel <= to_integer(unsigned(nm_format_m));
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
-            RegDataInSel         <= "11" & IR(1 downto 0);  -- bit-decode type of extension
+            RegDataInSel         <= RegDataIn_Ext;
+            ExtMode              <= IR(1 downto 0);     -- bit-decode extension mode
             Instruction_EnableIn <= '1';
 
         -- ADD #imm, Rn
@@ -1646,31 +1672,73 @@ begin
             RegInSel <= to_integer(unsigned(n_format_n));
 
             -- selects data source to store to a register through bit decoding
-            RegDataInSel <= "01" & IR(5 downto 4);
+            SysRegSel <= "0" & IR(5 downto 4);
+            RegDataInSel <= RegDataIn_SysReg;
+            Instruction_EnableIn <= '1';
+
+        elsif std_match(IR, STS_SYS_RN) then
+
+            -- STS {MACH, MACL, PR}, Rn
+            -- Uses bit decoding to choose the system register to store
+
+            LogWithTime(l, "sh2_control.vhd: Decoded STS XXX, Rn", LogFile);
+
+            RegInSel <= to_integer(unsigned(n_format_n));
+
+            -- selects data source to store to a register through bit decoding
+            SysRegSel <= "1" & IR(5 downto 4);
+            RegDataInSel <= RegDataIn_SysReg;
             Instruction_EnableIn <= '1';
 
         elsif std_match(IR, STC_L_SYS_RN) then
 
-                -- STC.L {SR, GBR, VBR}, @-Rn
-                -- Uses bit decoding to choose the system register to store
-                LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
+            -- STC.L {SR, GBR, VBR}, @-Rn
+            -- Uses bit decoding to choose the system register to store
+            LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
 
-                -- Writes a byte to memory
-                Instruction_MemEnable <= '1';               -- Uses memory.
-                Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
-                Instruction_WordMode  <= LongwordMode;      -- bit decode memory mode
+            -- Writes a byte to memory
+            Instruction_MemEnable <= '1';               -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
+            Instruction_WordMode  <= LongwordMode;      -- bit decode memory mode
 
-                MemOutSel <= '1' & IR(5 downto 4); -- bit decode system register to output
+            -- selects data source to store to a register through bit decoding
+            SysRegSel <= "0" & IR(5 downto 4);
+            MemOutSel <= MemOut_SysReg;
 
-                RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
-                RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
-                Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+            RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
+            RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
+            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
 
-                -- DMAU signals (for Pre-decrement indirect register addressing)
-                BaseSel      <= BaseSel_REG;
-                IndexSel     <= IndexSel_NONE;
-                OffScalarSel <= OffScalarSel_FOUR;
-                IncDecSel    <= IncDecSel_PRE_DEC;
+            -- DMAU signals (for Pre-decrement indirect register addressing)
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_PRE_DEC;
+
+        elsif std_match(IR, STS_L_SYS_RN) then
+
+            -- STC.L {MACH, MACL, PR}, @-Rn
+            -- Uses bit decoding to choose the system register to store
+            LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
+
+            -- Writes a byte to memory
+            Instruction_MemEnable <= '1';               -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
+            Instruction_WordMode  <= LongwordMode;      -- bit decode memory mode
+
+            -- selects data source to store to a register through bit decoding
+            SysRegSel <= "1" & IR(5 downto 4);
+            MemOutSel <= MemOut_SysReg;
+
+            RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
+            RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
+            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+
+            -- DMAU signals (for Pre-decrement indirect register addressing)
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_PRE_DEC;
 
 
         elsif std_match(IR, LDC_RM_SYS) then
@@ -1679,93 +1747,96 @@ begin
             -- to work. Must modify other system control register loads to load to their actual
             -- locations as well.
             if (std_match(IR, LDC_RM_GBR)) then
-
-                -- LDC Rm, GBR
-
-                LogWithTime(l, 
-                    "sh2_control.vhd: Decoded LDC " & to_string(slv_to_uint(m_format_m)) &
-                    ", GBR", LogFile);
-
-                RegBSel    <= to_integer(unsigned(m_format_m));
-                GBRInSel   <= GBRInSel_RegB;
                 Instruction_GBRWriteEn <= '1'; 
-
-            else
-
-                -- LDC Rm, {SR, GBR, VBR}
-                -- Uses bit decoding to choose the system register to load
-
-                LogWithTime(l, "sh2_control.vhd: Decoded LDC Rm, X", LogFile);
-
-                RegBSel <= to_integer(unsigned(m_format_m));
-                Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
-                SysRegSel <= IR(5 downto 4);
-                SysRegSrc <= SysRegSrc_RegB;
-
-                        
             end if;
 
+            -- LDC Rm, {SR, GBR, VBR}
+            -- Uses bit decoding to choose the system register to load
+
+            LogWithTime(l, "sh2_control.vhd: Decoded LDC Rm, X", LogFile);
+
+            RegBSel <= to_integer(unsigned(m_format_m));
+            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegSel <= "0" & IR(5 downto 4);      -- bit decode register to select
+            SysRegSrc <= SysRegSrc_RegB;
 
         elsif std_match(IR, LDC_L_RM_SYS) then
+            -- LDC.L @Rm+, {SR, GBR, VBR}
+            -- Uses bit decoding to choose the system register to load
 
             if (std_match(IR, LDC_L_AT_RM_PLUS_GBR)) then
-
-                -- LDC.L @Rm+, GBR
-                LogWithTime(l,
-                    "sh2_control.vhd: Decoded LDC.L @R" & to_string(slv_to_uint(m_format_m)) & 
-                    "+, GBR", LogFile);
-
-                -- Reads a longword from memory
-                Instruction_MemEnable <= '1';             -- Uses memory.
-                Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-                Instruction_WordMode  <= LongwordMode;    -- bit decode memory mode
-
-                -- Write data bus to GBR.
-                GBRInSel   <= GBRInSel_DB;
                 Instruction_GBRWriteEn <= '1';
-
-                -- Read from @Rm, and save with post-incremented value
-                -- RegA2Sel               <= to_integer(unsigned(m_format_m));
-                RegAxInSel             <= to_integer(unsigned(m_format_m));
-                Instruction_RegAxStore <= '1';
-
-                -- DMAU signals (for post-increment indirect register addressing)
-                BaseSel      <= BaseSel_REG;
-                IndexSel     <= IndexSel_NONE;
-                OffScalarSel <= OffScalarSel_FOUR;
-                IncDecSel    <= IncDecSel_POST_INC;
-
-
-            else
-                
-                -- LDC.L @Rm+, {SR, GBR, VBR}
-                -- Uses bit decoding to choose the system register to load
-
-                LogWithTime(l, "sh2_control.vhd: Decoded LDC.L @Rm+, X", LogFile);
-
-                -- Reads a longword from memory
-                Instruction_MemEnable <= '1';             -- Uses memory.
-                Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-                Instruction_WordMode  <= LongwordMode;    -- bit decode memory mode
-
-                -- Load into a system register
-                Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
-                SysRegSel <= IR(5 downto 4);    -- bit decode which system register to write to
-                SysRegSrc <= SysRegSrc_DB;      -- load new register value from memory
-
-                -- Read from @Rm, and save with post-incremented value
-                RegA2Sel   <= to_integer(unsigned(m_format_m));
-                RegAxInSel <= to_integer(unsigned(m_format_m));
-                Instruction_RegAxStore <= '1';
-
-                -- DMAU signals (for post-increment indirect register addressing)
-                BaseSel      <= BaseSel_REG;
-                IndexSel     <= IndexSel_NONE;
-                OffScalarSel <= OffScalarSel_FOUR;
-                IncDecSel    <= IncDecSel_POST_INC;
-
             end if;
 
+            LogWithTime(l, "sh2_control.vhd: Decoded LDC.L @Rm+, X", LogFile);
+
+            -- Reads a longword from memory
+            Instruction_MemEnable <= '1';             -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+            Instruction_WordMode  <= LongwordMode;    -- bit decode memory mode
+
+            -- Load into a system register
+            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegSel <= "0" & IR(5 downto 4);    -- bit decode which system register to write to
+            SysRegSrc <= SysRegSrc_DB;      -- load new register value from memory
+
+            -- Read from @Rm, and save with post-incremented value
+            RegA2Sel   <= to_integer(unsigned(m_format_m));
+            RegAxInSel <= to_integer(unsigned(m_format_m));
+            Instruction_RegAxStore <= '1';
+
+            -- DMAU signals (for post-increment indirect register addressing)
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_POST_INC;
+
+        elsif std_match(IR, LDS_RM_SYS) then
+            -- LDS Rm, {MACH, MACL, PR}
+            -- Uses bit decoding to choose the system register to load
+
+            -- Ensure that PR does actually get written to
+            if (std_match(IR, LDS_RM_PR)) then
+                Instruction_PRWriteEn <= '1'; 
+            end if;
+
+            LogWithTime(l, "sh2_control.vhd: Decoded LDS Rm, X", LogFile);
+
+            RegBSel <= to_integer(unsigned(m_format_m));
+            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegSel <= "1" & IR(5 downto 4);  -- bit decode register to select
+            SysRegSrc <= SysRegSrc_RegB;
+
+        elsif std_match(IR, LDS_L_RM_SYS) then
+            -- LDS.L @Rm+, {MACH, MACL, PR}
+            -- Uses bit decoding to choose the system register to load
+
+            if (std_match(IR, LDS_L_AT_RM_PLUS_PR)) then
+                Instruction_PRWriteEn <= '1';
+            end if;
+
+            LogWithTime(l, "sh2_control.vhd: Decoded LDS.L @Rm+, X", LogFile);
+
+            -- Reads a longword from memory
+            Instruction_MemEnable <= '1';             -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+            Instruction_WordMode  <= LongwordMode;    -- bit decode memory mode
+
+            -- Load into a system register
+            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegSel <= "1" & IR(5 downto 4);    -- bit decode which system register to write to
+            SysRegSrc <= SysRegSrc_DB;      -- load new register value from memory
+
+            -- Read from @Rm, and save with post-incremented value
+            RegA2Sel   <= to_integer(unsigned(m_format_m));
+            RegAxInSel <= to_integer(unsigned(m_format_m));
+            Instruction_RegAxStore <= '1';
+
+            -- DMAU signals (for post-increment indirect register addressing)
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_POST_INC;
 
         elsif std_match(IR, NOP) then
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);

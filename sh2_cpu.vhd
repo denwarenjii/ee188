@@ -208,17 +208,20 @@ architecture structural of sh2cpu is
 
     signal SR               : std_logic_vector(31 downto 0);
     signal VBR              : std_logic_vector(31 downto 0);
+    signal MACL             : std_logic_vector(31 downto 0);
+    signal MACH             : std_logic_vector(31 downto 0);
 
     signal SysRegCtrl       : std_logic;
-    signal SysRegSel        : std_logic_vector(1 downto 0);
+    signal SysRegSel        : std_logic_vector(2 downto 0);
     signal SysRegSrc        : std_logic;
-
-    signal GBRInSel : std_logic_vector(1 downto 0); -- What will be written to the GBR.
 
     signal NextSysReg       : std_logic_vector(31 downto 0);
 
     signal TNext        : std_logic;    -- Next value for T bit
 
+    signal ExtMode     : std_logic_vector(1 downto 0);      -- mode for extending register value (zero or signed)
+
+    signal ExtendedReg : std_logic_vector(31 downto 0);     -- extended register value (for EXT* instructions)
 
     -- RegA with the high and low bytes swapped (for the SWAP.B instruction).
     signal RegASwapB : std_logic_vector(31 downto 0);
@@ -226,9 +229,6 @@ architecture structural of sh2cpu is
     -- RegA with the high and low words swapped (for the SWAP.W instruction).
     signal RegASwapW : std_logic_vector(31 downto 0);
 
-    -- Not implemented
-    -- signal MACL             : std_logic_vector(31 downto 0);
-    -- signal MACH             : std_logic_vector(31 downto 0);
 
     signal MemAddrSel  : std_logic;
 
@@ -236,6 +236,9 @@ architecture structural of sh2cpu is
     signal TCmpSel      : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
 
     signal StrCmp       : std_logic;    -- used to compare the bytes of RegA and RegB
+
+    -- Value of the current system/control reginster of interest
+    signal SysReg   : std_logic_vector(31 downto 0);
 
 
 begin
@@ -261,11 +264,7 @@ begin
     with MemOutSel select
         MemDataOut <=   RegA            when MemOut_RegA,
                         RegB            when MemOut_RegB,
-                        SR              when MemOut_SR,
-                        GBROut          when MemOut_GBR,
-                        VBR             when MemOut_VBR,
-                        PROut           when MemOut_PR,
-                        PCOut           when MemOut_PC,
+                        SysReg          when MemOut_SysReg,
                         (others => 'Z') when others;
 
     ImmediateExt(7 downto 0) <= Immediate;
@@ -283,23 +282,32 @@ begin
     -- RegA with the high and low words swapped.
     RegASwapW <= RegA(17 downto 0) & RegA(31 downto 18);
 
+    with ExtMode select
+        ExtendedReg <= SignExtend(LowByte(RegB))  when  Ext_Sign_B_RegA,
+                       SignExtend(LowWord(RegB))  when  Ext_Sign_W_RegA,
+                       ZeroExtend(LowByte(RegB))  when  Ext_Zero_B_RegA,
+                       ZeroExtend(LowWord(RegB))  when  Ext_Zero_W_RegA,
+                       (others => 'X') when others;
+
+    with SysRegSel select
+        SysReg <= SR      when SysRegSel_SR,
+                  GBROut  when SysRegSel_GBR,
+                  VBR     when SysRegSel_VBR,
+                  MACH    when SysRegSel_MACH,
+                  MACL    when SysRegSel_MACL,
+                  PROut   when SysRegSel_PR,
+                  (others => 'X') when others;
 
     -- Select the data to write the the register based on the decoded instruction.
-    --
     with RegDataInSel select 
         RegDataIn <= Result                     when  RegDataIn_ALUResult,
                      ImmediateExt               when  RegDataIn_Immediate,
                      RegA                       when  RegDataIn_RegA,
                      RegB                       when  RegDataIn_RegB,
-                     SR                         when  RegDataIn_SR,
-                     GBROut                     when  RegDataIn_GBR,
-                     VBR                        when  RegDataIn_VBR,
+                     SysReg                     when  RegDataIn_SysReg,
                      RegASwapB                  when  RegDataIn_RegA_SWAP_B,
                      RegASwapW                  when  RegDataIn_RegA_SWAP_W,
-                     SignExtend(LowByte(RegB))  when  RegDataIn_SignExt_B_RegA,
-                     SignExtend(LowWord(RegB))  when  RegDataIn_SignExt_W_RegA,
-                     ZeroExtend(LowByte(RegB))  when  RegDataIn_ZeroExt_B_RegA,
-                     ZeroExtend(LowWord(RegB))  when  RegDataIn_ZeroExt_W_RegA,
+                     ExtendedReg                when  RegDataIn_Ext,
                      MemDataIn                  when  RegDataIn_DB,
 
                      -- Extract the T bit from the status register.
@@ -487,6 +495,7 @@ begin
         Immediate    => Immediate,
         ImmediateMode=> ImmediateMode,
         TFlagSel     => TFlagSel,
+        ExtMode      => ExtMode,
 
         -- Memory interface control signals:
         MemEnable    => MemEnable,
@@ -537,21 +546,17 @@ begin
         -- system control signals
         SysRegCtrl => SysRegCtrl,
         SysRegSel => SysRegSel,
-        SysRegSrc => SysRegSrc,
-        GBRInSel => GBRInSel
+        SysRegSrc => SysRegSrc
     );
 
-    -- Mux GBRIn based on GBRInSel. Note that GBRWriteEn must be enabled 
-    -- seperately.
-    with GBRInSel select
-        GBRIn <= MemDataIn       when  GBRInSel_DB,
-                 RegB            when  GBRInSel_RegB,
-                 (others => '0') when others;
-
-
+    -- Mux system register input values based on SysRegSrc. Note that individual
+    -- write-enables (like GBRWriteEn and PRWriteEn) must be enabled seperately.
     NextSysReg <= RegB      when SysRegSrc = SysRegSrc_RegB else
                   MemDataIn when SysRegSrc = SysRegSrc_DB else
                   (others => 'X');
+
+    GBRIn <= NextSysReg;
+    PRIn  <= NextSysReg;
 
     register_proc: process(clock, reset)
       variable l : line;
@@ -570,10 +575,12 @@ begin
             if SysRegCtrl = SysRegCtrl_LOAD then
                 if SysRegSel = SysRegSel_SR then
                     SR <= NextSysReg;
-                -- elsif SysRegSel = SysRegSel_GBR then
-                --     GBR <= NextSysReg;
                 elsif SysRegSel = SysRegSel_VBR then
                     VBR <= NextSysReg;
+                elsif SysRegSel = SysRegSel_MACH then
+                    MACH <= NextSysReg;
+                elsif SysRegSel = SysRegSel_MACL then
+                    MACL <= NextSysReg;
                 end if;
             end if;
 
