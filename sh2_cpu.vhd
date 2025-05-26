@@ -18,6 +18,7 @@
 --     16 May 25  Zack Huang        Documentation, renaming signals
 --     19 May 25  Chris M.          Connect R0Src to DMAU.
 --     24 May 25  Chris M.          Add GBRIn mux.
+--     25 May 25  Zack Huang        Finishing ALU and system instructions
 --
 ----------------------------------------------------------------------------
 
@@ -564,7 +565,6 @@ begin
         if reset = '0' then
 
             SR  <=  (others => '0');
-            -- GBR <=  (others => '0');
             VBR <=  (others => '0');
 
         elsif rising_edge(clock) then
