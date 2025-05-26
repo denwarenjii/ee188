@@ -27,7 +27,7 @@
 --  - Document register output conventions.
 --  - Document bit decoding.
 --  - Add short instruction operation to std_match case.
---
+--  - Use slv_to_uint more.
 ----------------------------------------------------------------------------
 
 library ieee;
@@ -1719,14 +1719,37 @@ begin
 
 
         -- SWAP.B Rm, Rn
+        -- nm format
+        -- Rm -> Swap upper and lower 2 bytes -> Rn
+        -- TODO: Bit decode this and SWAP.W
         elsif std_match(IR, SWAP_B_RM_RN) then
-          report "Instruction: [SWAP.B Rm, Rn] not implemented."
-          severity ERROR;
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded SWAP.B R" & to_string(slv_to_uint(nm_format_m))
+                & ", R" & to_string(nm_format_n), LogFile);
+
+            RegASel      <= slv_to_uint(nm_format_m);
+            RegInSel     <= slv_to_uint(nm_format_n);
+            RegDataInSel <= RegDataIn_RegA_SWAP_B;
+
+            Instruction_EnableIn <= '1';
+
 
         -- SWAP.W Rm, Rn
+        -- nm format
+        -- Rm -> Swap upper and lower word -> Rn
         elsif std_match(IR, SWAP_W_RM_RN) then
-          report "Instruction: [SWAP.W Rm, Rn] not implemented."
-          severity ERROR;
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded SWAP.W R" & to_string(slv_to_uint(nm_format_m))
+                & ", R" & to_string(nm_format_n), LogFile);
+
+            RegASel      <= slv_to_uint(nm_format_m);
+            RegInSel     <= slv_to_uint(nm_format_n);
+            RegDataInSel <= RegDataIn_RegA_SWAP_W;
+
+            Instruction_EnableIn <= '1';
+
 
         -- XTRCT Rm, Rn
         elsif std_match(IR, XTRCT_RM_RN) then

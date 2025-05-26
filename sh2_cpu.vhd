@@ -224,7 +224,7 @@ architecture structural of sh2cpu is
 
     signal ExtendedReg : std_logic_vector(31 downto 0);     -- extended register value (for EXT* instructions)
 
-    -- RegA with the high and low bytes swapped (for the SWAP.B instruction).
+    -- RegA with the upper and lower halves of the low two bytes swapped (for the SWAP.B instruction).
     signal RegASwapB : std_logic_vector(31 downto 0);
 
     -- RegA with the high and low words swapped (for the SWAP.W instruction).
@@ -278,10 +278,11 @@ begin
                                  
 
     -- RegA with the high and low bytes swapped.
-    RegASwapB <= RegA(3 downto 0) & RegA(27 downto 4) & RegA(31 downto 28);
+
+    RegASwapB <= RegA(31 downto 16) & RegA(7 downto 0) & RegA(15 downto 8);
 
     -- RegA with the high and low words swapped.
-    RegASwapW <= RegA(17 downto 0) & RegA(31 downto 18);
+    RegASwapW <= RegA(15 downto 0) & RegA(31 downto 16);
 
     with ExtMode select
         ExtendedReg <= SignExtend(LowByte(RegB))  when  Ext_Sign_B_RegA,
