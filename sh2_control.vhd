@@ -1681,9 +1681,29 @@ begin
 
 
         -- MOVA @(disp, PC), R0
+        -- d format
+        -- disp*4 + PC -> R0
         elsif std_match(IR, MOVA_AT_DISP_PC_R0) then
-          report "Instruction: [MOVA @(disp, PC), R0] not implemented."
-          severity ERROR;
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded MOVA @(" & to_hstring(d_format_d) & 
+                ", PC), R0", LogFile);
+
+            -- Note that this instruction moves the address, disp*4 + PC
+            -- (calculated by the DMAU) into R0. It does NOT move the data at
+            -- this address.
+
+            RegAxInSel             <=  0;   -- Write address to R0
+            Instruction_RegAxStore <= '1';  -- Enable writing to address register in writeback state.
+
+            -- DMAU signals for PC Relative addressing with displacement (longword mode)
+            BaseSel      <= BaseSel_PC;
+            IndexSel     <= IndexSel_OFF8;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_NONE;
+            DMAUOff8     <= nd8_format_d;
+
+
 
         -- MOVT Rn
         elsif std_match(IR, MOVT_RN) then
