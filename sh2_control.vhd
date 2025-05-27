@@ -1,4 +1,4 @@
-------------- --------------------------------------------------------------
+-------------------------------------------------------------------------------
 --
 --  Control Unit
 --
@@ -11,6 +11,7 @@
 --     14 May 25  Chris M.          Formatting.
 --     16 May 25  Zack Huang        Documentation, renaming signals
 --     25 May 25  Zack Huang        Finishing ALU and system instructions
+--     26 May 25  Chris May         Add T flag as input to control unit.
 --
 -- Notes:
 --  - When reading/writing to registers, RegB is always Rm and RegA is always Rn
@@ -28,7 +29,7 @@
 --  - Document bit decoding.
 --  - Add short instruction operation to std_match case.
 --  - Use slv_to_uint more.
-----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 library ieee;
 library std;
@@ -131,16 +132,16 @@ package SH2InstructionEncodings is
   constant BSHIFT_RN     : Instruction := "0100----00--100-";  -- barrel shifter instructions
 
   -- Branch Instructions:
-  constant BF     :   Instruction := "10001011--------"; -- BF   <label>
-  constant BF_S   :   Instruction := "10001111--------"; -- BF/S <label>
-  constant BT     :   Instruction := "10001001--------"; -- BT   <label>
-  constant BT_S   :   Instruction := "10001101--------"; -- BT/S <label>
-  constant BRA    :   Instruction := "1010------------"; -- BRA  <label>
-  constant BRAF   :   Instruction := "0000----00100011"; -- BRAF Rm
-  constant BSR    :   Instruction := "1011------------"; -- BSR  <label>
-  constant BSRF   :   Instruction := "0000----00000011"; -- BSRF Rm
-  constant JMP    :   Instruction := "0100----00101011"; -- JMP @Rm
-  constant JSR    :   Instruction := "0100----00001011"; -- JSR @Rm
+  constant BF     :   Instruction := "10001011--------"; -- BF      <label>
+  constant BF_S   :   Instruction := "10001111--------"; -- BF/S    <label>
+  constant BT     :   Instruction := "10001001--------"; -- BT      <label>
+  constant BT_S   :   Instruction := "10001101--------"; -- BT/S    <label>
+  constant BRA    :   Instruction := "1010------------"; -- BRA     <label>
+  constant BRAF   :   Instruction := "0000----00100011"; -- BRAF    Rm
+  constant BSR    :   Instruction := "1011------------"; -- BSR     <label>
+  constant BSRF   :   Instruction := "0000----00000011"; -- BSRF    Rm
+  constant JMP    :   Instruction := "0100----00101011"; -- JMP     @Rm
+  constant JSR    :   Instruction := "0100----00001011"; -- JSR     @Rm
   constant RTS    :   Instruction := "0000000000001011"; -- RTS
 
 
@@ -264,8 +265,7 @@ package SH2ControlConstants is
     constant SysRegSel_VBR      : std_logic_vector(2 downto 0) := "010";
     constant SysRegSel_Control  : std_logic_vector(2 downto 0) := "1--";
     constant SysRegSel_MACH     : std_logic_vector(2 downto 0) := "100";
-    constant
-    SysRegSel_MACL     : std_logic_vector(2 downto 0) := "101";
+    constant SysRegSel_MACL     : std_logic_vector(2 downto 0) := "101";
     constant SysRegSel_PR       : std_logic_vector(2 downto 0) := "110";
 
     -- Whether to sign or zero extend the immediate into a 32-bit word.
@@ -296,6 +296,7 @@ entity  SH2Control  is
 
     port (
         MemDataIn   : in  std_logic_vector(31 downto 0);    -- data read from memory
+        TFlagIn     : in  std_logic;                        -- T Flag input from top level CPU.
         clock       : in  std_logic;                        -- system clock
         reset       : in  std_logic;                        -- system reset (active low, async)
 
@@ -1778,7 +1779,7 @@ begin
             
 
 
-        -- Branch Instruction -------------------------------------------------
+        -- Branch Instructions -------------------------------------------------
 
         -- BF <label> (where label is disp*2 + PC)
         -- d format
@@ -1788,8 +1789,25 @@ begin
                 "sh2_control.vhd: Decoded BF (label=" & to_hstring(d_format_d) &
                 "*2 + PC)", LogFile);
 
-            assert false
-            severity ERROR;
+            -- TODO: See if PMAU interprets offset as signed and if it adds
+            -- two ...
+
+            -- Branch false without delay slot.
+
+            -- If T=0, disp*2 + PC -> PC; if T=1, nop (where label is disp*2 + PC)
+
+            if (TFlagIn = '0') then
+                Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
+
+                -- TODO: Hack for now. Fix later.
+                -- PMAUOff8                <= std_logic_vector(unsigned(d_format_d) + to_unsigned(2, 8));
+                PMAUOff8                <= d_format_d;
+            else
+                -- Go to the next instruction.
+                Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+            end if;
+
+
 
         -- BF/S <label> (where label is disp*2 + PC)
         -- d format
@@ -1799,30 +1817,76 @@ begin
                 "sh2_control.vhd: Decoded BF/S (label=" & to_hstring(d_format_d) &
                 "*2 + PC)", LogFile);
 
-            assert false
-            severity ERROR;
+            -- TODO: See if PMAU interprets offset as signed and if it adds
+            -- two ...
+
+            -- TODO: Implement delay slot ?
+            --
+            if (TFlagIn = '0') then
+                Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
+
+                -- TODO: Hack for now. Fix later.
+                -- PMAUOff8                <= std_logic_vector(unsigned(d_format_d) + to_unsigned(2, 8));
+                PMAUOff8                <= d_format_d;
+            else
+                -- Go to the next instruction.
+                Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+            end if;
+
+
+            -- Note that disp is a signed value.
+            Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
+            PRWriteEn   <= '0';
+            PMAUOff8    <= d_format_d;
+
+            -- assert false
+            -- severity ERROR;
 
         -- BT <label> (where label is disp*2 + PC)
         -- d format
         elsif std_match(IR, BT) then
 
+            -- Branch true without delay slot.
+
             LogWithTime(l,
                 "sh2_control.vhd: Decoded BT (label=" & to_hstring(d_format_d) &
                 "*2 + PC)", LogFile);
+           
+            -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
+            if (TFlagIn = '1') then
+                Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
 
-            assert false
-            severity ERROR;
+                -- TODO: Hack for now. Fix later.
+                -- PMAUOff8                <= std_logic_vector(unsigned(d_format_d) + to_unsigned(2, 8));
+                PMAUOff8                <= d_format_d;
+            else
+                -- Go to the next instruction.
+                Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+            end if;
+
 
         -- BT/S <label> (where label is disp*2 + PC)
         -- d format
         elsif std_match(IR, BT_S) then
 
+            -- Branch true with delay slot.
+
             LogWithTime(l,
                 "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d_format_d) &
                 "*2 + PC)", LogFile);
 
-            assert false
-            severity ERROR;
+            -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
+            if (TFlagIn = '1') then
+                Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
+
+                -- TODO: Hack for now. Fix later.
+                -- PMAUOff8                <= std_logic_vector(unsigned(d_format_d) + to_unsigned(2, 8));
+                PMAUOff8                <= d_format_d;
+            else
+                -- Go to the next instruction.
+                Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+            end if;
+
 
         -- BRA <label> (where label is disp*2 + PC)
         -- d12 format
@@ -1835,6 +1899,7 @@ begin
             assert false
             severity ERROR;
 
+
         -- BRAF Rm
         -- m format
         elsif std_match(IR, BRAF) then
@@ -1844,6 +1909,7 @@ begin
 
             assert false
             severity ERROR;
+
 
         -- BSR <label> (where label is disp*2)
         -- d12 format
@@ -1856,6 +1922,7 @@ begin
             assert false
             severity ERROR;
 
+
         -- BSRF Rm
         -- m format
         elsif std_match(IR, BSRF) then
@@ -1866,6 +1933,7 @@ begin
             assert false
             severity ERROR;
 
+
         -- JMP @Rm
         -- m format
         elsif std_match(IR, JMP) then
@@ -1875,6 +1943,7 @@ begin
 
             assert false
             severity ERROR;
+
 
         -- JSR @Rm
         -- m format
@@ -2087,6 +2156,7 @@ begin
             IncDecSel    <= IncDecSel_POST_INC;
 
         elsif std_match(IR, NOP) then
+
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
             null;
 

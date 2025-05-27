@@ -23,7 +23,7 @@
 --    02 May   25   Chris M. Changed SignExtend function to wrap numeric_std
 --                           conversion.
 --    07 May   25   Chris M. Add reset signal and logic.
---
+--    26 May   25   Chris M. Add 2 to 8-bit offset.
 ----------------------------------------------------------------------------
 
 library ieee;
@@ -148,6 +148,7 @@ architecture structural of SH2Pmau is
   constant PMAUAddrOff_OFF8   : integer := 1;
   constant PMAUAddrOff_OFF12  : integer := 2;
   constant PMAUAddrOff_REG    : integer := 3;
+
   signal PMAUAddrOff : std_logic_array(OFFSETCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
   signal PMAUOffsetSel : integer range OFFSETCNT - 1 downto 0;
 
@@ -184,14 +185,14 @@ begin
   PROut <= (ZERO_32) when (Reset = '0') else
            PRReg;
 
-  with PCAddrMode select PCMux <=
-    IncrementedPC   when PCAddrMode_INC,
-    CalculatedPC    when PCAddrMode_RELATIVE_8 | PCAddrMode_RELATIVE_12,
-    CalculatedPC    when PCAddrMode_REG_DIRECT_RELATIVE,
-    CalculatedPC    when PCAddrMode_REG_DIRECT,
-    PRReg           when PCAddrMode_PR_DIRECT,
-    PCReg           when PCAddrMode_HOLD,
-    (others => '0') when others;
+  with PCAddrMode select 
+      PCMux <= IncrementedPC    when  PCAddrMode_INC,
+               CalculatedPC     when  PCAddrMode_RELATIVE_8 | PCAddrMode_RELATIVE_12,
+               CalculatedPC     when  PCAddrMode_REG_DIRECT_RELATIVE,
+               CalculatedPC     when  PCAddrMode_REG_DIRECT,
+               PRReg            when  PCAddrMode_PR_DIRECT,
+               PCReg            when  PCAddrMode_HOLD,
+               (others => '0')  when  others;
 
   UpdateRegisters : process(Clk, reset)
   begin
@@ -237,7 +238,9 @@ begin
 
   -- 2 * SignExtend(Off8) (*2 is shift left by 1)
   PMAUAddrOff(PMAUAddrOff_OFF8)   <=   (ZERO_32) when (Reset = '0') else
-                                       shift_left_slv(SignExtend(Off8), 1);
+
+                                       -- TODO: ????
+                                       std_logic_vector(unsigned(shift_left_slv(SignExtend(Off8), 1)) + to_unsigned(2, 32));
 
   -- 2 * SignExtend(Off12)
   PMAUAddrOff(PMAUAddrOff_OFF12)  <=   (ZERO_32) when (Reset = '0') else

@@ -209,10 +209,23 @@ architecture structural of sh2cpu is
     signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
     signal ALUOpBSel        : std_logic;
 
-    signal SR               : std_logic_vector(31 downto 0);
-    signal VBR              : std_logic_vector(31 downto 0);
-    signal MACL             : std_logic_vector(31 downto 0);
-    signal MACH             : std_logic_vector(31 downto 0);
+
+    
+    signal SR               : std_logic_vector(31 downto 0);  -- Status register.
+    signal VBR              : std_logic_vector(31 downto 0);  -- Vector Base Register.
+    signal MACL             : std_logic_vector(31 downto 0);  -- Multiply and Accumulate Low.
+    signal MACH             : std_logic_vector(31 downto 0);  -- Multiply and Accumulate High.
+
+
+    -- Aliases for status register bits.
+    alias MBit  is SR(9);   -- The M and Q bits are used by DIVOU/S and DIV1 instructions.
+    alias QBit  is SR(8);   -- ...
+    alias I3Bit is SR(7);   -- Interrupt mask bits.
+    alias I2Bit is SR(6);   -- ...
+    alias I1Bit is SR(5);   -- ...
+    alias I0BIt is SR(4);   -- ...
+    alias SBit  is SR(1);   -- Used by MAC instructions.
+    alias TBit  is SR(0);   -- True flag.
 
     signal SysRegCtrl       : std_logic;
     signal SysRegSel        : std_logic_vector(2 downto 0);
@@ -391,7 +404,7 @@ begin
                   Zero       when TFlagSel_Zero,        -- set T flag to ALU Zero flag
                   '0'        when TFlagSel_CLEAR,       -- clear T flag
                   '1'        when TFlagSel_SET,         -- set T flag
-                  TCMP       when TFlagSel_CMP,         -- compute T flag based on compare result
+                  TCmp       when TFlagSel_CMP,         -- compute T flag based on compare result
                   'X'        when others;
 
     alu : entity work.sh2alu
@@ -496,15 +509,16 @@ begin
     control_unit : entity work.SH2Control
     port map (
         -- Inputs:
-        MemDataIn => MemDataIn,
-        clock => clock,
-        reset => reset,
+        MemDataIn   => MemDataIn,
+        TFlagIn     => TBit,
+        clock       => clock,
+        reset       => reset,
 
         -- Outputs:
-        Immediate    => Immediate,
-        ImmediateMode=> ImmediateMode,
-        TFlagSel     => TFlagSel,
-        ExtMode      => ExtMode,
+        Immediate       => Immediate,
+        ImmediateMode   => ImmediateMode,
+        TFlagSel        => TFlagSel,
+        ExtMode         => ExtMode,
 
         -- Memory interface control signals:
         MemEnable    => MemEnable,
@@ -526,25 +540,25 @@ begin
         TCmpSel      => TCmpSel,
 
         -- Register Array control signals:
-        RegDataInSel => RegDataInSel,
-        EnableIn     => EnableIn,
-        RegInSel     => RegInSel,
-        RegASel      => RegASel,
-        RegBSel      => RegBSel,
-        RegAxIn      => RegAxIn,
-        RegAxInSel   => RegAxInSel,
-        RegAxStore   => RegAxStore,
-        RegA1Sel     => RegA1Sel,
-        RegA2Sel     => RegA2Sel,
+        RegDataInSel    => RegDataInSel,
+        EnableIn        => EnableIn,
+        RegInSel        => RegInSel,
+        RegASel         => RegASel,
+        RegBSel         => RegBSel,
+        RegAxIn         => RegAxIn,
+        RegAxInSel      => RegAxInSel,
+        RegAxStore      => RegAxStore,
+        RegA1Sel        => RegA1Sel,
+        RegA2Sel        => RegA2Sel,
 
         -- DMAU control signals:
-        GBRWriteEn   => GBRWriteEn,
-        DMAUOff4     => DMAUOff4,
-        DMAUOff8     => DMAUOff8,
-        BaseSel      => BaseSel,
-        IndexSel     => IndexSel,
-        OffScalarSel => OffScalarSel,
-        IncDecSel    => IncDecSel,
+        GBRWriteEn      => GBRWriteEn,
+        DMAUOff4        => DMAUOff4,
+        DMAUOff8        => DMAUOff8,
+        BaseSel         => BaseSel,
+        IndexSel        => IndexSel,
+        OffScalarSel    => OffScalarSel,
+        IncDecSel       => IncDecSel,
 
         -- PMAU control signals:
         PCAddrMode   => PCAddrMode,
@@ -553,9 +567,9 @@ begin
         PMAUOff12    => PMAUOff12,
 
         -- system control signals
-        SysRegCtrl => SysRegCtrl,
-        SysRegSel => SysRegSel,
-        SysRegSrc => SysRegSrc
+        SysRegCtrl  => SysRegCtrl,
+        SysRegSel   => SysRegSel,
+        SysRegSrc   => SysRegSrc
     );
 
     -- Mux system register input values based on SysRegSrc. Note that individual
