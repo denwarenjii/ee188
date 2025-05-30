@@ -32,7 +32,7 @@
 --  - Document bit decoding.                                                                       -
 --  - Add short instruction operation to std_match case.                                           -
 --  - Use slv_to_uint more.                                                                        -
---                                                                                                 -
+--  - DEAL WITH DOUBLE DELAYED BRANCHES - NOT POSSIBLE                                             -
 ----------------------------------------------------------------------------------------------------
 
 
@@ -584,7 +584,17 @@ begin
         Instruction_PRWriteEn   <= '0';             -- Don't write to PR.
 
         -- Default behavior
-        Instruction_PCAddrMode <= PCAddrMode_INC;       -- Increment PC
+
+
+        -- If a delayed branch was taken previously, then don't change the PC since the target
+        -- address was calculated when the delayed branch was taken. 
+        if (DelayedBranchTaken = '1') then
+            Instruction_PCAddrMode <= PCAddrMode_HOLD;
+        else
+            -- Increment the PC.
+            Instruction_PCAddrMode <= PCAddrMode_INC;
+        end if;
+
         Instruction_SysRegCtrl <= SysRegCtrl_NONE;      -- system register not selected
         ImmediateMode          <= ImmediateMode_SIGN;   -- sign-extend immediates by defualt
         ExtMode                <= Ext_Sign_B_RegA;
@@ -1851,14 +1861,12 @@ begin
                  "sh2_control.vhd: Decoded BF/S (label=" & to_hstring(d_format_d) &
                  "*2 + PC)", LogFile);
  
-             -- TODO: Implement delay slot ?
-             --
              if (TFlagIn = '0') then
                  -- Take the branch
 
                  --  The delay will be taken.
                  Instruction_DelayedBranchTaken  <= '1';
-                 PCWriteCtrl <= PCWriteCtrl_HOLD;
+                 PCWriteCtrl                     <= PCWriteCtrl_WRITE_CALC;
 
                  Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
                  PMAUOff8               <= d_format_d;
@@ -1881,8 +1889,6 @@ begin
  
              -- Branch true without delay slot.
 
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
- 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BT (label=" & to_hstring(d_format_d) &
                  "*2 + PC)", LogFile);
@@ -1905,9 +1911,6 @@ begin
          -- d format
          elsif std_match(IR, BT_S) then
  
-             -- Branch true with delay slot.
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
- 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d_format_d) &
                  "*2 + PC)", LogFile);
@@ -1918,12 +1921,11 @@ begin
 
                  --  The delay will be taken.
                  Instruction_DelayedBranchTaken  <= '1';
-                 PCWriteCtrl <= PCWriteCtrl_HOLD;
+                 PCWriteCtrl                     <= PCWriteCtrl_WRITE_CALC;
 
                  Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
                  PMAUOff8               <= d_format_d;
 
-                LogWithTime("DELAYED BRANCH IS BEING TAKEN");
              else
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
@@ -1933,8 +1935,6 @@ begin
          -- BRA <label> (where label is disp*2 + PC)
          -- d12 format
          elsif std_match(IR, BRA) then
- 
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d12_format_d) &
@@ -1947,8 +1947,6 @@ begin
          -- BRAF Rm
          -- m format
          elsif std_match(IR, BRAF) then
-
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
  
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile);
@@ -1960,8 +1958,6 @@ begin
          -- BSR <label> (where label is disp*2)
          -- d12 format
          elsif std_match(IR, BSR) then
-
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
  
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
@@ -1975,8 +1971,6 @@ begin
          -- m format
          elsif std_match(IR, BSRF) then
 
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
- 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BSRF R" & to_string(slv_to_uint(m_format_m)), LogFile);
  
@@ -1988,8 +1982,6 @@ begin
          -- m format
          elsif std_match(IR, JMP) then
              
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
- 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded JMP @R" & to_string(slv_to_uint(m_format_m)), LogFile);
  
@@ -2002,8 +1994,6 @@ begin
          elsif
          std_match(IR, JSR) then
 
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
- 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded JSR @R" & to_string(slv_to_uint(m_format_m)), LogFile);
  
@@ -2012,8 +2002,6 @@ begin
  
          elsif std_match(IR, RTS) then
 
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
- 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded RTS", LogFile);
  

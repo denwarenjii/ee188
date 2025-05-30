@@ -268,6 +268,7 @@ architecture structural of sh2cpu is
     -- The current PC incremented by two.
     signal PCNext : std_logic_vector(31 downto 0);
 
+    signal PrevPCReg : std_logic_vector(31 downto 0);
 
     -- The PC that will be fetched from program memory.
     signal PCUsed : std_logic_vector(31 downto 0);
@@ -284,8 +285,15 @@ begin
     WE2 <= WriteMask(2) when (not clock) else '1';
     WE3 <= WriteMask(3) when (not clock) else '1';
 
+    StorePCReg : process(clock)
+    begin
+        if rising_edge(clock) then
+            PrevPCReg <= PCRegOut;
+        end if;
+    end process;
+
     -- The "next" PC is the current value of the PC register (NOT PCCalcOut) + 2.
-    PCNext <= std_logic_vector(unsigned(PCRegOut) + to_unsigned(2, 32));
+    PCNext <= std_logic_vector(unsigned(PrevPCReg) + to_unsigned(2, 32));
 
     PCUsed <= PCNext when (DelayedBranchTaken = '1') else
               PCCalcOut;
@@ -454,7 +462,7 @@ begin
                   RegA1           when Mem_WRITE,
                   (others => 'X') when others;
 
-    -- Connect PCSrc to PCOut
+    -- Connect PCSrc to PCUsed
     PCSrc <= PCUsed;
 
     -- R0 comes from RegA2 when we are reading and RegA1 when we are writing.
