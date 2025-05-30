@@ -372,8 +372,7 @@ entity  SH2Control  is
         SysRegSrc       : out std_logic;
 
         -- Branch control signals:
-        DelayedBranchTaken : out std_logic;  -- Whether the delayed branch is taken or not.
-        DelayedBranchState : out std_logic_vector(1 downto 0)
+        DelayedBranchTaken : out std_logic  -- Whether the delayed branch is taken or not.
 );
     
 end  SH2Control;
@@ -500,8 +499,6 @@ architecture dataflow of sh2control is
   -- we are currently executing branch slot instruction of a delayed branch,
   -- and the next PC will be calculated using the saved signals below.
   signal Instruction_DelayedBranchTaken : std_logic;
-
-  signal Instruction_DelayedBranchState : std_logic_vector(1 downto 0);
 
 begin
 
@@ -1871,8 +1868,6 @@ begin
                  Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
                  PMAUOff8               <= d_format_d;
 
-                LogWithTime("DELAYED BRANCH IS BEING TAKEN");
-
              else
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
@@ -1894,13 +1889,12 @@ begin
                  "*2 + PC)", LogFile);
             
              -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
+
              if (TFlagIn = '1') then
+
                 Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
                 PMAUOff8                <= d_format_d;
 
-                -- PCWriteCtrl <= PCWriteCtrl_HOLD;
-                -- Instruction_DelayedBranchTaken <= '1';
-                -- LogWithTime("DELAYED BRANCH IS BEING TAKEN");
              else
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
