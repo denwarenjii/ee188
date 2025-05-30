@@ -229,21 +229,24 @@ begin
 
       -- Choose what to do to the PC based on the PC write control signal.
       PCReg <= PCMux;
-      -- case PCWriteCtrl is
 
-      --     when PCWriteCtrl_HOLD =>
-      --         PCReg <= PCReg;
+      case PCWriteCtrl is
 
-      --     when PCWriteCtrl_WRITE_IN =>
-      --         PCReg <= PCIn;
+          when PCWriteCtrl_HOLD =>
+              PCReg <= PCReg;
 
-      --    when PCWriteCtrl_WRITE_CALC =>
-      --        PCReg <= PCMux;
+          when PCWriteCtrl_WRITE_IN =>
+              PCReg <= PCIn;
 
-      --    when others =>
-      --        PCReg <= PCReg;
+         when PCWriteCtrl_WRITE_CALC =>
+             PCReg <= PCMux;
 
-      -- end case;
+         -- This has to be set intially otherwise instructions are not loaded.
+         -- TODO: Hold when an uncrecognized signal is sent.
+         when others =>
+             PCReg <= PCReg;
+
+      end case;
 
     end if;
 

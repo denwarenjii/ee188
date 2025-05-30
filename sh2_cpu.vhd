@@ -570,6 +570,8 @@ begin
         -- PMAU control signals:
         PCAddrMode   => PCAddrMode,
         PRWriteEn    => PRWriteEn,
+        PCWriteCtrl  => PCWriteCtrl,
+        PCIn         => PCIn,
         PMAUOff8     => PMAUOff8,
         PMAUOff12    => PMAUOff12,
 
