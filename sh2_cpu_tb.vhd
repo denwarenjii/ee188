@@ -651,9 +651,9 @@ begin
         -- RunTest("asm/swap");                                -- Test SWAP.B Rm, Rn and SWAP.W Rm, Rn
         -- RunTest("asm/xtrct");                               -- Test XTRCT Rm, Rn
 
-        -- RunTest("asm/cmp");     -- Test CMP operations
-        -- RunTest("asm/ext");     -- Test zero/sign extension instructions
-        -- RunTest("asm/bshift");  -- Test barrel shift instructions
+        RunTest("asm/cmp");     -- Test CMP operations
+        RunTest("asm/ext");     -- Test zero/sign extension instructions
+        RunTest("asm/bshift");  -- Test barrel shift instructions
 
         -- RunTest("asm/branch");      -- Test branch instructions.
 
