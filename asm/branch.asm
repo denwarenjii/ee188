@@ -3,14 +3,23 @@
 ; branch.asm                                                                   ;
 ;                                                                              ;
 ; This file tests the following instructions:                                  ;
-;                                                                              ;
+;   BF <label>                                                                 ;
 ; Revision History:                                                            ;
 ;   26 May 2025  Chris M.  Initial revision.                                   ;
 ;                                                                              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Start:
+    ; The branches will be taken in this order if their implementations are 
+    ; correct:
+    ;
+    ;   BF    TRGET_F0
+    ;   BF/S  TRGET_F1
+    ;   BT    TRGET_T0
+    ;   BT/S  TRGET_T1
 
+    ; BF test
+    ;
     ; Example:
     ;   CLRT          T is always cleared to 0
     ;   BT TRGET_T    Does not branch, because T = 0
@@ -21,33 +30,62 @@ Start:
     ;
     ;   TRGET_F:
 
-    CLRT              ; PC = 0x00
-    BT    TRGET_T     ; PC = 0x02
-    BF    TRGET_F     ; PC = 0x04
-    NOP               ; PC = 0x06
-    NOP               ; PC = 0x08
+    CLRT
+    BT    TRGET_T0
+    BF    TRGET_F0
+    NOP
+    NOP
 
-TRGET_T:
+TRGET_T0:
 
-    MOV   TrueVar,  R1  ; PC = 0x0A
-    MOV   #$00,     R0  ; PC = 0x0C
-    MOV   R1,       @R0 ; PC = 0x0E
+    MOV   TrueVar,  R1
+    MOV   #$00,     R0
+    MOV   R1,       @R0
 
-End_T:
+TRGET_T1:
+
+    MOV   TrueVar,  R1
+    MOV   #$08,     R0
+    MOV   R1,       @R0
+
+End_T0:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
     ; as system exit.
-    MOV     #-4,  R0;   ; PC = 0x10
-    MOV.B   R0,   @R0;  ; PC = 0x12
+    MOV     #-4,  R0
+    MOV.B   R0,   @R0
 
 
-TRGET_F:
+TRGET_F0:
 
-    MOV   FalseVar,  R1 ; PC = 0x14
-    MOV   #$00,     R0  ; PC = 0x16
-    MOV   R1,       @R0 ; PC = 0x18
+    MOV   FalseVar,   R1
+    MOV   #$00,       R0    ; Write FalseVar at 0x00
+    MOV   R1,         @R0
 
-End_F:
+    MOV   #6,   R2
+    MOV   #7,   R3
+
+    CLRT            ; Clear the T flag.
+    
+    BF/S  TRGET_F1  ; Branch to TRGET_F1 and exeucte the delay slot.
+    ADD   R2, R3    ; 6 + 7 = 13 should be in R3 when we get to TRGET_F1.
+
+    BT/S  TRGET_T1  ; This branch should not be taken.
+    NOP
+
+    NOP
+
+TRGET_F1:
+
+    MOV   #$04,  R0   ; If the delay slot was executed, then 13 is in R3.
+    MOV   R3,    @R0  ; Write 13 (0x0D) to 0x04
+
+    MOV   FalseVar,   R1  ; Write FalseVar at 0x08
+    MOV   #$08,       R0
+    MOV   R1,         @R0
+
+
+End_F0:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
     ; as system exit.

@@ -24,6 +24,8 @@
 --                           conversion.
 --    07 May   25   Chris M. Add reset signal and logic.
 --    26 May   25   Chris M. Add 2 to 8-bit offset.
+--    29 May   25   Chris M. Add PCWriteEn and PCIn.
+--
 ----------------------------------------------------------------------------
 
 library ieee;
@@ -55,6 +57,10 @@ use ieee.std_logic_1164.all;
 --   RegIn         : Register source input.
 --   PRIn          : PR Register input (for writing to PR).
 --   PRWriteEn     : Enable writing to PR (active high).
+--   PCIn          : Input for parallel loading of PC.
+--   PCWriteCtrl   : Write control signal for PC. Can either hold the current 
+--                   value, write PCIn to the PC register on the rising edge,
+--                   or write the calculated PC value on the rising edge.
 --   Off8          : 8-bit signed offset input.
 --   Off12         : 12-bit signed offset input.
 --   PCAddrMode    : Program address mode select signal.
@@ -70,6 +76,8 @@ entity SH2Pmau is
     RegIn         : in std_logic_vector(SH2_WORDSIZE - 1 downto 0);
     PRIn          : in std_logic_vector(SH2_WORDSIZE - 1 downto 0);
     PRWriteEn     : in std_logic;
+    PCIn          : in std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    PCWriteCtrl   : in std_logic_vector(1 downto 0);
     Off8          : in std_logic_vector(7 downto 0);
     Off12         : in std_logic_vector(11 downto 0);
     PCAddrMode    : in std_logic_vector(2 downto 0);
@@ -93,6 +101,12 @@ package SH2PmauConstants is
   constant PCAddrMode_REG_DIRECT              : std_logic_vector(2 downto 0) := "100";  -- PC <- Rm
   constant PCAddrMode_PR_DIRECT               : std_logic_vector(2 downto 0) := "101";  -- PC <- PR
   constant PCAddrMode_HOLD                    : std_logic_vector(2 downto 0) := "110";  -- PC <- PC
+
+  
+  constant PCWriteCtrl_HOLD       : std_logic_vector(1 downto 0) := "00";   -- Hold the current PC. 
+  constant PCWriteCtrl_WRITE_IN   : std_logic_vector(1 downto 0) := "01";   -- Write PCIn to the PC reg. 
+  constant PCWriteCtrl_WRITE_CALC : std_logic_vector(1 downto 0) := "10";   -- Write the calculated PC.
+  
 
 end package SH2PmauConstants;
 
@@ -196,17 +210,43 @@ begin
 
   UpdateRegisters : process(Clk, reset)
   begin
+
     if reset = '0' then
+      -- Reset PC and PR to all zeros.
       PCReg <= (others => '0');
       PRReg <= (others => '0');
-    elsif rising_edge(Clk) then
-      PCReg <= PCMux;
+
+    elsif (rising_edge(Clk)) then
+
+      -- PCReg <= PCMux;
+
+      -- Only write to register if their enable signal is set.
       if (PRWriteEn = '1') then
         PRReg <= PRIn;
       else
         PRReg <= PRReg;
       end if;
+
+      -- Choose what to do to the PC based on the PC write control signal.
+      PCReg <= PCMux;
+      -- case PCWriteCtrl is
+
+      --     when PCWriteCtrl_HOLD =>
+      --         PCReg <= PCReg;
+
+      --     when PCWriteCtrl_WRITE_IN =>
+      --         PCReg <= PCIn;
+
+      --    when PCWriteCtrl_WRITE_CALC =>
+      --        PCReg <= PCMux;
+
+      --    when others =>
+      --        PCReg <= PCReg;
+
+      -- end case;
+
     end if;
+
   end process;
 
 

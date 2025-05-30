@@ -123,7 +123,7 @@ architecture structural of sh2cpu is
 
 
     -- Register array inputs
-    signal RegDataIn     : std_logic_vector(31 downto 0);    -- data to write to a register
+    signal RegDataIn  : std_logic_vector(31 downto 0);    -- data to write to a register
     signal EnableIn   : std_logic;                        -- if data should be written to an input register
     signal RegInSel   : integer  range 15 downto 0;       -- which register to write data to
     signal RegASel    : integer  range 15 downto 0;       -- which register to read to bus A
@@ -182,6 +182,8 @@ architecture structural of sh2cpu is
     signal PRWriteEn   : std_logic;
     signal PMAUOff8    : std_logic_vector(7 downto 0);
     signal PMAUOff12   : std_logic_vector(11 downto 0);
+    signal PCIn        : std_logic_vector(31 downto 0);
+    signal PCWriteCtrl : std_logic_vector(1 downto 0);
 
     -- PMAU outputs
     signal PCOut       : std_logic_vector(31 downto 0);
@@ -218,14 +220,14 @@ architecture structural of sh2cpu is
 
 
     -- Aliases for status register bits.
-    alias MBit  is SR(9);   -- The M and Q bits are used by DIVOU/S and DIV1 instructions.
-    alias QBit  is SR(8);   -- ...
-    alias I3Bit is SR(7);   -- Interrupt mask bits.
-    alias I2Bit is SR(6);   -- ...
-    alias I1Bit is SR(5);   -- ...
-    alias I0BIt is SR(4);   -- ...
-    alias SBit  is SR(1);   -- Used by MAC instructions.
-    alias TBit  is SR(0);   -- True flag.
+    alias MBit  : std_logic is SR(9);   -- The M and Q bits are used by DIVOU/S and DIV1 instructions.
+    alias QBit  : std_logic is SR(8);   -- ...
+    alias I3Bit : std_logic is SR(7);   -- Interrupt mask bits.
+    alias I2Bit : std_logic is SR(6);   -- ...
+    alias I1Bit : std_logic is SR(5);   -- ...
+    alias I0BIt : std_logic is SR(4);   -- ...
+    alias SBit  : std_logic is SR(1);   -- Used by MAC instructions.
+    alias TBit  : std_logic is SR(0);   -- True flag.
 
     signal SysRegCtrl       : std_logic;
     signal SysRegSel        : std_logic_vector(2 downto 0);
@@ -257,7 +259,6 @@ architecture structural of sh2cpu is
 
     -- Value of the current system/control reginster of interest
     signal SysReg   : std_logic_vector(31 downto 0);
-
 
 begin
 
@@ -464,20 +465,28 @@ begin
         GBROut     => GBROut
     );
 
+
+    -- Default PC in is all zeroes.
+
+    PCIn <= (others => '0');
+
+
     pmau : entity work.sh2pmau
     port map (
         -- Inputs:
-        RegIn      => RegIn,
-        PRIn       => PRIn,
-        PRWriteEn  => PRWriteEn,
-        Off8       => PMAUOff8,
-        Off12      => PMAUOff12,
-        PCAddrMode => PCAddrMode,
-        Clk        => clock,
-        Reset      => Reset,
+        RegIn       => RegIn,
+        PRIn        => PRIn,
+        PRWriteEn   => PRWriteEn,
+        PCIn        => PCIn,
+        PCWriteCtrl => PCWriteCtrl,
+        Off8        => PMAUOff8,
+        Off12       => PMAUOff12,
+        PCAddrMode  => PCAddrMode,
+        Clk         => clock,
+        Reset       => Reset,
         -- Outputs:
-        PCOut => PCOut,
-        PROut => PROut
+        PCOut       => PCOut,
+        PROut       => PROut
     );
 
     memory_tx : entity work.MemoryInterfaceTx

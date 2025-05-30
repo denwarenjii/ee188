@@ -635,7 +635,7 @@ begin
         -- RunTest("asm/shift");
         -- RunTest("asm/sr");
         -- RunTest("asm/system");
-        -- RunTest("asm/control");
+        RunTest("asm/control");
         -- RunTest("asm/mov_wl_at_disp_pc_rn");                -- Tests Mov (disp, PC), Rn
         -- RunTest("asm/mov_bwl_at_rm_rn");                    -- Tests Mov @Rm, Rn
         -- RunTest("asm/mov_bwl_rm_at_minus_rn");              -- Tests Mov Rm, @-Rn
@@ -655,7 +655,7 @@ begin
         -- RunTest("asm/ext");     -- Test zero/sign extension instructions
         -- RunTest("asm/bshift");  -- Test barrel shift instructions
 
-        RunTest("asm/branch");      -- Test branch instructions.
+        -- RunTest("asm/branch");      -- Test branch instructions.
 
         wait;
     end process;
