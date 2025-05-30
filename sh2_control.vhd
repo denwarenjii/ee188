@@ -277,6 +277,11 @@ package SH2ControlConstants is
     constant ImmediateMode_SIGN     : std_logic := '0';
     constant ImmediateMode_ZERO     : std_logic := '1';
 
+    -- None -> Slot -> Target -> None
+    -- constant DelayedBR_NONE   : std_logic_vector(1 downto 0);
+    -- constant DelayedBR_SLOT   : std_logic_vector(1 downto 0);
+    -- constant DelayedBR_TARGET : std_logic_vector(1 downto 0);
+
 end package SH2ControlConstants;
 
 
@@ -367,7 +372,8 @@ entity  SH2Control  is
         SysRegSrc       : out std_logic;
 
         -- Branch control signals:
-        DelayedBranchTaken : out std_logic  -- Whether the delayed branch is taken or not.
+        DelayedBranchTaken : out std_logic;  -- Whether the delayed branch is taken or not.
+        DelayedBranchState : out std_logic_vector(1 downto 0)
 );
     
 end  SH2Control;
@@ -495,8 +501,12 @@ architecture dataflow of sh2control is
   -- and the next PC will be calculated using the saved signals below.
   signal Instruction_DelayedBranchTaken : std_logic;
 
+  signal Instruction_DelayedBranchState : std_logic_vector(1 downto 0);
 
 begin
+
+    -- Is this valid ??? 
+    DelayedBranchTaken <= Instruction_DelayedBranchTaken;
 
     -- Outputs that change based on the CPU state
     with state select 
@@ -582,7 +592,7 @@ begin
         PCWriteCtrl <= PCWriteCtrl_WRITE_CALC;  -- Write the calculated PC by default.
 
         Instruction_DelayedBranchTaken <= '0'; -- The delayed branch taken flag is set to not 
-                                   -- taken by default.
+                                               -- taken by default.
 
         if std_match(IR, ADD_RM_RN) then
 
@@ -1846,15 +1856,15 @@ begin
              if (TFlagIn = '0') then
                  -- Take the branch
 
-                 -- Delayed branch instructions will calculate the target address which will be
-                 -- stored by the top level CPU, but will not change the current value of the PC
-                 -- register. The top-level CPU will add 2 to the PC reg output and save the target
-                 -- of the branch instruction, first executing the branch instruction and then
-                 -- jumping to the target address and unfreezing the PC.
-                 PCWriteCtrl            <= PCWriteCtrl_HOLD;
+                 --  The delay will be taken.
+                 Instruction_DelayedBranchTaken  <= '1';
+                 PCWriteCtrl <= PCWriteCtrl_HOLD;
 
                  Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
                  PMAUOff8               <= d_format_d;
+
+                LogWithTime("DELAYED BRANCH IS BEING TAKEN");
+
              else
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
@@ -1880,7 +1890,11 @@ begin
              -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
              if (TFlagIn = '1') then
                 Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
-                 PMAUOff8                <= d_format_d;
+                PMAUOff8                <= d_format_d;
+
+                -- PCWriteCtrl <= PCWriteCtrl_HOLD;
+                -- Instruction_DelayedBranchTaken <= '1';
+                -- LogWithTime("DELAYED BRANCH IS BEING TAKEN");
              else
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
@@ -1901,12 +1915,15 @@ begin
 
              -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
              if (TFlagIn = '1') then
+
                  --  The delay will be taken.
-                 Instruction_DelayedBranchTaken     <= '1';
+                 Instruction_DelayedBranchTaken  <= '1';
+                 PCWriteCtrl <= PCWriteCtrl_HOLD;
 
                  Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
                  PMAUOff8               <= d_format_d;
 
+                LogWithTime("DELAYED BRANCH IS BEING TAKEN");
              else
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC

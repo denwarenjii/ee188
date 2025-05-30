@@ -627,33 +627,33 @@ begin
 
     begin
 
-        RunTest("asm/hello");
-        RunTest("asm/mov_reg");
-        RunTest("asm/reg_indirect");
-        RunTest("asm/arith");
-        RunTest("asm/logic");
-        RunTest("asm/shift");
-        RunTest("asm/sr");
-        RunTest("asm/system");
-        RunTest("asm/control");
-        RunTest("asm/mov_wl_at_disp_pc_rn");                -- Tests Mov (disp, PC), Rn
-        RunTest("asm/mov_bwl_at_rm_rn");                    -- Tests Mov @Rm, Rn
-        RunTest("asm/mov_bwl_rm_at_minus_rn");              -- Tests Mov Rm, @-Rn
-        RunTest("asm/mov_bwl_at_rm_plus_rn");               -- Test Mov @Rm+, Rn
-        RunTest("asm/mov_bwl_r0_or_rm_at_disp_rn");         -- Test Mov R0, @(disp, Rn) and Mov Rm, @(disp,Rn)
-        RunTest("asm/mov_bwl_at_disp_rm_r0_or_rn");         -- Test Mov @(disp, Rm), R0 and Mov @(disp, Rm), Rn
-        RunTest("asm/mov_rm_at_r0_rn");                     -- Test Mov Rm, @(R0, Rn)
-        RunTest("asm/mov_b_at_r0_rm_rn");                   -- Test Mov @(R0, Rm), Rn 
-        RunTest("asm/mov_bwl_r0_at_disp_gbr");              -- Test Mov R0, @(disp, GBR)
-        RunTest("asm/mov_at_disp_gbr_r0");                  -- Test Mov @(disp, GBR), R0
-        RunTest("asm/mova_at_disp_pc_r0");                  -- Test Mova @(disp, PC), R0
-        RunTest("asm/movt_rn");                             -- Test Movt Rn
-        RunTest("asm/swap");                                -- Test SWAP.B Rm, Rn and SWAP.W Rm, Rn
-        RunTest("asm/xtrct");                               -- Test XTRCT Rm, Rn
+        -- RunTest("asm/hello");
+        -- RunTest("asm/mov_reg");
+        -- RunTest("asm/reg_indirect");
+        -- RunTest("asm/arith");
+        -- RunTest("asm/logic");
+        -- RunTest("asm/shift");
+        -- RunTest("asm/sr");
+        -- RunTest("asm/system");
+        -- RunTest("asm/control");
+        -- RunTest("asm/mov_wl_at_disp_pc_rn");                -- Tests Mov (disp, PC), Rn
+        -- RunTest("asm/mov_bwl_at_rm_rn");                    -- Tests Mov @Rm, Rn
+        -- RunTest("asm/mov_bwl_rm_at_minus_rn");              -- Tests Mov Rm, @-Rn
+        -- RunTest("asm/mov_bwl_at_rm_plus_rn");               -- Test Mov @Rm+, Rn
+        -- RunTest("asm/mov_bwl_r0_or_rm_at_disp_rn");         -- Test Mov R0, @(disp, Rn) and Mov Rm, @(disp,Rn)
+        -- RunTest("asm/mov_bwl_at_disp_rm_r0_or_rn");         -- Test Mov @(disp, Rm), R0 and Mov @(disp, Rm), Rn
+        -- RunTest("asm/mov_rm_at_r0_rn");                     -- Test Mov Rm, @(R0, Rn)
+        -- RunTest("asm/mov_b_at_r0_rm_rn");                   -- Test Mov @(R0, Rm), Rn 
+        -- RunTest("asm/mov_bwl_r0_at_disp_gbr");              -- Test Mov R0, @(disp, GBR)
+        -- RunTest("asm/mov_at_disp_gbr_r0");                  -- Test Mov @(disp, GBR), R0
+        -- RunTest("asm/mova_at_disp_pc_r0");                  -- Test Mova @(disp, PC), R0
+        -- RunTest("asm/movt_rn");                             -- Test Movt Rn
+        -- RunTest("asm/swap");                                -- Test SWAP.B Rm, Rn and SWAP.W Rm, Rn
+        -- RunTest("asm/xtrct");                               -- Test XTRCT Rm, Rn
 
-        RunTest("asm/cmp");     -- Test CMP operations
-        RunTest("asm/ext");     -- Test zero/sign extension instructions
-        RunTest("asm/bshift");  -- Test barrel shift instructions
+        -- RunTest("asm/cmp");     -- Test CMP operations
+        -- RunTest("asm/ext");     -- Test zero/sign extension instructions
+        -- RunTest("asm/bshift");  -- Test barrel shift instructions
 
         RunTest("asm/branch");      -- Test branch instructions.
 

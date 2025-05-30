@@ -266,7 +266,7 @@ architecture structural of sh2cpu is
     signal DelayedBranchTaken : std_logic;
 
     -- The current PC incremented by two.
-    signal NextPC : std_logic_vector(31 downto 0);
+    signal PCNext : std_logic_vector(31 downto 0);
 
 
     -- The PC that will be fetched from program memory.
@@ -284,13 +284,17 @@ begin
     WE2 <= WriteMask(2) when (not clock) else '1';
     WE3 <= WriteMask(3) when (not clock) else '1';
 
-    -- The PC that will be used is always the calculated one (for now).
-    PCUsed <= PCCalcOut;
+    -- The "next" PC is the current value of the PC register (NOT PCCalcOut) + 2.
+    PCNext <= std_logic_vector(unsigned(PCRegOut) + to_unsigned(2, 32));
+
+    PCUsed <= PCNext when (DelayedBranchTaken = '1') else
+              PCCalcOut;
 
     with MemAddrSel select 
         MemAddress <=  PCUsed           when MemAddrSel_PMAU,
                        DataAddress     when MemAddrSel_DMAU,
                        (others => 'Z') when others;
+
         -- MemAddress <=  PCOut           when MemAddrSel_PMAU,
         --                DataAddress     when MemAddrSel_DMAU,
         --                (others => 'Z') when others;
