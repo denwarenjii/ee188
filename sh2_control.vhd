@@ -1836,7 +1836,6 @@ begin
 
             -- Note that disp is a signed value.
             Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
-            PRWriteEn   <= '0';
             PMAUOff8    <= d_format_d;
 
             -- assert false

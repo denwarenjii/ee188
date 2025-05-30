@@ -383,8 +383,6 @@ begin
                        (RegA(7 downto 0)   = RegB(7 downto 0))
                    else '0';
 
-    TIn <= SR(0);
-
     -- Compute T flag value based on ALU output flags. Used for operations
     -- of the form CMP/XX.
     with TCmpSel select
@@ -398,7 +396,7 @@ begin
 
 
     with TFlagSel select
-        TNext <=  SR(0)      when TFlagSel_T,           -- retain T flag
+        TNext <=  TBit       when TFlagSel_T,           -- retain T flag
                   Cout       when TFlagSel_Carry,       -- Set T flag to ALU carry flag
                   Overflow   when TFlagSel_Overflow,    -- Set T flag to ALU overflow flag
                   Zero       when TFlagSel_Zero,        -- set T flag to ALU Zero flag
@@ -412,7 +410,7 @@ begin
         -- Inputs:
         OperandA => OperandA,
         OperandB => OperandB,
-        TIn      => TIn,
+        TIn      => TBit,
         LoadA    => LoadA,
         FCmd     => FCmd,
         CinCmd   => CinCmd,
