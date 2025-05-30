@@ -24,7 +24,7 @@
 --                           conversion.
 --    07 May   25   Chris M. Add reset signal and logic.
 --    26 May   25   Chris M. Add 2 to 8-bit offset.
---    29 May   25   Chris M. Add PCWriteEn and PCIn.
+--    29 May   25   Chris M. Add PCWriteEn and PCIn. Add PCRegOut and PCCalcOut.
 --
 ----------------------------------------------------------------------------
 
@@ -68,7 +68,10 @@ use ieee.std_logic_1164.all;
 --   Reset         : system reset (active low).
 --    
 -- Outputs:
---   PCOut         : PC (Program Counter) output.
+--   PCCalcOut     : Calculated PC address output. Note that this is not the
+--                   value of the PR register.
+--   PCRegOut      : Current value of the PC register.
+--   
 --   PROut         : PR (Procedure Register) output.
 --
 entity SH2Pmau is
@@ -83,7 +86,8 @@ entity SH2Pmau is
     PCAddrMode    : in std_logic_vector(2 downto 0);
     Clk           : in std_logic;
     Reset         : in std_logic;
-    PCOut         : out std_logic_vector(SH2_WORDSIZE - 1 downto 0);
+    PCCalcOut     : out std_logic_vector(31 downto 0);   -- TODO
+    PCRegOut      : out std_logic_vector(31 downto 0);   -- TODO
     PROut         : out std_logic_vector(SH2_WORDSIZE - 1 downto 0)
   );
 end entity SH2Pmau;
@@ -193,8 +197,14 @@ architecture structural of SH2Pmau is
 
 begin
 
-  PCOut <= (ZERO_32) when (Reset = '0') else
+  PCCalcOut <= (ZERO_32) when (Reset = '0') else
            PCMux;
+
+
+  PCRegOut <= PCReg;
+
+  -- PCOut <= (ZERO_32) when (Reset = '0') else
+  --          PCMux;
 
   PROut <= (ZERO_32) when (Reset = '0') else
            PRReg;

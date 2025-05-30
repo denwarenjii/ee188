@@ -186,8 +186,10 @@ architecture structural of sh2cpu is
     signal PCWriteCtrl : std_logic_vector(1 downto 0);
 
     -- PMAU outputs
-    signal PCOut       : std_logic_vector(31 downto 0);
-    signal PROut       : std_logic_vector(31 downto 0);
+    -- signal PCOut       : std_logic_vector(31 downto 0);
+    signal PCCalcOut : std_logic_vector(31 downto 0);
+    signal PCRegOut  : std_logic_vector(31 downto 0);
+    signal PROut     : std_logic_vector(31 downto 0);
 
     -- Memory interface inputs/outputs
     signal MemEnable   : std_logic;
@@ -260,6 +262,16 @@ architecture structural of sh2cpu is
     -- Value of the current system/control reginster of interest
     signal SysReg   : std_logic_vector(31 downto 0);
 
+    -- Whether the delayed branch is taken or not.
+    signal DelayedBranchTaken : std_logic;
+
+    -- The current PC incremented by two.
+    signal NextPC : std_logic_vector(31 downto 0);
+
+
+    -- The PC that will be fetched from program memory.
+    signal PCUsed : std_logic_vector(31 downto 0);
+
 begin
 
     RE0 <= ReadMask(0) when (not clock) else '1';
@@ -272,10 +284,16 @@ begin
     WE2 <= WriteMask(2) when (not clock) else '1';
     WE3 <= WriteMask(3) when (not clock) else '1';
 
+    -- The PC that will be used is always the calculated one (for now).
+    PCUsed <= PCCalcOut;
+
     with MemAddrSel select 
-        MemAddress <=  PCOut           when MemAddrSel_PMAU,
+        MemAddress <=  PCUsed           when MemAddrSel_PMAU,
                        DataAddress     when MemAddrSel_DMAU,
                        (others => 'Z') when others;
+        -- MemAddress <=  PCOut           when MemAddrSel_PMAU,
+        --                DataAddress     when MemAddrSel_DMAU,
+        --                (others => 'Z') when others;
 
     AB <= MemAddress;
 
@@ -433,7 +451,7 @@ begin
                   (others => 'X') when others;
 
     -- Connect PCSrc to PCOut
-    PCSrc <= PCOut;
+    PCSrc <= PCUsed;
 
     -- R0 comes from RegA2 when we are reading and RegA1 when we are writing.
     with ReadWrite select
@@ -483,7 +501,9 @@ begin
         Clk         => clock,
         Reset       => Reset,
         -- Outputs:
-        PCOut       => PCOut,
+        -- PCOut       => PCOut,
+        PCRegOut    => PCRegOut,
+        PCCalcOut   => PCCalcOut,
         PROut       => PROut
     );
 
@@ -578,7 +598,11 @@ begin
         -- system control signals
         SysRegCtrl  => SysRegCtrl,
         SysRegSel   => SysRegSel,
-        SysRegSrc   => SysRegSrc
+        SysRegSrc   => SysRegSrc,
+
+        -- Branch control signals.
+        DelayedBranchTaken => DelayedBranchTaken
+
     );
 
     -- Mux system register input values based on SysRegSrc. Note that individual

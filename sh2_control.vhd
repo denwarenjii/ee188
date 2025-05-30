@@ -13,7 +13,8 @@
 --     26 May 25  Chris M.          Add T flag as input to control unit. Add delay slot simulation -
 --                                  signals.                                                       -
 --                                                                                                 -
---     29 May 25  Chris May         Add PCWriteCtrl signal to control unit output.                 -
+--     29 May 25  Chris May         Add PCWriteCtrl and DelayedBranchTaken signals to control unit -
+--                                  output.                                                        -
 --                                                                                                 -
 -- Notes:                                                                                          -
 --  - When reading/writing to registers, RegB is always Rm and RegA is always Rn                   -
@@ -358,12 +359,15 @@ entity  SH2Control  is
         PCIn            : out std_logic_vector(31 downto 0);  -- PC input for parallel loading.
         PCWriteCtrl     : out std_logic_vector(1 downto 0);   -- What to write to the PC register inside
                                                               -- the PMAU. Can either hold current value,
-                                                              -- write PCIn, or write calculated PC.
+                                                              -- write PCIn, or write calculated PC. 
 
         -- System control signals
         SysRegCtrl      : out std_logic;
         SysRegSel       : out std_logic_vector(2 downto 0);
-        SysRegSrc       : out std_logic
+        SysRegSrc       : out std_logic;
+
+        -- Branch control signals:
+        DelayedBranchTaken : out std_logic  -- Whether the delayed branch is taken or not.
 );
     
 end  SH2Control;
@@ -489,7 +493,7 @@ architecture dataflow of sh2control is
   -- If a delayed branch will be taken or not. If this is true ('1'), then
   -- we are currently executing branch slot instruction of a delayed branch,
   -- and the next PC will be calculated using the saved signals below.
-  signal DelayedBranchTaken : std_logic;
+  signal Instruction_DelayedBranchTaken : std_logic;
 
 
 begin
@@ -551,7 +555,7 @@ begin
         -- Default flag values are set here (these shouldn't change CPU state).
         -- This is so that not every control signal has to be set in every single
         -- instruction case. If an instruction enables writing to memory/registers,
-        -- then ensure that the default value is set here as "disable" to prevent
+       -- then ensure that the default value is set here as "disable" to prevent
         -- writes on the clocks following an instruction.
 
         -- Not accessing memory
@@ -575,10 +579,10 @@ begin
         ImmediateMode          <= ImmediateMode_SIGN;   -- sign-extend immediates by defualt
         ExtMode                <= Ext_Sign_B_RegA;
 
-
         PCWriteCtrl <= PCWriteCtrl_WRITE_CALC;  -- Write the calculated PC by default.
 
-        -- TODO: Figure out delay slot simulation logic.
+        Instruction_DelayedBranchTaken <= '0'; -- The delayed branch taken flag is set to not 
+                                   -- taken by default.
 
         if std_match(IR, ADD_RM_RN) then
 
@@ -1841,8 +1845,16 @@ begin
              --
              if (TFlagIn = '0') then
                  -- Take the branch
+
+                 -- Delayed branch instructions will calculate the target address which will be
+                 -- stored by the top level CPU, but will not change the current value of the PC
+                 -- register. The top-level CPU will add 2 to the PC reg output and save the target
+                 -- of the branch instruction, first executing the branch instruction and then
+                 -- jumping to the target address and unfreezing the PC.
+                 PCWriteCtrl            <= PCWriteCtrl_HOLD;
+
                  Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
-                 PMAUOff8                <= d_format_d;
+                 PMAUOff8               <= d_format_d;
              else
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
@@ -1890,7 +1902,7 @@ begin
              -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
              if (TFlagIn = '1') then
                  --  The delay will be taken.
-                 DelayedBranchTaken     <= '1';
+                 Instruction_DelayedBranchTaken     <= '1';
 
                  Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
                  PMAUOff8               <= d_format_d;
