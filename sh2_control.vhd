@@ -1840,8 +1840,10 @@ begin
                  PMAUOff8                <= d_format_d;
 
              else
+
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+
              end if;
  
  
@@ -1923,13 +1925,16 @@ begin
          elsif std_match(IR, BRA) then
 
              LogWithTime(l,
-                 "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d12_format_d) &
+                 "sh2_control.vhd: Decoded BRA (label=" & to_hstring(d12_format_d) &
                  "*2 + PC)", LogFile);
+
+            Instruction_DelayedBranchTaken <= '1';
+            PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
+
+            Instruction_PCAddrMode <= PCAddrMode_RELATIVE_12;
+            PMAUOff12              <= d12_format_d;
  
-             assert false
-             severity ERROR;
- 
- 
+
          -- BRAF Rm
          -- m format
          elsif std_match(IR, BRAF) then

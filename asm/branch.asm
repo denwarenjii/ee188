@@ -137,6 +137,41 @@ TRGET_T3:
     MOV   R1,        @R0
 
 
+
+    ; Test BRA. Write to 0x18
+
+    MOV   #$01,   R2
+    MOV   #$02,   R3
+
+    BRA TRGET_BRA;
+    ADD   R2,     R3  ; Branch slot for BRA
+
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+
+
+    ; If BRA doesn't work, the test exits.
+    ;
+    ; The test bench interprets a read of 0xFFFFFFFC (-4)
+    ; as system exit.
+    MOV     #-4,  R0;   ; PC = 0x1A
+    MOV.B   R0,  @R0;   ; PC = 0x1C
+
+
+TRGET_BRA:
+
+    MOV   #$18,     R0  ; Write result of branch slot (0x03) at 0x18
+    MOV   R3,      @R0
+
+    MOV   TrueVar,  R1  ; Write TrueVar at 0x1C
+    MOV   #$1C,     R0
+    MOV   R1,      @R0
+
 End:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
@@ -152,6 +187,8 @@ End:
     ; 0000000C AAAAAAAA  ; TrueVar is writen to 0x0C if `BT` jumps to the correct target.
     ; 00000010 00000015  ; 0x15 is written to 0x10 if the delay slot of a `BT/S` is exeucted.
     ; 00000014 AAAAAAAA  ; TrueVar is written to 0x14 if `BT/S` jumps to the correct target.
+    ; 00000018 00000003  ; 0x03 is written to 0x18 if the branch slot of the `BRA` is executed.
+    ; 0000001C AAAAAAAA  ; TrueVar is written to 0x1C of `BRA` jumps to the correct target.
 
     align 4
     LTORG

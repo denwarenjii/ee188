@@ -299,8 +299,11 @@ begin
                                        std_logic_vector(unsigned(shift_left_slv(SignExtend(Off8), 1)) + to_unsigned(4, 32));
 
   -- 2 * SignExtend(Off12)
+
+  -- TODO: I guess this needs an offset too ???
   PMAUAddrOff(PMAUAddrOff_OFF12)  <=   (ZERO_32) when (Reset = '0') else
-                                       shift_left_slv(SignExtend(Off12), 1);
+
+                                       std_logic_vector(unsigned(shift_left_slv(SignExtend(Off12), 1)) + to_unsigned(4, 32));
 
   PMAUAddrOff(PMAUAddrOff_REG)    <=   (ZERO_32) when (Reset = '0') else
                                        RegIn;
