@@ -34,20 +34,20 @@ TRGET_T0:
 
     MOV   TrueVar,  R1  ; Write TrueVar @ 0x00 to detect wrong branch.
     MOV   #$00,     R0
-    MOV   R1,       @R0
+    MOV   R1,      @R0
 
 TRGET_T1:
 
     MOV   TrueVar,  R1  ; Write TrueVar @ 0x08 to detect wrong branch.
     MOV   #$08,     R0
-    MOV   R1,       @R0
+    MOV   R1,      @R0
 
 End_T0:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
     ; as system exit.
     MOV     #-4,  R0
-    MOV.B   R0,   @R0
+    MOV.B   R0,  @R0
 
 
 TRGET_F0:
@@ -56,7 +56,7 @@ TRGET_F0:
 
     MOV   FalseVar,   R1    ; Write FalseVar at 0x00
     MOV   #$00,       R0    
-    MOV   R1,         @R0
+    MOV   R1,        @R0
 
     MOV   #6,   R2
     MOV   #7,   R3
@@ -74,11 +74,11 @@ TRGET_F0:
 TRGET_F1:
 
     MOV   #$04,  R0   ; If the delay slot was executed, then 0x0D is in R3.
-    MOV   R3,    @R0  ; Write 0x0D to 0x04
+    MOV   R3,   @R0  ; Write 0x0D to 0x04
 
     MOV   FalseVar,   R1  ; Write FalseVar at 0x08
     MOV   #$08,       R0
-    MOV   R1,         @R0
+    MOV   R1,        @R0
 
     ; Test BT. Write at 0x0C
 
@@ -92,27 +92,66 @@ TRGET_F2:
      
     MOV   FalseVar,   R1  ; Write FalseVar at 0x0C to detect wrong branch.
     MOV   #$0C,       R0
-    MOV   R1,         @R0
+    MOV   R1,        @R0
 
 TRGET_T2:
 
-    MOV   TrueVar,  R1 ; Write TrueVar at 0x0C
+    MOV   TrueVar,  R1    ; Write TrueVar at 0x0C
     MOV   #$0C,     R0
-    MOV   R1,       @R0
+    MOV   R1,      @R0
+
+    CLRT                  ; Clear T flag
+
+    ; Test BT/S. Write at 0x10
+
+    MOV   #$09,     R3    ; Set up register for addition
+    MOV   #$0C,     R4
+
+    SETT                  ; Set T flag.
+
+    BF/S  TRGET_F3        ; Should not be taken
+    NOP
+
+    BT/S  TRGET_T3        ; Should be taken
+    ADD   R3,       R4    ; 0x15 should be in R4 if the branch slot is executed.
+    NOP
+
+TRGET_F3:
+
+    MOV   FalseVar,   R1  ; Write FalseVar at 0x10 to detect wrong branch.
+    MOV   #$10,       R0
+    MOV   R1,        @R0
+
+    ; The test bench interprets a read of 0xFFFFFFFC (-4)
+    ; as system exit.
+    MOV     #-4,  R0;   ; PC = 0x1A
+    MOV.B   R0,  @R0;   ; PC = 0x1C
+
+TRGET_T3:
+
+    MOV   #$10,       R0  ; If the delay slot is executed, then 0x15 is in R4
+    MOV   R4,        @R0  ; Write 0x15 @ 0x10
+
+    MOV   TrueVar,    R1  ; Write TrueVar at 0x14 if `BT/S` jumps to the correct address.
+    MOV   #$14,       R0
+    MOV   R1,        @R0
+
 
 End:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
     ; as system exit.
     MOV     #-4,  R0;   ; PC = 0x1A
-    MOV.B   R0,   @R0;  ; PC = 0x1C
+    MOV.B   R0,  @R0;  ; PC = 0x1C
 
    
     ; Expected memory:
     ; 00000000 BBBBBBBB  ; FalseVar is written to 0x00 if `BF` jumps to the correct target.
-    ; 00000004 0000000D  ; 0x0D (13) is written to 0x04 if the delayed slot of a `BF/S` is executed.
+    ; 00000004 0000000D  ; 0x0D (13) is written to 0x04 if the delay slot of a `BF/S` is executed.
     ; 00000008 BBBBBBBB  ; FalseVar is written to 0x08 if `BF/S` jumps to the correct target.
     ; 0000000C AAAAAAAA  ; TrueVar is writen to 0x0C if `BT` jumps to the correct target.
+    ; 00000010 00000015  ; 0x15 is written to 0x10 if the delay slot of a `BT/S` is exeucted.
+    ; 00000014 AAAAAAAA  ; TrueVar is written to 0x14 if `BT/S` jumps to the correct target.
 
     align 4
     LTORG

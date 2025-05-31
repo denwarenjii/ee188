@@ -290,10 +290,13 @@ begin
   PMAUAddrOff(PMAUAddrOff_NONE)   <=   (others => '0');
 
   -- 2 * SignExtend(Off8) (*2 is shift left by 1)
+
+  -- TODO: How the fuck does this fix it ????
+  -- 
   PMAUAddrOff(PMAUAddrOff_OFF8)   <=   (ZERO_32) when (Reset = '0') else
 
                                        -- TODO: ????
-                                       std_logic_vector(unsigned(shift_left_slv(SignExtend(Off8), 1)) + to_unsigned(2, 32));
+                                       std_logic_vector(unsigned(shift_left_slv(SignExtend(Off8), 1)) + to_unsigned(4, 32));
 
   -- 2 * SignExtend(Off12)
   PMAUAddrOff(PMAUAddrOff_OFF12)  <=   (ZERO_32) when (Reset = '0') else

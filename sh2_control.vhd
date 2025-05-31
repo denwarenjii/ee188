@@ -1827,20 +1827,18 @@ begin
         -- BF <label> (where label is disp*2 + PC)
         -- d format
          elsif std_match(IR, BF) then
-
-
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
  
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BF (label=" & to_hstring(d_format_d) &
                  "*2 + PC)", LogFile);
- 
-             -- Branch false without delay slot.
- 
+
              -- If T=0, disp*2 + PC -> PC; if T=1, nop (where label is disp*2 + PC)
+
              if (TFlagIn = '0') then
+
                  Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
                  PMAUOff8                <= d_format_d;
+
              else
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
@@ -1851,8 +1849,6 @@ begin
          -- BF/S <label> (where label is disp*2 + PC)
          -- d format
          elsif std_match(IR, BF_S) then
-
-             LogWithTime(l, "sh2_control.vhd: Decoded BRANCH" , LogFile);
  
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BF/S (label=" & to_hstring(d_format_d) &
@@ -1872,10 +1868,6 @@ begin
                  -- Go to the next instruction.
                  Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
              end if;
- 
-             -- Note that disp is a signed value.
-             Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
-             PMAUOff8    <= d_format_d;
  
  
          -- BT <label> (where label is disp*2 + PC)
