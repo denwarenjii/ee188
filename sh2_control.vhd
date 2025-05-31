@@ -555,9 +555,11 @@ begin
     -- Only update system register after execute clock (on writeback)
     SysRegCtrl <= Instruction_SysRegCtrl when state = execute else SysRegCtrl_NONE;
 
-    decode_proc: process (IR)
+    decode_proc: process (state)
       variable l : line;
     begin
+
+        if (state = execute) then
 
         -- Default flag values are set here (these shouldn't change CPU state).
         -- This is so that not every control signal has to be set in every single
@@ -584,13 +586,13 @@ begin
 
 
         -- If a delayed branch was taken previously, then don't change the PC since the target
-        -- address was calculated when the delayed branch was taken. 
+        -- address was calculated when the delayed branch decoded.
         if (DelayedBranchTaken = '1') then
             Instruction_PCAddrMode <= PCAddrMode_HOLD;
         else
             -- Increment the PC.
             Instruction_PCAddrMode <= PCAddrMode_INC;
-            LogWithTime("Changing PC to PCAddrMode_INC");
+            -- LogWithTime("Changing PC to PCAddrMode_INC");
         end if;
 
         Instruction_SysRegCtrl <= SysRegCtrl_NONE;      -- system register not selected
@@ -2212,6 +2214,8 @@ begin
         elsif not is_x(IR) then
             report "Unrecognized instruction: " & to_hstring(IR);
         end if;
+
+        end if; -- if (state = fetch)
 
     end process;
 
