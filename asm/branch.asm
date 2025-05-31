@@ -146,14 +146,6 @@ TRGET_T3:
     BRA TRGET_BRA;
     ADD   R2,     R3  ; Branch slot for BRA
 
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-
 
     ; If BRA doesn't work, the test exits.
     ;
@@ -171,6 +163,19 @@ TRGET_BRA:
     MOV   TrueVar,  R1  ; Write TrueVar at 0x1C
     MOV   #$1C,     R0
     MOV   R1,      @R0
+
+
+    ; Test BRAF
+
+
+    MOV #8, R2
+
+    BRAF R2 ; PC = 0x8E
+
+    NOP     ; PC = 0x90
+    NOP     ; PC = 0x92
+    NOP     ; PC = 0x94
+    NOP     ; PC = 0x98
 
 End:
 

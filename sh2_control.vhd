@@ -590,6 +590,7 @@ begin
         else
             -- Increment the PC.
             Instruction_PCAddrMode <= PCAddrMode_INC;
+            LogWithTime("Changing PC to PCAddrMode_INC");
         end if;
 
         Instruction_SysRegCtrl <= SysRegCtrl_NONE;      -- system register not selected
@@ -946,6 +947,7 @@ begin
         -- MOV #imm, Rn
         -- ni format
         elsif std_match(IR, MOV_IMM_RN) then
+
             LogWithTime(l, "sh2_control.vhd: Decoded MOV H'" & to_hstring(ni_format_i) &
                           ", R" & to_string(slv_to_uint(ni_format_n)), LogFile);
           
@@ -1938,14 +1940,22 @@ begin
          -- BRAF Rm
          -- m format
          elsif std_match(IR, BRAF) then
+
+             -- Delayed branch, Rm + PC -> PC
+
+             -- Note that the PMAU's register input is always RegB.
+
+            RegBSel <= slv_to_uint(m_format_m);
+
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile); 
  
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile);
- 
-             assert false
-             severity ERROR;
- 
- 
+            Instruction_DelayedBranchTaken <= '1';
+            PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
+
+            -- Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
+
+
          -- BSR <label> (where label is disp*2)
          -- d12 format
          elsif std_match(IR, BSR) then
@@ -2193,6 +2203,10 @@ begin
         elsif std_match(IR, NOP) then
 
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
+
+            -- TODO: WTF ???? 
+            -- Instruction_PCAddrMode <= PCAddrMode_INC;
+
             null;
 
         elsif not is_x(IR) then

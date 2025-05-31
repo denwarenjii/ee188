@@ -499,6 +499,10 @@ begin
     PCIn <= (others => '0');
 
 
+    -- PMAU Register input is always RegB.
+    RegIn <= RegB;
+
+
     pmau : entity work.sh2pmau
     port map (
         -- Inputs:
