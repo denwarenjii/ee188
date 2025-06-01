@@ -4,6 +4,7 @@
 --  Revision History:
 --     01 May 25    Zack Huang      initial revision
 --     03 May 25    Zack Huang      working with data/program memory units
+--     01 Jun 25    Zack Huang      cleaning up code
 --
 -- TODO:
 --  - Support loading into program memory with assembly directives.
@@ -19,7 +20,6 @@ use ieee.numeric_std.all;
 use ieee.math_real.all;
 use std.textio.all;
 
-use work.sh2utils.all;
 use work.Logging.all;
 use work.ANSIEscape.all;
 
@@ -89,73 +89,6 @@ architecture behavioral of sh2_cpu_tb is
     signal CPU_WR      :  std_logic;
     signal TEST_RD     :  std_logic;
     signal TEST_WR     :  std_logic;
-
-    -- Test signals
-    signal END_SIM    : boolean    := false;    -- if the simulation should end
-
-
-    -- vectors to keep track of written memory locations
-    signal RAMSegment0Writes : std_logic_vector(0 to 1023) := (others => '0');
-    signal RAMSegment1Writes : std_logic_vector(0 to 1023) := (others => '0');
-    signal RAMSegment2Writes : std_logic_vector(0 to 1023) := (others => '0');
-    signal RAMSegment3Writes : std_logic_vector(0 to 1023) := (others => '0');
-
-    function IntToHString(i : integer) return string is
-      variable slv     : std_logic_vector(31 downto 0);
-      variable hex_str : string(1 to 8);
-    begin
-      slv := std_logic_vector(to_unsigned(i, 32));
-      hex_str := to_hstring(slv);
-      return hex_str;
-    end function;
-
-
-    file MemLogFile : text open write_mode is "mem_log.txt";
-
-    -- procedure LogWrites(seg_no : integer range 0 to 3) is
-
-    --   variable l : line;
-    --   variable slv : std_logic_vector(31 downto 0);
-    --   variable hex_str : string(1 to 8) := (others => ' ');
-
-    -- begin
-
-    --   case seg_no is
-
-    --     when 0 =>
-    --       for i in 0 to 1023 loop
-
-    --         if ((i mod 8) = 0) then
-    --           writeline(MemLogFile, l);
-    --           write(l, string'(IntToHString(i) & ":"  & HT));
-    --         -- elsif ((i mod 2) = 0) then
-    --         end if;
-
-    --         if (RAMSegment0Writes(i) = '0') then
-    --           write(l, string'("UU"));
-    --           write(l, string'(" "));
-    --         else
-    --           write(l, string'(GREEN & "!" & ANSI_RESET));
-    --         end if;
-
-    --       end loop;
-
-    --     when 1 =>
-    --       -- TODO:
-    --       null;
-
-    --     when 2 =>
-    --       -- TODO:
-    --       null;
-
-    --     when 3 =>
-    --       -- TODO:
-    --       null;
-
-    --   end case;
-
-    -- end procedure;
-
 
 begin
 
@@ -362,29 +295,6 @@ begin
             wait for 5 ns;  -- wait for signal to propagate
         end procedure;
 
-        procedure ReadWord(address : unsigned ; data : out std_logic_vector) is
-        begin
-            TEST_AB <= std_logic_vector(address);
-            TEST_DB <= (others => 'Z');  -- Data bus unused, don't set
-            -- Read only the bytes being addressed
-            TEST_RE0 <= '0' when address mod 4 = 0 else '1';
-            TEST_RE1 <= '0' when address mod 4 = 0 else '1';
-            TEST_RE2 <= '0' when address mod 4 = 2 else '1';
-            TEST_RE3 <= '0' when address mod 4 = 2 else '1';
-
-            wait for 5 ns;  -- wait for signal to propagate
-
-            -- Shift the desired byte to the bottom 8 bits
-            data := TEST_DB(15 downto 0) when address mod 4 = 0 else TEST_DB(31 downto 16);
-
-            -- Disable writing
-            TEST_RE0 <= '1';
-            TEST_RE1 <= '1';
-            TEST_RE2 <= '1';
-            TEST_RE3 <= '1';
-            wait for 5 ns;  -- wait for signal to propagate
-        end procedure;
-
         -- assumes address is longword-aligned
         procedure ReadLongword(address : unsigned ; data : out std_logic_vector) is
         begin
@@ -473,7 +383,6 @@ begin
             for i in 1 to length loop
                 ReadLongword(curr_addr, data_out);
 
-
                 write(curr_line, to_hstring(curr_addr) & " ");
 
                 for j in 3 downto 0 loop
@@ -557,62 +466,6 @@ begin
         end procedure;
 
         procedure RunTest(path : string) is
-
-            procedure ReadByte(address : unsigned ; data : out std_logic_vector) is
-            begin
-                TEST_AB <= std_logic_vector(address);
-                TEST_DB <= (others => 'Z');
-
-                -- Enable only the specific byte being read
-                TEST_RE0 <= '0' when address mod 4 = 0 else '1';
-                TEST_RE1 <= '0' when address mod 4 = 1 else '1';
-                TEST_RE2 <= '0' when address mod 4 = 2 else '1';
-                TEST_RE3 <= '0' when address mod 4 = 3 else '1';
-
-                wait for 5 ns;
-
-                data := TEST_DB(7 downto 0) when address mod 2 = 0 else TEST_DB(31 downto 24);
-                
-                -- Disable writing
-                TEST_RE0 <= '1';
-                TEST_RE1 <= '1';
-                TEST_RE2 <= '1';
-                TEST_RE3 <= '1';
-                wait for 5 ns;  -- wait for signal to propagate
-
-            end procedure;
-
-
-            procedure DumpMemToLog is
-                variable l : line;
-                variable slv: std_logic_vector(31 downto 0);
-                variable hex_str : string(1 to 8) := (others => ' ');
-                variable test_data : std_logic_vector(7 downto 0);
-                
-            begin
-                write(l, string'("Segment 0:"));
-                writeline(MemLogFile, l);
-
-                for i in 0 to 1023 loop
-                    
-                    if ((i mod 8) = 0) then
-                      writeline(MemLogFile, l);
-                      write(l, string'(IntToHString(i) & ":"  & HT));
-                    end if;
-
-                    ReadByte(to_unsigned(i, 32), test_data);
-                    wait for 5 ns;
-
-                    if ((test_data = "UU") or (test_data = "XX")) then
-                        write(l, string'(to_hstring(test_data)));
-                    else
-                        write(l, string'(GREEN & to_hstring(test_data) & ANSI_RESET));
-                    end if;
-
-                end loop;
-
-            end procedure;
-
         begin
             -- report "Running test: " & path;
             LogBothWithTime("Running test: " & path, LogFile);
@@ -659,16 +512,6 @@ begin
 
         wait;
     end process;
-
-    LogRAMWrites : process(RAM_WE0, RAM_WE1, RAM_WE2, RAM_WE3)
-    begin
-      -- If the data memory is being accessed and there has been a changed to
-      -- the RAM write enable lines, log the address being written to and the
-      -- mode.
-      if (CPU_MEMSEL = '0') then
-      end if;
-
-    end process LogRAMWrites;
 
 end behavioral;
 

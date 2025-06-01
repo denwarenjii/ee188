@@ -231,7 +231,7 @@ architecture structural of sh2cpu is
     alias SBit  : std_logic is SR(1);   -- Used by MAC instructions.
     alias TBit  : std_logic is SR(0);   -- True flag.
 
-    signal SysRegCtrl       : std_logic;
+    signal SysRegCtrl       : std_logic_vector(1 downto 0);
     signal SysRegSel        : std_logic_vector(2 downto 0);
     signal SysRegSrc        : std_logic;
 
@@ -652,6 +652,15 @@ begin
                     MACH <= NextSysReg;
                 elsif SysRegSel = SysRegSel_MACL then
                     MACL <= NextSysReg;
+                end if;
+            elsif SysRegCtrl = SysRegCtrl_CLEAR then
+                if SysRegSel = SysRegSel_SR then
+                    SR <= (others => '0');
+                elsif SysRegSel = SysRegSel_VBR then
+                    VBR <= (others => '0');
+                elsif (SysRegSel = SysRegSel_MACH) or (SysRegSel = SysRegSel_MACL) then
+                    MACH <= (others => '0');
+                    MACL <= (others => '0');
                 end if;
             end if;
 

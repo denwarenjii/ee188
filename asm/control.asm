@@ -65,6 +65,13 @@ ProgramStart:
     STS.L MACH, @-R1;    Expect 0x0000004D at 0x1C
     STS.L MACL, @-R1;    Expect 0x0000004E at 0x18
 
+    ; Test CLRMAC
+    CLRMAC;
+
+    MOV #$30, R1;
+    STS.L MACH, @-R1;    Expect 0x00000000 at 0x2C
+    STS.L MACL, @-R1;    Expect 0x00000000 at 0x28
+
     ; Quit test program
     MOV #-4, R0;
     MOV.B R0, @R0;

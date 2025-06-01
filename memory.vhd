@@ -55,7 +55,6 @@
 library ieee;
 
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.Logging.all;
@@ -125,7 +124,7 @@ begin
 
     -- On input change, combinatorially compute the address and segment of RAM
     -- that needs to be accessed.
-    ram_access: process (RE, RE0, RE1, RE2, RE3, WE, WE0, WE1, WE2, WE2, MemAB) is
+    ram_access: process (all) is
     begin
         -- Check that MemAB is a valid value and is within the range of the integer type
         if not is_x(MemAB) and unsigned(MemAB) <= to_unsigned(integer'high, 32) then
@@ -164,7 +163,7 @@ begin
 
     -- On read, simply output the (masked) bytes that were accessed
     -- combinatorially (e.g. MemData)
-    read_proc: process (RE, RE0, RE1, RE2, RE3, MemData) is
+    read_proc: process (all) is
     begin
 
         -- first check if reading
@@ -197,7 +196,7 @@ begin
     -- On write, set the desired bytes within the RAM segment being currently
     -- accessed, at the correct address within the RAM (previously computed
     -- combinatorially).
-    write_proc: process (WE, WE0, WE1, WE2, WE3, MemAB) is
+    write_proc: process (all) is
     begin
 
         -- check if writing

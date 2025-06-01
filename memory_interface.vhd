@@ -55,7 +55,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.MemoryInterfaceConstants.all;
-use work.sh2utils.all;
 use work.Logging.all;
 
 -- MemoryInterfaceTx
@@ -242,7 +241,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.MemoryInterfaceConstants.all;
-use work.sh2utils.all;
 
 -- MemoryInterfaceRx
 --
