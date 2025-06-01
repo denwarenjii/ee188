@@ -172,6 +172,8 @@ TRGET_BRA:
     MOV   #9,   R3
 
     MOV   #10,   R4  ; The target of BRAF is 4 instructions away from the BRAF.
+                     ; So we add 8 + 2 because our PC points to current
+                     ; instruction instead of the next as expected by the spec.
 
 
     BRAF  R4        ; Branch to TRGET_BRAF
