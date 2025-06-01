@@ -1955,7 +1955,7 @@ begin
             Instruction_DelayedBranchTaken <= '1';
             PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
-            -- Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
+            Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
 
 
          -- BSR <label> (where label is disp*2)

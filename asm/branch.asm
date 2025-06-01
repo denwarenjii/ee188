@@ -168,21 +168,39 @@ TRGET_BRA:
     ; Test BRAF
 
 
-    MOV #8, R2
+    MOV   #7,   R2
+    MOV   #9,   R3
 
-    BRAF R2 ; PC = 0x8E
+    MOV   #10,   R4  ; The target of BRAF is 4 instructions away from the BRAF.
 
-    NOP     ; PC = 0x90
-    NOP     ; PC = 0x92
-    NOP     ; PC = 0x94
-    NOP     ; PC = 0x98
+
+    BRAF  R4        ; Branch to TRGET_BRAF
+    ADD   R2,   R3
+
+    NOP
+
+    ; If the branch is not taken, the system exits
+    ; The test bench interprets a read of 0xFFFFFFFC (-4)
+    ; as system exit.
+    MOV     #-4,  R0
+    MOV.B   R0,  @R0
+
+
+TRGET_BRAF:
+
+    MOV   #$20,     R0  ; Write the result of the branch slot (0x10) at 0x20
+    MOV   R3,      @R0
+
+    MOV   #$24,      R0 ; Write TrueVar at 0x24 to signal that BRAF made it to
+    MOV   TrueVar,   R1 ; the target.
+    MOV   R1,       @R0
 
 End:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
     ; as system exit.
-    MOV     #-4,  R0;   ; PC = 0x1A
-    MOV.B   R0,  @R0;  ; PC = 0x1C
+    MOV     #-4,  R0
+    MOV.B   R0,  @R0
 
    
     ; Expected memory:
@@ -194,6 +212,9 @@ End:
     ; 00000014 AAAAAAAA  ; TrueVar is written to 0x14 if `BT/S` jumps to the correct target.
     ; 00000018 00000003  ; 0x03 is written to 0x18 if the branch slot of the `BRA` is executed.
     ; 0000001C AAAAAAAA  ; TrueVar is written to 0x1C of `BRA` jumps to the correct target.
+    ; 00000020 00000010  ; 0x10 is written to 0x20 if the branch slot of the `BRAF` is executed.
+    ; 00000024 AAAAAAAA  ; TrueVar is written to 0x24 if `BRAF` jumps to the correct target.
+
 
     align 4
     LTORG
