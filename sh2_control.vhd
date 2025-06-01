@@ -146,9 +146,10 @@ package SH2InstructionEncodings is
 
 
   -- System Control:
-  constant NOP  : Instruction := "0000000000001001";
-  constant CLRT : Instruction := "0000000000001000";
-  constant SETT : Instruction := "0000000000011000";
+  constant NOP      : Instruction := "0000000000001001";
+  constant CLRT     : Instruction := "0000000000001000";
+  constant CLRMAC   : Instruction := "0000000000101000";
+  constant SETT     : Instruction := "0000000000011000";
 
   constant STC_SYS_RN             : Instruction := "0000----00--0010";  -- STC {SR, GBR, VBR}, Rn
   constant STC_SR_RN              : Instruction := "0000----00000010";  -- STC SR,  Rn
@@ -252,8 +253,9 @@ package SH2ControlConstants is
     constant MemAddrSel_PMAU    : std_logic := '0';
     constant MemAddrSel_DMAU    : std_logic := '1';
 
-    constant SysRegCtrl_NONE    : std_logic := '0';     -- do nothing with system register
-    constant SysRegCtrl_LOAD    : std_logic := '1';     -- load system register with new value
+    constant SysRegCtrl_NONE    : std_logic_vector(1 downto 0) := "00";     -- do nothing with system register
+    constant SysRegCtrl_LOAD    : std_logic_vector(1 downto 0) := "01";     -- load system register with new value
+    constant SysRegCtrl_CLEAR   : std_logic_vector(1 downto 0) := "10";     -- clear system register
 
     constant SysRegSrc_RegB     : std_logic := '0';     -- load system register from register bus B
     constant SysRegSrc_DB       : std_logic := '1';     -- load system register from data bus
@@ -353,7 +355,7 @@ entity  SH2Control  is
         PMAUOff12       : out std_logic_vector(11 downto 0);
 
         -- System control signals
-        SysRegCtrl      : out std_logic;
+        SysRegCtrl      : out std_logic_vector(1 downto 0);
         SysRegSel       : out std_logic_vector(2 downto 0);
         SysRegSrc       : out std_logic
 );
@@ -465,7 +467,7 @@ architecture dataflow of sh2control is
   signal Instruction_TFlagSel    : std_logic_vector(2 downto 0);
 
   -- If the system register should be loaded or not
-  signal Instruction_SysRegCtrl  : std_logic;
+  signal Instruction_SysRegCtrl  : std_logic_vector(1 downto 0);
   
   -- If the GBR register should be updated or not. Output during execute state so it is
   -- high for the rising clock edge of writeback.
@@ -1971,6 +1973,13 @@ begin
             LogWithTime(l, "sh2_control.vhd: Decoded CLRT", LogFile);
 
             Instruction_TFlagSel <= TFlagSel_CLEAR;     -- clear the T flag
+
+        elsif std_match(IR, CLRMAC) then
+
+            LogWithTime(l, "sh2_control.vhd: Decoded CLRMAC", LogFile);
+
+            Instruction_SysRegCtrl <= SysRegCtrl_CLEAR;
+            SysRegSel <= SysRegSel_MACL;
 
         elsif std_match(IR, SETT) then
 
