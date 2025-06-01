@@ -123,7 +123,7 @@ architecture structural of sh2cpu is
 
 
     -- Register array inputs
-    signal RegDataIn     : std_logic_vector(31 downto 0);    -- data to write to a register
+    signal RegDataIn  : std_logic_vector(31 downto 0);    -- data to write to a register
     signal EnableIn   : std_logic;                        -- if data should be written to an input register
     signal RegInSel   : integer  range 15 downto 0;       -- which register to write data to
     signal RegASel    : integer  range 15 downto 0;       -- which register to read to bus A
@@ -182,10 +182,14 @@ architecture structural of sh2cpu is
     signal PRWriteEn   : std_logic;
     signal PMAUOff8    : std_logic_vector(7 downto 0);
     signal PMAUOff12   : std_logic_vector(11 downto 0);
+    signal PCIn        : std_logic_vector(31 downto 0);
+    signal PCWriteCtrl : std_logic_vector(1 downto 0);
 
     -- PMAU outputs
-    signal PCOut       : std_logic_vector(31 downto 0);
-    signal PROut       : std_logic_vector(31 downto 0);
+    -- signal PCOut       : std_logic_vector(31 downto 0);
+    signal PCCalcOut : std_logic_vector(31 downto 0);
+    signal PCRegOut  : std_logic_vector(31 downto 0);
+    signal PROut     : std_logic_vector(31 downto 0);
 
     -- Memory interface inputs/outputs
     signal MemEnable   : std_logic;
@@ -218,14 +222,14 @@ architecture structural of sh2cpu is
 
 
     -- Aliases for status register bits.
-    alias MBit  is SR(9);   -- The M and Q bits are used by DIVOU/S and DIV1 instructions.
-    alias QBit  is SR(8);   -- ...
-    alias I3Bit is SR(7);   -- Interrupt mask bits.
-    alias I2Bit is SR(6);   -- ...
-    alias I1Bit is SR(5);   -- ...
-    alias I0BIt is SR(4);   -- ...
-    alias SBit  is SR(1);   -- Used by MAC instructions.
-    alias TBit  is SR(0);   -- True flag.
+    alias MBit  : std_logic is SR(9);   -- The M and Q bits are used by DIVOU/S and DIV1 instructions.
+    alias QBit  : std_logic is SR(8);   -- ...
+    alias I3Bit : std_logic is SR(7);   -- Interrupt mask bits.
+    alias I2Bit : std_logic is SR(6);   -- ...
+    alias I1Bit : std_logic is SR(5);   -- ...
+    alias I0BIt : std_logic is SR(4);   -- ...
+    alias SBit  : std_logic is SR(1);   -- Used by MAC instructions.
+    alias TBit  : std_logic is SR(0);   -- True flag.
 
     signal SysRegCtrl       : std_logic_vector(1 downto 0);
     signal SysRegSel        : std_logic_vector(2 downto 0);
@@ -258,6 +262,16 @@ architecture structural of sh2cpu is
     -- Value of the current system/control reginster of interest
     signal SysReg   : std_logic_vector(31 downto 0);
 
+    -- Whether the delayed branch is taken or not.
+    signal DelayedBranchTaken : std_logic;
+
+    -- The current PC incremented by two.
+    signal PCNext : std_logic_vector(31 downto 0);
+
+    signal PrevPCReg : std_logic_vector(31 downto 0);
+
+    -- The PC that will be fetched from program memory.
+    signal PCUsed : std_logic_vector(31 downto 0);
 
 begin
 
@@ -271,10 +285,27 @@ begin
     WE2 <= WriteMask(2) when (not clock) else '1';
     WE3 <= WriteMask(3) when (not clock) else '1';
 
+    StorePCReg : process(clock)
+    begin
+        if rising_edge(clock) then
+            PrevPCReg <= PCRegOut;
+        end if;
+    end process;
+
+    -- The "next" PC is the current value of the PC register (NOT PCCalcOut) + 2.
+    PCNext <= std_logic_vector(unsigned(PrevPCReg) + to_unsigned(2, 32));
+
+    PCUsed <= PCNext when (DelayedBranchTaken = '1') else
+              PCCalcOut;
+
     with MemAddrSel select 
-        MemAddress <=  PCOut           when MemAddrSel_PMAU,
+        MemAddress <=  PCUsed           when MemAddrSel_PMAU,
                        DataAddress     when MemAddrSel_DMAU,
                        (others => 'Z') when others;
+
+        -- MemAddress <=  PCOut           when MemAddrSel_PMAU,
+        --                DataAddress     when MemAddrSel_DMAU,
+        --                (others => 'Z') when others;
 
     AB <= MemAddress;
 
@@ -431,8 +462,8 @@ begin
                   RegA1           when Mem_WRITE,
                   (others => 'X') when others;
 
-    -- Connect PCSrc to PCOut
-    PCSrc <= PCOut;
+    -- Connect PCSrc to PCUsed
+    PCSrc <= PCUsed;
 
     -- R0 comes from RegA2 when we are reading and RegA1 when we are writing.
     with ReadWrite select
@@ -462,20 +493,34 @@ begin
         GBROut     => GBROut
     );
 
+
+    -- Default PC in is all zeroes.
+
+    PCIn <= (others => '0');
+
+
+    -- PMAU Register input is always RegB.
+    RegIn <= RegB;
+
+
     pmau : entity work.sh2pmau
     port map (
         -- Inputs:
-        RegIn      => RegIn,
-        PRIn       => PRIn,
-        PRWriteEn  => PRWriteEn,
-        Off8       => PMAUOff8,
-        Off12      => PMAUOff12,
-        PCAddrMode => PCAddrMode,
-        Clk        => clock,
-        Reset      => Reset,
+        RegIn       => RegIn,
+        PRIn        => PRIn,
+        PRWriteEn   => PRWriteEn,
+        PCIn        => PCIn,
+        PCWriteCtrl => PCWriteCtrl,
+        Off8        => PMAUOff8,
+        Off12       => PMAUOff12,
+        PCAddrMode  => PCAddrMode,
+        Clk         => clock,
+        Reset       => Reset,
         -- Outputs:
-        PCOut => PCOut,
-        PROut => PROut
+        -- PCOut       => PCOut,
+        PCRegOut    => PCRegOut,
+        PCCalcOut   => PCCalcOut,
+        PROut       => PROut
     );
 
     memory_tx : entity work.MemoryInterfaceTx
@@ -561,13 +606,19 @@ begin
         -- PMAU control signals:
         PCAddrMode   => PCAddrMode,
         PRWriteEn    => PRWriteEn,
+        PCWriteCtrl  => PCWriteCtrl,
+        PCIn         => PCIn,
         PMAUOff8     => PMAUOff8,
         PMAUOff12    => PMAUOff12,
 
         -- system control signals
         SysRegCtrl  => SysRegCtrl,
         SysRegSel   => SysRegSel,
-        SysRegSrc   => SysRegSrc
+        SysRegSrc   => SysRegSrc,
+
+        -- Branch control signals.
+        DelayedBranchTaken => DelayedBranchTaken
+
     );
 
     -- Mux system register input values based on SysRegSrc. Note that individual

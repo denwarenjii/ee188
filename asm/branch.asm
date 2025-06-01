@@ -1,70 +1,199 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;                                                                              ;
-; branch.asm                                                                   ;
-;                                                                              ;
-; This file tests the following instructions:                                  ;
-;                                                                              ;
-; Revision History:                                                            ;
-;   26 May 2025  Chris M.  Initial revision.                                   ;
-;                                                                              ;
+;                                                                              
+; branch.asm                                                                   
+;                                                                              
+; This file tests the following instructions:                                  
+;
+;   BF    <label>                                                             
+;   BF/S  <label>
+;   BT    <label>
+;   BT/S  <label>
+;
+; Branches are tested by writing to memory based on address we jump to. Note 
+; that if jumps do not work at all, we will encounter the "exit" signal and
+; the expected memory will be incomplete. The execution of the instructions in
+; the delay slot is tested by seeing if the contents of a register are altered
+; or not when we arrive at the target address.
+;
+; Revision History:                                                            
+;   26 May 2025  Chris M.  Initial revision.                                   
+;                                                                             
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Start:
 
-    ; Example:
-    ;   CLRT          T is always cleared to 0
-    ;   BT TRGET_T    Does not branch, because T = 0
-    ;   BF TRGET_F    Branches to TRGET_F, because T = 0
-    ;   NOP           
-    ;   NOP           <- The PC location is used to calculate the branch
-    ;                    destination address of the BF instruction
-    ;
-    ;   TRGET_F:
+    ; Test BF. Write at 0x00
 
-    CLRT              ; PC = 0x00
-    BT    TRGET_T     ; PC = 0x02
-    BF    TRGET_F     ; PC = 0x04
-    NOP               ; PC = 0x06
-    NOP               ; PC = 0x08
+    CLRT              ; Clear the T flag.
+    BT    TRGET_T0    ; This branch should not be taken.
+    BF    TRGET_F0    ; This branch is taken. The PC should be changed to TRGET_F0
+    NOP
+    NOP
 
-TRGET_T:
+TRGET_T0:
 
-    MOV   TrueVar,  R1  ; PC = 0x0A
-    MOV   #$00,     R0  ; PC = 0x0C
-    MOV   R1,       @R0 ; PC = 0x0E
+    MOV   TrueVar,  R1  ; Write TrueVar @ 0x00 to detect wrong branch.
+    MOV   #$00,     R0
+    MOV   R1,      @R0
 
-End_T:
+TRGET_T1:
+
+    MOV   TrueVar,  R1  ; Write TrueVar @ 0x08 to detect wrong branch.
+    MOV   #$08,     R0
+    MOV   R1,      @R0
+
+End_T0:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
     ; as system exit.
-    MOV     #-4,  R0;   ; PC = 0x10
-    MOV.B   R0,   @R0;  ; PC = 0x12
+    MOV     #-4,  R0
+    MOV.B   R0,  @R0
 
 
-TRGET_F:
+TRGET_F0:
 
-    MOV   FalseVar,  R1 ; PC = 0x14
-    MOV   #$00,     R0  ; PC = 0x16
-    MOV   R1,       @R0 ; PC = 0x18
+    ; Test BF/S. Write at 0x04 and 0x08
 
-End_F:
+    MOV   FalseVar,   R1    ; Write FalseVar at 0x00
+    MOV   #$00,       R0    
+    MOV   R1,        @R0
+
+    MOV   #6,   R2
+    MOV   #7,   R3
+
+    CLRT            ; Clear the T flag.
+    
+    BF/S  TRGET_F1  ; Branch to TRGET_F1 and exeucte the delay slot.
+    ADD   R2, R3    ; 6 + 7 = 13 should be in R3 when we get to TRGET_F1.
+
+    BT/S  TRGET_T1  ; This branch should not be taken.
+    NOP
+
+    NOP
+
+TRGET_F1:
+
+    MOV   #$04,  R0   ; If the delay slot was executed, then 0x0D is in R3.
+    MOV   R3,   @R0  ; Write 0x0D to 0x04
+
+    MOV   FalseVar,   R1  ; Write FalseVar at 0x08
+    MOV   #$08,       R0
+    MOV   R1,        @R0
+
+    ; Test BT. Write at 0x0C
+
+    SETT              ; Set the T flag
+    BF    TRGET_F2    ; This branch should not be taken.
+    BT    TRGET_T2    ; This branch is taken.
+    NOP
+    NOP
+
+TRGET_F2:
+     
+    MOV   FalseVar,   R1  ; Write FalseVar at 0x0C to detect wrong branch.
+    MOV   #$0C,       R0
+    MOV   R1,        @R0
+
+TRGET_T2:
+
+    MOV   TrueVar,  R1    ; Write TrueVar at 0x0C
+    MOV   #$0C,     R0
+    MOV   R1,      @R0
+
+    CLRT                  ; Clear T flag
+
+    ; Test BT/S. Write at 0x10
+
+    MOV   #$09,     R3    ; Set up register for addition
+    MOV   #$0C,     R4
+
+    SETT                  ; Set T flag.
+
+    BF/S  TRGET_F3        ; Should not be taken
+    NOP
+
+    BT/S  TRGET_T3        ; Should be taken
+    ADD   R3,       R4    ; 0x15 should be in R4 if the branch slot is executed.
+    NOP
+
+TRGET_F3:
+
+    MOV   FalseVar,   R1  ; Write FalseVar at 0x10 to detect wrong branch.
+    MOV   #$10,       R0
+    MOV   R1,        @R0
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
     ; as system exit.
     MOV     #-4,  R0;   ; PC = 0x1A
-    MOV.B   R0,   @R0;  ; PC = 0x1C
+    MOV.B   R0,  @R0;   ; PC = 0x1C
 
-    ; Note that we expect the false branch to be taken.
+TRGET_T3:
 
-    ; Expected memory if true branch is taken:
+    MOV   #$10,       R0  ; If the delay slot is executed, then 0x15 is in R4
+    MOV   R4,        @R0  ; Write 0x15 @ 0x10
+
+    MOV   TrueVar,    R1  ; Write TrueVar at 0x14 if `BT/S` jumps to the correct address.
+    MOV   #$14,       R0
+    MOV   R1,        @R0
+
+
+
+    ; Test BRA. Write to 0x18
+
+    MOV   #$01,   R2
+    MOV   #$02,   R3
+
+    BRA TRGET_BRA;
+    ADD   R2,     R3  ; Branch slot for BRA
+
+
+    ; If BRA doesn't work, the test exits.
     ;
-    ;   00000000  AAAAAAAA
+    ; The test bench interprets a read of 0xFFFFFFFC (-4)
+    ; as system exit.
+    MOV     #-4,  R0;   ; PC = 0x1A
+    MOV.B   R0,  @R0;   ; PC = 0x1C
 
 
-    ; Expected memory if false branch is taken:
-    ;
-    ;   00000000  BBBBBBBB
-    
+TRGET_BRA:
+
+    MOV   #$18,     R0  ; Write result of branch slot (0x03) at 0x18
+    MOV   R3,      @R0
+
+    MOV   TrueVar,  R1  ; Write TrueVar at 0x1C
+    MOV   #$1C,     R0
+    MOV   R1,      @R0
+
+
+    ; Test BRAF
+
+
+    MOV #8, R2
+
+    BRAF R2 ; PC = 0x8E
+
+    NOP     ; PC = 0x90
+    NOP     ; PC = 0x92
+    NOP     ; PC = 0x94
+    NOP     ; PC = 0x98
+
+End:
+
+    ; The test bench interprets a read of 0xFFFFFFFC (-4)
+    ; as system exit.
+    MOV     #-4,  R0;   ; PC = 0x1A
+    MOV.B   R0,  @R0;  ; PC = 0x1C
+
+   
+    ; Expected memory:
+    ; 00000000 BBBBBBBB  ; FalseVar is written to 0x00 if `BF` jumps to the correct target.
+    ; 00000004 0000000D  ; 0x0D (13) is written to 0x04 if the delay slot of a `BF/S` is executed.
+    ; 00000008 BBBBBBBB  ; FalseVar is written to 0x08 if `BF/S` jumps to the correct target.
+    ; 0000000C AAAAAAAA  ; TrueVar is writen to 0x0C if `BT` jumps to the correct target.
+    ; 00000010 00000015  ; 0x15 is written to 0x10 if the delay slot of a `BT/S` is exeucted.
+    ; 00000014 AAAAAAAA  ; TrueVar is written to 0x14 if `BT/S` jumps to the correct target.
+    ; 00000018 00000003  ; 0x03 is written to 0x18 if the branch slot of the `BRA` is executed.
+    ; 0000001C AAAAAAAA  ; TrueVar is written to 0x1C of `BRA` jumps to the correct target.
 
     align 4
     LTORG

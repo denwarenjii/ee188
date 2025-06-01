@@ -1,35 +1,40 @@
--------------------------------------------------------------------------------
---
---  Control Unit
---
---
---  Revision History:
---     06 May 25  Zack Huang        Initial revision
---     07 May 25  Chris Miranda     Initial implentation of MOV and branch 
---                                  instruction decoding.
---     10 May 25  Zack Huang        Implementing ALU instruction
---     14 May 25  Chris M.          Formatting.
---     16 May 25  Zack Huang        Documentation, renaming signals
---     25 May 25  Zack Huang        Finishing ALU and system instructions
---     26 May 25  Chris May         Add T flag as input to control unit.
---
--- Notes:
---  - When reading/writing to registers, RegB is always Rm and RegA is always Rn
---  - When reading/writing to addresses (in registers), RegA2 is always @(Rm) and
---    RegA2 is always @(Rn).
---
--- TODO:
---  - Bit decode all movs.
---  - Remove redundant assignment of default signals.
---  - Better names for:
---      Instruction_EnableIn, EnableIn
---
---  - Generate DMAU signals with vectors.
---  - Document register output conventions.
---  - Document bit decoding.
---  - Add short instruction operation to std_match case.
---  - Use slv_to_uint more.
--------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+--                                                                                                 -
+--  Control Unit                                                                                   -
+--                                                                                                 -
+--                                                                                                 -
+--  Revision History:                                                                              -
+--     06 May 25  Zack Huang        Initial revision                                               -
+--     07 May 25  Chris Miranda     Initial implentation of MOV and branch instruction decoding.   - 
+--     10 May 25  Zack Huang        Implementing ALU instruction                                   -
+--     14 May 25  Chris M.          Formatting.                                                    -
+--     16 May 25  Zack Huang        Documentation, renaming signals                                -
+--     25 May 25  Zack Huang        Finishing ALU and system instructions                          -
+--     26 May 25  Chris M.          Add T flag as input to control unit. Add delay slot simulation -
+--                                  signals.                                                       -
+--                                                                                                 -
+--     29 May 25  Chris May         Add PCWriteCtrl and DelayedBranchTaken signals to control unit -
+--                                  output.                                                        -
+--                                                                                                 -
+-- Notes:                                                                                          -
+--  - When reading/writing to registers, RegB is always Rm and RegA is always Rn                   -
+--  - When reading/writing to addresses (in registers), RegA2 is always @(Rm) and                  -
+--    RegA2 is always @(Rn).                                                                       -
+--                                                                                                 -
+-- TODO:                                                                                           -
+--  - Bit decode all movs.                                                                         -
+--  - Remove redundant assignment of default signals.                                              -
+--  - Better names for:                                                                            -
+--      Instruction_EnableIn, EnableIn                                                             -
+--                                                                                                 -
+--  - Generate DMAU signals with vectors.                                                          -
+--  - Document register output conventions.                                                        -
+--  - Document bit decoding.                                                                       -
+--  - Add short instruction operation to std_match case.                                           -
+--  - Use slv_to_uint more.                                                                        -
+--  - DEAL WITH DOUBLE DELAYED BRANCHES - NOT POSSIBLE                                             -
+----------------------------------------------------------------------------------------------------
+
 
 library ieee;
 library std;
@@ -274,6 +279,11 @@ package SH2ControlConstants is
     constant ImmediateMode_SIGN     : std_logic := '0';
     constant ImmediateMode_ZERO     : std_logic := '1';
 
+    -- None -> Slot -> Target -> None
+    -- constant DelayedBR_NONE   : std_logic_vector(1 downto 0);
+    -- constant DelayedBR_SLOT   : std_logic_vector(1 downto 0);
+    -- constant DelayedBR_TARGET : std_logic_vector(1 downto 0);
+
 end package SH2ControlConstants;
 
 
@@ -349,15 +359,22 @@ entity  SH2Control  is
         IncDecSel       : out std_logic_vector(1 downto 0);
 
         -- PMAU signals
-        PCAddrMode      : out std_logic_vector(2 downto 0);
-        PRWriteEn       : out std_logic;
-        PMAUOff8        : out std_logic_vector(7 downto 0);
-        PMAUOff12       : out std_logic_vector(11 downto 0);
+        PCAddrMode      : out std_logic_vector(2 downto 0);   -- What PC addressing mode is desired.
+        PRWriteEn       : out std_logic;                      -- Enable writing to PR.
+        PMAUOff8        : out std_logic_vector(7 downto 0);   -- 8-bit offset for relative addressing.
+        PMAUOff12       : out std_logic_vector(11 downto 0);  -- 12-bit offset for relative addressing.
+        PCIn            : out std_logic_vector(31 downto 0);  -- PC input for parallel loading.
+        PCWriteCtrl     : out std_logic_vector(1 downto 0);   -- What to write to the PC register inside
+                                                              -- the PMAU. Can either hold current value,
+                                                              -- write PCIn, or write calculated PC. 
 
         -- System control signals
         SysRegCtrl      : out std_logic_vector(1 downto 0);
         SysRegSel       : out std_logic_vector(2 downto 0);
-        SysRegSrc       : out std_logic
+        SysRegSrc       : out std_logic;
+
+        -- Branch control signals:
+        DelayedBranchTaken : out std_logic  -- Whether the delayed branch is taken or not.
 );
     
 end  SH2Control;
@@ -477,7 +494,18 @@ architecture dataflow of sh2control is
   -- high for the rising clock edge of writeback.
   signal Instruction_PRWriteEn  : std_logic;
 
+  -- Signal to simulate delay slot.
+  signal Instruction_DelaySlotEn : std_logic;
+
+  -- If a delayed branch will be taken or not. If this is true ('1'), then
+  -- we are currently executing branch slot instruction of a delayed branch,
+  -- and the next PC will be calculated using the saved signals below.
+  signal Instruction_DelayedBranchTaken : std_logic;
+
 begin
+
+    -- Is this valid ??? 
+    DelayedBranchTaken <= Instruction_DelayedBranchTaken;
 
     -- Outputs that change based on the CPU state
     with state select 
@@ -529,14 +557,16 @@ begin
     -- Only update system register after execute clock (on writeback)
     SysRegCtrl <= Instruction_SysRegCtrl when state = execute else SysRegCtrl_NONE;
 
-    decode_proc: process (IR)
+    decode_proc: process (state)
       variable l : line;
     begin
+
+        if (state = execute) then
 
         -- Default flag values are set here (these shouldn't change CPU state).
         -- This is so that not every control signal has to be set in every single
         -- instruction case. If an instruction enables writing to memory/registers,
-        -- then ensure that the default value is set here as "disable" to prevent
+       -- then ensure that the default value is set here as "disable" to prevent
         -- writes on the clocks following an instruction.
 
         -- Not accessing memory
@@ -554,11 +584,27 @@ begin
         Instruction_GBRWriteEn  <= '0';             -- Don't write to GBR.
         Instruction_PRWriteEn   <= '0';             -- Don't write to PR.
 
-        -- Defatult behavior
-        Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
-        Instruction_SysRegCtrl <= SysRegCtrl_NONE;  -- system register not selected
-        ImmediateMode <= ImmediateMode_SIGN;        -- sign-extend immediates by defualt
-        ExtMode       <= Ext_Sign_B_RegA;
+        -- Default behavior
+
+
+        -- If a delayed branch was taken previously, then don't change the PC since the target
+        -- address was calculated when the delayed branch decoded.
+        if (DelayedBranchTaken = '1') then
+            Instruction_PCAddrMode <= PCAddrMode_HOLD;
+        else
+            -- Increment the PC.
+            Instruction_PCAddrMode <= PCAddrMode_INC;
+            -- LogWithTime("Changing PC to PCAddrMode_INC");
+        end if;
+
+        Instruction_SysRegCtrl <= SysRegCtrl_NONE;      -- system register not selected
+        ImmediateMode          <= ImmediateMode_SIGN;   -- sign-extend immediates by defualt
+        ExtMode                <= Ext_Sign_B_RegA;
+
+        PCWriteCtrl <= PCWriteCtrl_WRITE_CALC;  -- Write the calculated PC by default.
+
+        Instruction_DelayedBranchTaken <= '0'; -- The delayed branch taken flag is set to not 
+                                               -- taken by default.
 
         if std_match(IR, ADD_RM_RN) then
 
@@ -905,6 +951,7 @@ begin
         -- MOV #imm, Rn
         -- ni format
         elsif std_match(IR, MOV_IMM_RN) then
+
             LogWithTime(l, "sh2_control.vhd: Decoded MOV H'" & to_hstring(ni_format_i) &
                           ", R" & to_string(slv_to_uint(ni_format_n)), LogFile);
           
@@ -1785,186 +1832,187 @@ begin
 
         -- BF <label> (where label is disp*2 + PC)
         -- d format
-        elsif std_match(IR, BF) then
+         elsif std_match(IR, BF) then
+ 
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded BF (label=" & to_hstring(d_format_d) &
+                 "*2 + PC)", LogFile);
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded BF (label=" & to_hstring(d_format_d) &
-                "*2 + PC)", LogFile);
+             -- If T=0, disp*2 + PC -> PC; if T=1, nop (where label is disp*2 + PC)
 
-            -- TODO: See if PMAU interprets offset as signed and if it adds
-            -- two ...
+             if (TFlagIn = '0') then
 
-            -- Branch false without delay slot.
+                 Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
+                 PMAUOff8                <= d_format_d;
 
-            -- If T=0, disp*2 + PC -> PC; if T=1, nop (where label is disp*2 + PC)
+             else
 
-            if (TFlagIn = '0') then
-                Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
+                 -- Go to the next instruction.
+                 Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
 
-                -- TODO: Hack for now. Fix later.
-                -- PMAUOff8                <= std_logic_vector(unsigned(d_format_d) + to_unsigned(2, 8));
-                PMAUOff8                <= d_format_d;
-            else
-                -- Go to the next instruction.
-                Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
-            end if;
+             end if;
+ 
+ 
+ 
+         -- BF/S <label> (where label is disp*2 + PC)
+         -- d format
+         elsif std_match(IR, BF_S) then
+ 
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded BF/S (label=" & to_hstring(d_format_d) &
+                 "*2 + PC)", LogFile);
+ 
+             if (TFlagIn = '0') then
+                 -- Take the branch
 
+                 --  The delay will be taken.
+                 Instruction_DelayedBranchTaken  <= '1';
+                 PCWriteCtrl                     <= PCWriteCtrl_WRITE_CALC;
 
+                 Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
+                 PMAUOff8               <= d_format_d;
 
-        -- BF/S <label> (where label is disp*2 + PC)
-        -- d format
-        elsif std_match(IR, BF_S) then
+             else
+                 -- Go to the next instruction.
+                 Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+             end if;
+ 
+ 
+         -- BT <label> (where label is disp*2 + PC)
+         -- d format
+         elsif std_match(IR, BT) then
+ 
+             -- Branch true without delay slot.
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded BF/S (label=" & to_hstring(d_format_d) &
-                "*2 + PC)", LogFile);
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded BT (label=" & to_hstring(d_format_d) &
+                 "*2 + PC)", LogFile);
+            
+             -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
 
-            -- TODO: See if PMAU interprets offset as signed and if it adds
-            -- two ...
+             if (TFlagIn = '1') then
 
-            -- TODO: Implement delay slot ?
-            --
-            if (TFlagIn = '0') then
                 Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
-
-                -- TODO: Hack for now. Fix later.
-                -- PMAUOff8                <= std_logic_vector(unsigned(d_format_d) + to_unsigned(2, 8));
                 PMAUOff8                <= d_format_d;
-            else
-                -- Go to the next instruction.
-                Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
-            end if;
 
+             else
+                 -- Go to the next instruction.
+                 Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+             end if;
+ 
+ 
+         -- BT/S <label> (where label is disp*2 + PC)
+         -- d format
+         elsif std_match(IR, BT_S) then
+ 
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d_format_d) &
+                 "*2 + PC)", LogFile);
+ 
 
-            -- Note that disp is a signed value.
-            Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
-            PMAUOff8    <= d_format_d;
+             -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
+             if (TFlagIn = '1') then
 
-            -- assert false
-            -- severity ERROR;
+                 --  The delay will be taken.
+                 Instruction_DelayedBranchTaken  <= '1';
+                 PCWriteCtrl                     <= PCWriteCtrl_WRITE_CALC;
 
-        -- BT <label> (where label is disp*2 + PC)
-        -- d format
-        elsif std_match(IR, BT) then
+                 Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
+                 PMAUOff8               <= d_format_d;
 
-            -- Branch true without delay slot.
+             else
+                 -- Go to the next instruction.
+                 Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+             end if;
+ 
+ 
+         -- BRA <label> (where label is disp*2 + PC)
+         -- d12 format
+         elsif std_match(IR, BRA) then
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded BT (label=" & to_hstring(d_format_d) &
-                "*2 + PC)", LogFile);
-           
-            -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
-            if (TFlagIn = '1') then
-                Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded BRA (label=" & to_hstring(d12_format_d) &
+                 "*2 + PC)", LogFile);
 
-                -- TODO: Hack for now. Fix later.
-                -- PMAUOff8                <= std_logic_vector(unsigned(d_format_d) + to_unsigned(2, 8));
-                PMAUOff8                <= d_format_d;
-            else
-                -- Go to the next instruction.
-                Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
-            end if;
+            Instruction_DelayedBranchTaken <= '1';
+            PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
+            Instruction_PCAddrMode <= PCAddrMode_RELATIVE_12;
+            PMAUOff12              <= d12_format_d;
+ 
 
-        -- BT/S <label> (where label is disp*2 + PC)
-        -- d format
-        elsif std_match(IR, BT_S) then
+         -- BRAF Rm
+         -- m format
+         elsif std_match(IR, BRAF) then
 
-            -- Branch true with delay slot.
+             -- Delayed branch, Rm + PC -> PC
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d_format_d) &
-                "*2 + PC)", LogFile);
+             -- Note that the PMAU's register input is always RegB.
 
-            -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
-            if (TFlagIn = '1') then
-                Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
-
-                -- TODO: Hack for now. Fix later.
-                -- PMAUOff8                <= std_logic_vector(unsigned(d_format_d) + to_unsigned(2, 8));
-                PMAUOff8                <= d_format_d;
-            else
-                -- Go to the next instruction.
-                Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
-            end if;
-
-
-        -- BRA <label> (where label is disp*2 + PC)
-        -- d12 format
-        elsif std_match(IR, BRA) then
+            RegBSel <= slv_to_uint(m_format_m);
 
             LogWithTime(l,
-                "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d12_format_d) &
-                "*2 + PC)", LogFile);
+                "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile); 
+ 
+            Instruction_DelayedBranchTaken <= '1';
+            PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
-            assert false
-            severity ERROR;
-
-
-        -- BRAF Rm
-        -- m format
-        elsif std_match(IR, BRAF) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile);
-
-            assert false
-            severity ERROR;
+            -- Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
 
 
-        -- BSR <label> (where label is disp*2)
-        -- d12 format
-        elsif std_match(IR, BSR) then
+         -- BSR <label> (where label is disp*2)
+         -- d12 format
+         elsif std_match(IR, BSR) then
+ 
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
+                 "*2 + PC)", LogFile);
+ 
+             assert false
+             severity ERROR;
+ 
+ 
+         -- BSRF Rm
+         -- m format
+         elsif std_match(IR, BSRF) then
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
-                "*2 + PC)", LogFile);
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded BSRF R" & to_string(slv_to_uint(m_format_m)), LogFile);
+ 
+             assert false
+             severity ERROR;
+ 
+ 
+         -- JMP @Rm
+         -- m format
+         elsif std_match(IR, JMP) then
+             
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded JMP @R" & to_string(slv_to_uint(m_format_m)), LogFile);
+ 
+             assert false
+             severity ERROR;
+ 
+ 
+         -- JSR @Rm
+         -- m format
+         elsif
+         std_match(IR, JSR) then
 
-            assert false
-            severity ERROR;
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded JSR @R" & to_string(slv_to_uint(m_format_m)), LogFile);
+ 
+             assert false
+             severity ERROR;
+ 
+         elsif std_match(IR, RTS) then
 
-
-        -- BSRF Rm
-        -- m format
-        elsif std_match(IR, BSRF) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded BSRF R" & to_string(slv_to_uint(m_format_m)), LogFile);
-
-            assert false
-            severity ERROR;
-
-
-        -- JMP @Rm
-        -- m format
-        elsif std_match(IR, JMP) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded JMP @R" & to_string(slv_to_uint(m_format_m)), LogFile);
-
-            assert false
-            severity ERROR;
-
-
-        -- JSR @Rm
-        -- m format
-        elsif
-        std_match(IR, JSR) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded JSR @R" & to_string(slv_to_uint(m_format_m)), LogFile);
-
-            assert false
-            severity ERROR;
-
-        elsif std_match(IR, RTS) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded RTS", LogFile);
-
-            assert false
-            severity ERROR;
-
+             LogWithTime(l,
+                 "sh2_control.vhd: Decoded RTS", LogFile);
+ 
+             assert false
+             severity ERROR;
+ 
 
         -- System Control Instructions ----------------------------------------
 
@@ -2166,11 +2214,17 @@ begin
         elsif std_match(IR, NOP) then
 
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
+
+            -- TODO: WTF ???? 
+            -- Instruction_PCAddrMode <= PCAddrMode_INC;
+
             null;
 
         elsif not is_x(IR) then
             report "Unrecognized instruction: " & to_hstring(IR);
         end if;
+
+        end if; -- if (state = fetch)
 
     end process;
 
