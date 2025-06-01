@@ -14,7 +14,7 @@ use ieee.numeric_std.all;
 use ieee.math_real.all;
 use std.textio.all;
 
-use work.sh2utils.all;
+use work.utils.all;
 
 entity sh2_reg_tb is
 end sh2_reg_tb;

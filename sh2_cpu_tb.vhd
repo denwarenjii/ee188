@@ -4,6 +4,7 @@
 --  Revision History:
 --     01 May 25    Zack Huang      initial revision
 --     03 May 25    Zack Huang      working with data/program memory units
+--     01 Jun 25    Zack Huang      cleaning up code
 --
 -- TODO:
 --  - Support loading into program memory with assembly directives.
@@ -19,7 +20,6 @@ use ieee.numeric_std.all;
 use ieee.math_real.all;
 use std.textio.all;
 
-use work.sh2utils.all;
 use work.Logging.all;
 use work.ANSIEscape.all;
 
@@ -111,51 +111,6 @@ architecture behavioral of sh2_cpu_tb is
 
 
     file MemLogFile : text open write_mode is "mem_log.txt";
-
-    -- procedure LogWrites(seg_no : integer range 0 to 3) is
-
-    --   variable l : line;
-    --   variable slv : std_logic_vector(31 downto 0);
-    --   variable hex_str : string(1 to 8) := (others => ' ');
-
-    -- begin
-
-    --   case seg_no is
-
-    --     when 0 =>
-    --       for i in 0 to 1023 loop
-
-    --         if ((i mod 8) = 0) then
-    --           writeline(MemLogFile, l);
-    --           write(l, string'(IntToHString(i) & ":"  & HT));
-    --         -- elsif ((i mod 2) = 0) then
-    --         end if;
-
-    --         if (RAMSegment0Writes(i) = '0') then
-    --           write(l, string'("UU"));
-    --           write(l, string'(" "));
-    --         else
-    --           write(l, string'(GREEN & "!" & ANSI_RESET));
-    --         end if;
-
-    --       end loop;
-
-    --     when 1 =>
-    --       -- TODO:
-    --       null;
-
-    --     when 2 =>
-    --       -- TODO:
-    --       null;
-
-    --     when 3 =>
-    --       -- TODO:
-    --       null;
-
-    --   end case;
-
-    -- end procedure;
-
 
 begin
 
@@ -659,16 +614,6 @@ begin
 
         wait;
     end process;
-
-    LogRAMWrites : process(RAM_WE0, RAM_WE1, RAM_WE2, RAM_WE3)
-    begin
-      -- If the data memory is being accessed and there has been a changed to
-      -- the RAM write enable lines, log the address being written to and the
-      -- mode.
-      if (CPU_MEMSEL = '0') then
-      end if;
-
-    end process LogRAMWrites;
 
 end behavioral;
 

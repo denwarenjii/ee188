@@ -6,31 +6,36 @@
 -- for converting between ints, and std_logic_vector.
 --  
 -- Packages provided:
---    SH2Utils - SH2 specific utility functions.
 --    Utils    - generic utility functions.
 --
 --  Revision History:
 --    28 April 25   Zach H.    Initial revision.
 --    30 April 25   Chris M.   Add conversion functions.
+--    01 June  25   Zach H.    Combined functions into a single package
 --
 ----------------------------------------------------------------------------
+
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
-use std.textio.all;
 
-package  SH2Utils  is
+package Utils is
+
     type rng is protected
         impure function rand_slv(len : integer) return std_logic_vector;
     end protected rng;
 
-    -- Convert between little-endian and big-endian (swap each consecutive pairs of bytes)
-    pure function swap_bytes(x : std_logic_vector) return std_logic_vector;
-end package SH2Utils;
+  function int_to_slv  (i : integer; width : natural)  return std_logic_vector;
+  function uint_to_slv (i : natural; width : natural)  return std_logic_vector;
+  function slv_to_int  (slv : std_logic_vector) return integer;
+  function slv_to_uint (slv : std_logic_vector) return natural;
 
-package body SH2Utils is
+end package Utils;
+
+package body Utils is
+
     type rng is protected body
         variable seed1, seed2 : integer := 1000;
 
@@ -45,40 +50,6 @@ package body SH2Utils is
             return slv;
         end function;
     end protected body;
-
-    pure function swap_bytes(x : std_logic_vector) return std_logic_vector is
-        variable y : std_logic_vector(x'length-1 downto 0);
-    begin
-        -- Should contain an even number of bytes
-        assert x'length mod 16 = 0;
-
-        -- Swap every pair of bytes (since SH-2 defines a "word" as 16 bits)
-        for i in 0 to x'length / 16 - 1 loop
-            y(i * 16 + 7 downto i * 16) := x(i * 16 + 15 downto i * 16 + 8);
-            y(i * 16 + 15 downto i * 16 + 8) := x(i * 16 + 7 downto i * 16);
-        end loop;
-
-        return y;
-    end function;
-end package body;
-
-
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use ieee.math_real.all;
-
-package Utils is
-
-  function int_to_slv  (i : integer; width : natural)  return std_logic_vector;
-  function uint_to_slv (i : natural; width : natural)  return std_logic_vector;
-  function slv_to_int  (slv : std_logic_vector) return integer;
-  function slv_to_uint (slv : std_logic_vector) return natural;
-
-end package Utils;
-
-package body Utils is
 
   function int_to_slv (i : integer; width : natural) return std_logic_vector is
     variable max_int : signed(width - 1 downto 0);
