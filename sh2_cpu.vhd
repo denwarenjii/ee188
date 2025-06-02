@@ -1,9 +1,17 @@
 ----------------------------------------------------------------------------
 --
---  Hitachi SH-2 CPU Entity Declaration
+--  Hitachi SH-2 CPU
 --
---  This is the entity declaration for the complete SH-2 CPU.  The design
---  should implement this entity to make testing possible.
+--  This file implements the complete SH-2 CPU, implemented for EE 188, Spring
+--  term 2024-2025. The CPU supports the entirety of the SH-2 instruction set
+--  except for MUL/DIV, MAC instructions, and other multi-clock instructions.
+--  The CPU consists of a register array, arithmetic logic unit (ALU), program
+--  memory access unit (PMAU), data memory access unit (DMAU), and memory
+--  interfaces for input/output. This CPU contains sixteen 32-bit general
+--  purpose registers, along with special registers such as PC, PR, GBR, VBR,
+--  and SR. Each instruction is encoded in 16 bits, and memory can be accessed
+--  either byte-wise, word-wise, or longword-wise. Currently, the CPU is not
+--  pipelined and executes every instruction in three clocks.
 --
 --  Revision History:
 --     28 Apr 25  Glen George       Initial revision.
@@ -23,6 +31,7 @@
 --                                  register manipulation. Also added this
 --                                  as possible input to RegDataIn.
 --     01 Jun 25  Zack Huang        Finishing documentation
+--
 ----------------------------------------------------------------------------
 
 

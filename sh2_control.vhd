@@ -594,7 +594,7 @@ begin
         -- Default flag values are set here (these shouldn't change CPU state).
         -- This is so that not every control signal has to be set in every single
         -- instruction case. If an instruction enables writing to memory/registers,
-       -- then ensure that the default value is set here as "disable" to prevent
+        -- then ensure that the default value is set here as "disable" to prevent
         -- writes on the clocks following an instruction.
 
         -- Not accessing memory
