@@ -89,12 +89,24 @@ begin
 
     output_proc: process(MemEnable, ReadWrite, MemMode, Address, MemDataOut, clock)
       variable l : line;
-    begin
+
+      pure function is_x(vec : std_logic_vector) return boolean is
+      begin
+          for i in vec'range loop
+              if vec(i) = 'X' or vec(i) = 'U' or vec(i) = 'W' or 
+              vec(i) = 'Z' or vec(i) = '-' then
+                  return true;
+              end if;
+          end loop;
+          return false;
+      end function;
+
+  begin
         -- When clock goes low, if this interface is enabled and should perform
         -- either a read or a write, then output the read-enable and
         -- write-enable signals in order depending on the memory mode to
         -- read/write a byte, word, or longword.
-        if MemEnable = MemEnable_ON and clock = '0' and not is_x(address) then
+        if MemEnable = MemEnable_ON and clock = '0' and not is_x(std_logic_vector(address)) then
             if ReadWrite = Mem_READ then    -- If performing a read
                 WE(3 downto 0) <= (others => '1');  -- Disable writing
                 DB <= (others => 'Z');              -- set data bus to high impedance so it can be read from
@@ -134,11 +146,9 @@ begin
                         -- RE(2) <= '0' when address mod 4 = 2 else '1';
                         -- RE(3) <= '0' when address mod 4 = 3 else '1';
 
-                        LogWithTime(l, "memory_interface.vhd: Reading byte at address 0x" & to_hstring(address), LogFile);
-
                     when WordMode =>
                         assert (address mod 2 = 0)
-                        report "Memory interface Tx: Cannot read word from non-aligned address: " & to_hstring(address)
+                        report "Memory interface Tx: Cannot read word from non-aligned address: "
                         severity error;
 
                         -- Enable only the specific pair of bytes being read (address must be word-aligned)
@@ -172,21 +182,18 @@ begin
                         -- RE(2) <= '0' when address mod 4 = 2 else '1';
                         -- RE(3) <= '0' when address mod 4 = 2 else '1';
 
-                        LogWithTime(l, "memory_interface.vhd: Reading word at address 0x" & to_hstring(address), LogFile);
-
                     when LongwordMode =>
                         assert (address mod 4 = 0)
-                        report "Memory interface Tx: Cannot read longword from non-aligned address: " & to_hstring(address)
+                        report "Memory interface Tx: Cannot read longword from non-aligned address: "
                         severity error;
 
                         -- Enable all bytes to read a longword. Address must be longword-aligned.
                         RE(3 downto 0) <= (others => '0');
 
-                        LogWithTime(l, "memory_interface.vhd: Reading longword at address 0x" & to_hstring(address), LogFile);
 
                     when others =>
                         assert (false)
-                        report "Memory interface Tx: unrecognized read mode" & to_hstring(address)
+                        report "Memory interface Tx: unrecognized read mode"
                         severity error;
 
                         -- When unrecognized mode, don't read/write anything
@@ -243,12 +250,10 @@ begin
                             DB(31 downto 24) <= MemDataOut(7 downto 0);
                         end if;
 
-                        LogWithTime(l, "memory_interface.vhd: Writing byte (0x" & to_hstring(MemDataOut(7 downto 0)) &
-                                       ") at address 0x" & to_hstring(address), LogFile);
 
                     when WordMode =>
                         assert (address mod 2 = 0)
-                        report "Memory interface Tx: Cannot write word to non-aligned address: " & to_hstring(address)
+                        report "Memory interface Tx: Cannot write word to non-aligned address: "
                         severity error;
 
                         -- Enable only the specific pair of bytes being read (address must be word-aligned)
@@ -287,22 +292,16 @@ begin
                             -- the output to the low word of the data bus
                             DB(15 downto 0) <= MemDataOut(7 downto 0) & MemDataOut(15 downto 8);
 
-                            LogWithTime(l, "memory_interface.vhd: Writing word (0x" & 
-                                            to_hstring(MemDataOut(7 downto 0) & MemDataOut(15 downto 8)), LogFile);
                         elsif address mod 2 = 0 then
                             -- Convert input data from little-endian to big-endian by reversing the bytes,
                             -- the output to the high word of the data bus
                             DB(31 downto 16) <= MemDataOut(7 downto 0) & MemDataOut(15 downto 8);
 
-                            LogWithTime(l, "memory_interface.vhd: Writing word (0x" & 
-                                            to_hstring(MemDataOut(7 downto 0) & MemDataOut(15 downto 8)), LogFile);
                         end if;
-
-                        LogWithTime(") at address 0x" & to_hstring(address), LogFile);
 
                     when LongwordMode =>
                         assert (address mod 4 = 0)
-                        report "Memory interface Tx: Cannot write longword to non-aligned address: " & to_hstring(address)
+                        report "Memory interface Tx: Cannot write longword to non-aligned address: "
                         severity error;
 
                         -- Enable all bytes to read a longword. Address must be longword-aligned.
@@ -313,9 +312,6 @@ begin
                         DB(15 downto 8) <= MemDataOut(23 downto 16);
                         DB(23 downto 16) <= MemDataOut(15 downto 8);
                         DB(31 downto 24) <= MemDataOut(7 downto 0);
-
-                        LogWithTime(l, "memory_interface.vhd: Writing longword (0x" & to_hstring(MemDataOut) &
-                                       ") at address 0x" & to_hstring(address), LogFile);
 
                     when others =>
                         assert (false)

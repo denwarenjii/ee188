@@ -145,7 +145,6 @@ begin
 
             -- handle normal stores last so they have highest precedence
             if (RegStore = '1')  then
-                LogWithTime(l, "Storing " & to_hstring(RegIn) & " to R" & to_string(RegInSel), LogFile);
                 Registers(RegInSel)  <=  RegIn;
             end if;
         else

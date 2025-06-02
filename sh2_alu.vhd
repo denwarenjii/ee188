@@ -242,7 +242,12 @@ architecture structural of sh2alu is
 
     signal ALUResult : std_logic_vector(31 downto 0);
 
+
+    signal OpAMux : std_logic_vector(31 downto 0);
+
 begin
+    OpAMux <= OperandA when LoadA = '1' else (others => '0');
+
     -- We use a generic ALU to implement all of the SH-2 ALU operations. We
     -- pass in the T bit in place of a dedicated carry input, and the CPU can
     -- route the correct output flag (carry, sign, zero, overflow) back into
@@ -252,7 +257,7 @@ begin
             wordsize => 32
         )
         port map (
-            AluOpA   => OperandA and LoadA,
+            AluOpA   => OpAMux,
             AluOpB   => OperandB,
             Cin      => TIn,
             FCmd     => FCmd,

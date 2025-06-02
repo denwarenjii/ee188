@@ -124,7 +124,7 @@ begin
 
     -- On input change, combinatorially compute the address and segment of RAM
     -- that needs to be accessed.
-    ram_access: process (all) is
+    ram_access: process (RE0, RE1, RE2, RE3, WE0, WE1, WE2, WE3, MemAB) is
     begin
         -- Check that MemAB is a valid value and is within the range of the integer type
         if not is_x(MemAB) and unsigned(MemAB) <= to_unsigned(integer'high, 32) then
@@ -159,7 +159,7 @@ begin
 
     -- On read, simply output the (masked) bytes that were accessed
     -- combinatorially (e.g. MemData)
-    read_proc: process (all) is
+    read_proc: process (RE0, RE1, RE2, RE3, WE0, WE1, WE2, WE3, MemAB) is
     begin
 
         -- first check if reading
@@ -192,7 +192,7 @@ begin
     -- On write, set the desired bytes within the RAM segment being currently
     -- accessed, at the correct address within the RAM (previously computed
     -- combinatorially).
-    write_proc: process (all) is
+    write_proc: process (RE0, RE1, RE2, RE3, WE0, WE1, WE2, WE3, MemAB) is
     begin
 
         -- check if writing

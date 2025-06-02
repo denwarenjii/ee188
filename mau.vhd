@@ -179,7 +179,7 @@ architecture  dataflow  of  MemUnit  is
     --   for adder
     signal  acarry : std_logic_vector(32 downto 0);
     --   for incrementer/decrementer
-    signal  idcarry : std_logic_vector(31 downto 0);
+    signal  idcarry : std_logic_vector(32 downto 0);
 
     -- source address, depends on whether doing pre- or post- inc/dec
     signal  SrcAddr : std_logic_vector(31 downto 0);
