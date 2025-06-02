@@ -22,7 +22,6 @@
 --    RegA2 is always @(Rn).                                                                       -
 --                                                                                                 -
 -- TODO:                                                                                           -
---  - Bit decode all movs.                                                                         -
 --  - Remove redundant assignment of default signals.                                              -
 --  - Better names for:                                                                            -
 --      Instruction_EnableIn, EnableIn                                                             -
@@ -51,7 +50,6 @@ package SH2InstructionEncodings is
   subtype Instruction is std_logic_vector(15 downto 0);
 
   -- Data Transfer Instruction:
-  -- TODO: Bit decode when possible.
   constant  MOV_IMM_RN            :  Instruction := "1110------------";  -- MOV #imm, Rn
 
   constant  MOV_AT_DISP_PC_RN     :  Instruction := "1-01------------";  -- MOV.X @(disp, PC), Rn (for bit decoding.)
@@ -595,9 +593,6 @@ begin
         Instruction_GBRWriteEn  <= '0';             -- Don't write to GBR.
         Instruction_PRWriteEn   <= '0';             -- Don't write to PR.
 
-        -- Default behavior
-
-
         -- If a delayed branch was taken previously, then don't change the PC since the target
         -- address was calculated when the delayed branch decoded.
         if (DelayedBranchTaken = '1') then
@@ -618,11 +613,10 @@ begin
                                                -- taken by default.
 
         if std_match(IR, ADD_RM_RN) then
+            -- ADD{C,V} Rm, Rn
 
             LogWithTime(l, "sh2_control.vhd: Decoded Add R" & to_string(to_integer(unsigned(nm_format_m))) &
                            " , R" & to_string(to_integer(unsigned(nm_format_n))), LogFile);
-
-            -- report "Instruction: ADD(C/V) Rm, Rn";
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -635,25 +629,21 @@ begin
             -- Bit-decoding T flag select (None, Carry, Overflow)
             Instruction_TFlagSel <= '0' & IR(1 downto 0);
 
-            -- ALU signals
+            -- ALU signals for addition
             ALUOpBSel <= ALUOpB_RegB;
             LoadA     <= '1';
             FCmd      <= FCmd_B;
 
             -- Bit-decode carry in value
-            if IR(1 downto 0) = "10" then
-                CinCmd <= CinCmd_CIN;   -- ADDC
-            else
-                CinCmd <= CinCmd_ZERO;  -- ADD, ADDV
-            end if;
+            CinCmd <= CinCmd_CIN when IR(1 downto 0) = "10" else    -- ADDC
+                      CinCmd_ZERO;                                  -- ADD, ADDV
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
 
-        -- SUB Rm, Rn
         elsif std_match(IR, SUB_RM_RN) then
-            -- report "Instruction: SUB(C/V) Rm, Rn";
+            -- SUB{C,V} Rm, Rn
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -666,23 +656,20 @@ begin
             -- Bit-decoding T flag select (None, Carry, Overflow)
             Instruction_TFlagSel <= '0' & IR(1 downto 0);
 
-            -- ALU signals
+            -- ALU signals for subtraction
             ALUOpBSel <= ALUOpB_RegB;
             LoadA     <= '1';
             FCmd      <= FCmd_BNOT;
 
             -- Bit-decode carry in value
-            if IR(1 downto 0) = "10" then
-                CinCmd <= CinCmd_CINBAR;    -- SUBC
-            else
-                CinCmd <= CinCmd_ONE;       -- SUB, SUBV
-            end if;
+            CinCmd <= CinCmd_CINBAR when IR(1 downto 0) = "10" else     -- SUBC
+                      CinCmd_ONE;                                       -- SUB, SUBV
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, DT_RN) then
-            -- report "Instruction: DT Rn";
+            -- DT Rn
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -699,13 +686,12 @@ begin
             ALUOpBSel <= ALUOpB_Imm;
             LoadA     <= '1';
             FCmd      <= FCmd_BNOT;
-            CinCmd <= CinCmd_ZERO;
-            SCmd   <= "XXX";
-            ALUCmd <= ALUCmd_ADDER;
+            CinCmd    <= CinCmd_ZERO;
+            SCmd      <= "XXX";
+            ALUCmd    <= ALUCmd_ADDER;
 
-        -- NEG Rm, Rn
         elsif std_match(IR, NEG_RM_RN) then
-            -- report "Instruction: NEG(C) Rm, Rn";
+            -- NEG{C} Rm, Rn
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -716,29 +702,23 @@ begin
             Instruction_EnableIn <= '1';
 
             -- Bit-decoding T flag select
-            if IR(0) = '0' then
-                Instruction_TFlagSel <= TFlagSel_Carry;
-            else
-                Instruction_TFlagSel <= TFlagSel_T;
-            end if;
+            Instruction_TFlagSel <= TFlagSel_Carry when IR(0) = '0' else    -- NEGC
+                                    TFlagSel_T;                             -- NEG
 
-            -- ALU signals
+            -- ALU signals for negation
             ALUOpBSel <= ALUOpB_RegB;
             LoadA     <= '0';
             FCmd      <= FCmd_BNOT;
 
             -- Bit-decode carry in value
-            if IR(0) = '0' then
-                CinCmd <= CinCmd_CINBAR;    -- NEGC
-            else
-                CinCmd <= CinCmd_ONE;       -- NEG
-            end if;
+            CinCmd <= CinCmd_CINBAR when IR(0) = '0' else   -- NEGC
+                      CinCmd_ONE;                           -- NEG
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, EXT_RM_RN) then
-            -- report "Instruction: EXT(U/S).(B/W) Rm, Rn";
+            -- EXT{U,S}.{B,W Rm, Rn}
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -749,9 +729,8 @@ begin
             ExtMode              <= IR(1 downto 0);     -- bit-decode extension mode
             Instruction_EnableIn <= '1';
 
-        -- ADD #imm, Rn
         elsif std_match(IR, ADD_IMM_RN) then
-            -- report "Instruction: ADD #imm, Rn";
+            -- ADD #imm, Rn
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -761,7 +740,7 @@ begin
             Instruction_EnableIn <= '1';
             Immediate            <= ni_format_i;
 
-            -- ALU signals
+            -- ALU signals for addition
             ALUOpBSel <= ALUOpB_Imm;
             LoadA     <= '1';
             FCmd      <= FCmd_B;
@@ -771,7 +750,6 @@ begin
 
         elsif std_match(IR, LOGIC_RM_RN) then
             -- {AND, TST, OR, XOR} Rm, Rn
-            -- Uses bit decoding to distinguish between the four possible operations
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -782,15 +760,17 @@ begin
             Instruction_EnableIn <= IR(1) or IR(0);   -- exclude TST
 
             -- Enable TFlagSel for TST
-            Instruction_TFlagSel <= TFlagSel_Zero when IR(1 downto 0) = "00" else TFlagSel_T;
+            Instruction_TFlagSel <= TFlagSel_Zero when IR(1 downto 0) = "00"    -- TST
+                                    else TFlagSel_T;                            -- AND, OR, XOR
 
-            -- ALU signals
+            -- ALU signals for logic instructions using the FBlock
             ALUOpBSel <= ALUOpB_RegB;
             LoadA     <= '1';
 
-            FCmd <= FCmd_AND when IR(1) = '0'           else
-                    FCmd_XOR when IR(1 downto 0) = "10" else
-                    FCmd_OR;
+            -- Bit-decode f-block operation
+            FCmd <= FCmd_AND when IR(1) = '0'           else    -- AND, TST
+                    FCmd_XOR when IR(1 downto 0) = "10" else    -- XOR
+                    FCmd_OR;                                    -- OR
 
             CinCmd <= CinCmd_ZERO;
             SCmd   <= "XXX";
@@ -809,15 +789,17 @@ begin
             ImmediateMode        <= ImmediateMode_ZERO;
 
             -- Enable TFlagSel for TST
-            Instruction_TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00" else TFlagSel_T;
+            Instruction_TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00"    -- TST
+                                    else TFlagSel_T;                            -- AND, OR, XOR
 
-            -- ALU signals
+            -- ALU signals for logic instructions using the FBlock
             ALUOpBSel <= ALUOpB_Imm;
             LoadA     <= '1';
 
-            FCmd <= FCmd_AND when IR(9) = '0' else
-                    FCmd_XOR when IR(9 downto 8) = "10" else
-                    FCmd_OR;
+            -- Bit-decode f-block operation
+            FCmd <= FCmd_AND when IR(9) = '0' else              -- AND, TST
+                    FCmd_XOR when IR(9 downto 8) = "10" else    -- XOR
+                    FCmd_OR;                                    -- OR
 
             CinCmd <= CinCmd_ZERO;
             SCmd   <= "XXX";
@@ -834,7 +816,7 @@ begin
             RegDataInSel         <= RegDataIn_ALUResult;
             Instruction_EnableIn <= '1';
 
-            -- ALU signals
+            -- ALU signals for logical negation
             ALUOpBSel <= ALUOpB_RegB;
             LoadA     <= '1';
             FCmd      <= FCmd_BNOT;
@@ -843,7 +825,7 @@ begin
             ALUCmd    <= ALUCmd_FBLOCK;
 
         elsif std_match(IR, CMP_EQ_IMM) then
-            -- report "Instruction: CMP/EQ #Imm, R0";
+            -- CMP/EQ #Imm, R0
 
             -- Register array signals
             RegASel <= 0;
@@ -865,7 +847,7 @@ begin
             ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, CMP_RM_RN) then
-            -- report "Instruction: CMP/XX Rm, Rn";
+            -- CMP/XX Rm, Rn
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -885,7 +867,7 @@ begin
             ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, CMP_STR_RM_RN) then
-            -- report "Instruction: CMP/STR Rm, Rn";
+            -- CMP/STR Rm, Rn
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -896,7 +878,7 @@ begin
             TCMPSel <= TCMP_STR;
 
         elsif std_match(IR, CMP_RN) then
-            -- report "Instruction: CMP/{PL/PZ} Rn";
+            -- CMP/{PL/PZ} Rn
 
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
@@ -918,6 +900,7 @@ begin
             ALUCmd <= ALUCmd_ADDER;
 
         elsif std_match(IR, SHIFT_RN) then
+            -- Shift operations
             -- {ROTL, ROTR, ROTCL, ROTCR, SHAL, SHAR, SHLL, SHLR} Rn
             -- Uses bit decoding to compute control signals (to reduce code size)
 
@@ -934,13 +917,15 @@ begin
             LoadA     <= '1';
             FCmd      <= "XXXX";
 
-            CinCmd    <= CinCmd_CIN when (IR(5) and IR(2)) = '1' else  -- ROTCL, ROTCR
-                         CinCmd_ZERO;     
+            -- Bit-decode carry command
+            CinCmd    <= CinCmd_CIN when (IR(5) and IR(2)) = '1' else   -- ROTCL, ROTCR
+                         CinCmd_ZERO;                                   -- all others   
 
             SCmd   <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
 
         elsif std_match(IR, BSHIFT_RN) then
+            -- Barrel shift operations
             -- {SHLL,SHLR}{2,8,16} Rn
             -- Uses bit decoding to compute control signals (to reduce code size)
 
@@ -1028,6 +1013,7 @@ begin
 
         -- MOV Rm, Rn
         -- nm format
+        -- Note: for bit decoding, this must be done before MOV_AT_RM_RN
         elsif std_match(IR, MOV_RM_RN) then
             LogWithTime(l, 
               "sh2_control.vhd: Decoded MOV R" & to_string(slv_to_uint(nm_format_m)) &
@@ -1064,6 +1050,7 @@ begin
 
         -- MOV.X @Rm, Rn
         -- nm format
+        -- Note: for bit decoding, this must be done after MOV_RM_RN
         elsif std_match(IR, MOV_AT_RM_RN) then
           LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.X @R" & to_string(slv_to_uint(nm_format_m)) &
@@ -1877,13 +1864,11 @@ begin
             -- TODO: WTF ???? 
             -- Instruction_PCAddrMode <= PCAddrMode_INC;
 
-            null;
-
         elsif not is_x(IR) then
             report "Unrecognized instruction: " & to_hstring(IR);
         end if;
 
-        end if; -- if (state = fetch)
+        end if;
 
     end process;
 
