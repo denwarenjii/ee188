@@ -8,6 +8,13 @@
 ;   BF/S  <label>
 ;   BT    <label>
 ;   BT/S  <label>
+;   BRA   <label>
+;   BRAF  Rm
+;   BSR   <label>
+;   BSRF  Rm
+;   JMP  @Rm
+;   JSR  @Rm
+;   RTS
 ;
 ; Branches are tested by writing to memory based on address we jump to. Note 
 ; that if jumps do not work at all, we will encounter the "exit" signal and
@@ -18,6 +25,9 @@
 ; Revision History:                                                            
 ;   26 May 2025  Chris M.  Initial revision.                                   
 ;                                                                             
+; TODO:
+;   - Use long-word constants instead of manually calculating addresses.
+;   - Format nicely.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Start:
@@ -80,7 +90,7 @@ TRGET_F1:
     MOV   #$08,       R0
     MOV   R1,        @R0
 
-    ; Test BT. Write at 0x0C
+    ; -- Test BT. Write at 0x0C ------------------------------------------------
 
     SETT              ; Set the T flag
     BF    TRGET_F2    ; This branch should not be taken.
@@ -102,7 +112,7 @@ TRGET_T2:
 
     CLRT                  ; Clear T flag
 
-    ; Test BT/S. Write at 0x10
+    ; -- Test BT/S. Write at 0x10 ----------------------------------------------
 
     MOV   #$09,     R3    ; Set up register for addition
     MOV   #$0C,     R4
@@ -122,7 +132,7 @@ TRGET_F3:
     MOV   #$10,       R0
     MOV   R1,        @R0
 
-    ; The test bench interprets a read of 0xFFFFFFFC (-4)
+    ; The test bench interprets a read of 0xFFFFFFFC (-4) 
     ; as system exit.
     MOV     #-4,  R0;   ; PC = 0x1A
     MOV.B   R0,  @R0;   ; PC = 0x1C
@@ -138,7 +148,7 @@ TRGET_T3:
 
 
 
-    ; Test BRA. Write to 0x18
+    ; -- Test BRA. Write to 0x18 -----------------------------------------------
 
     MOV   #$01,   R2
     MOV   #$02,   R3
@@ -165,7 +175,7 @@ TRGET_BRA:
     MOV   R1,      @R0
 
 
-    ; Test BRAF
+    ; -- Test BRAF -------------------------------------------------------------
 
 
     MOV   #7,   R2
@@ -197,7 +207,7 @@ TRGET_BRAF:
     MOV   TrueVar,   R1 ; the target.
     MOV   R1,       @R0
 
-    ; Test BSR
+    ; -- Test BSR --------------------------------------------------------------
 
     MOV  #10,   R3  ; Values to test execution of branch slot.
     MOV  #12,   R4
@@ -212,11 +222,12 @@ TRGET_BRAF:
     MOV   R1,    @R0
 
 
-    ; Test BSRF
+    ; -- Test BSRF -------------------------------------------------------------
+
     MOV  #5,  R3    ; Values to test execution of branch slot.
     MOV  #3,  R4
 
-    MOV   #26,  R1     ; TRGET_BSRF is 12 instructions (24 bytes) away from BSRF.
+    MOV   #38,  R1     ; TRGET_BSRF is 18 instructions (36 bytes) away from BSRF.
                        ; We add an extra 2 bytes because our PC points to the 
                        ; current instruction instead of the next instruction as
                        ; expected by the spec.
@@ -229,7 +240,24 @@ TRGET_BRAF:
     MOV   #$3C,   R0   ; Write the result of the RTS branch slot, 0x22 at 0x38
     MOV   R1,    @R0
 
-    MOV     #-4,  R0    ; Exit
+    ; -- Test JMP  -------------------------------------------------------------
+
+    ; MOV.W   TRGET_JMP, R0
+
+    ; MOVA  TRGET_JMP, R0  ; Load address of target into R0
+
+    ; MOV #$36, R0          ; 17 * 2 + 2 = 36 
+
+    MOV.L  TRGET_JMP_DATA, R0 ;Load target address of JMP into R0
+
+    MOV  #2,  R3        ; Values to test execution of branch slot.
+    MOV  #5,  R4
+
+    JMP  @R0
+    ADD  R3,  R4        ; Branch slot of JMP
+
+
+    MOV     #-4,  R0    ; If the JMP is not taken, the system exits.
     MOV.B   R0,  @R0
 
 
@@ -259,12 +287,52 @@ TRGET_BSRF:
 
     MOV  #$22, R1         ; Branch slot of RTS
 
+TRGET_JMP:
+
+    MOV  #$40,      R0    ; Write the result of the JMP branch slot, 0x07 at 0x40
+    MOV  R4,       @R0
+
+    MOV  #$44,      R0    ; Write TrueVar at 0x40 to signal that JMP jumped to
+    MOV  TrueVar,   R1    ; the correct target.
+    MOV  R1,       @R0
+
+    ; -- Test JSR -------------------------------------------------------------
+
+    MOV.L   TRGET_JSR_DATA, R0 ; Load target address of JSR into R0
+
+
+    MOV   #10,     R3   ; Values to check the execution of the branch slot.
+    MOV   #20,     R4
+
+    JSR   @R0   
+    ADD   R3,      R4   ; Branch slot of JSR
+
+    NOP                 ; RTS returns here.
+
+    MOV   #$50,   R0    ; Write the result of RTS's branch slot, 0x33 at 0x50
+    MOV   R1,    @R0
+
 End:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
     ; as system exit.
     MOV     #-4,  R0
     MOV.B   R0,  @R0
+
+
+
+TRGET_JSR:
+
+    MOV     #$48,     R0  ; Write the result of the JSR branch slot, 0x1E, at 0x48.
+    MOV     R4,      @R0
+
+    MOV.L   TrueVar,  R1  ; Write TrueVar at 0x4C to signal that JSR jumped to 
+    MOV     #$4C,     R0  ; the correct target.
+    MOV     R1,      @R0
+
+    RTS                   ; Return
+    MOV     #$33,     R1  ; Branch slot of RTS
+
 
    
     ; Expected memory:
@@ -283,10 +351,17 @@ End:
     ; 00000030 00000011  ; 0x11 is written to 0x30 if the branch slot of `RTS` is executed.
     ; 00000034 00000008  ; 0x08 is written to 0x34 if the branch slot of `BSRF` is executed.
     ; 00000038 AAAAAAAA  ; TrueVar is written to 0x38 if `BSRF` jumps to the correct instruction.
-    ; 0000003C 00000022  ; 0x22 is written to 0x3C if the bracnh slot of `RTS` is executed.
+    ; 0000003C 00000022  ; 0x22 is written to 0x3C if the branch slot of `RTS` is executed.
+    ; 00000040 00000007  ; 0x07 is written to 0x40 if the branch slot of `JMP` is executed.
+    ; 00000044 AAAAAAAA  ; TrueVar is written to 0x44 if `JMP` jumps to the correct target.
+    ; 00000048 0000001E  ; 0x1E is written to 0x48 if the branch slot of `JSR` is executed.
+    ; 0000004C AAAAAAAA  ; TrueVar is written to 0x4C if `JSR` jumps to the correct target.
+    ; 00000050 00000033  ; 0x33 is written to 0x50 if the branch slot of `RTS` is executed.
 
     align 4
     LTORG
 
-TrueVar:    dc.l $AAAAAAAA
-FalseVar:   dc.l $BBBBBBBB
+TrueVar:         dc.l $AAAAAAAA
+FalseVar:        dc.l $BBBBBBBB
+TRGET_JMP_DATA:  dc.l TRGET_JMP
+TRGET_JSR_DATA:  dc.l TRGET_JSR
