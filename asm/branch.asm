@@ -206,11 +206,28 @@ TRGET_BRAF:
     BSR  TRGET_BSR
     ADD  R3,    R4
 
-    NOP
+    NOP                 ; RTS returns here.
 
     MOV   #$30,   R0    ; Write the result of the RTS branch slot (0x11) at 0x30
     MOV   R1,    @R0
 
+
+    ; Test BSRF
+    MOV  #5,  R3    ; Values to test execution of branch slot.
+    MOV  #3,  R4
+
+    MOV   #26,  R1     ; TRGET_BSRF is 12 instructions (24 bytes) away from BSRF.
+                       ; We add an extra 2 bytes because our PC points to the 
+                       ; current instruction instead of the next instruction as
+                       ; expected by the spec.
+
+    BSRF  R1
+    ADD   R3,   R4     ; Branch slot for BSRF
+
+    NOP                ; RTS returns here
+
+    MOV   #$3C,   R0   ; Write the result of the RTS branch slot, 0x22 at 0x38
+    MOV   R1,    @R0
 
     MOV     #-4,  R0    ; Exit
     MOV.B   R0,  @R0
@@ -227,6 +244,20 @@ TRGET_BSR:
 
     RTS                 ; Return to the instruction after the branch slot of BSR
     MOV   #$11,     R1  ; Branch slot of RTS
+
+TRGET_BSRF:
+
+
+    MOV   #$34,     R0    ; Write the result of the BSRF branch slot, 0x08 at 0x34
+    MOV   R4,      @R0
+
+    MOV   #$38,     R0    ; Write TrueVar at 0x3C to signal that BSRF jumped
+    MOV   TrueVar,  R1    ; to the correct target.
+    MOV   R1,      @R0
+
+    RTS                   ; Return to the instruction after the branch slot of BSRF
+
+    MOV  #$22, R1         ; Branch slot of RTS
 
 End:
 
@@ -250,6 +281,9 @@ End:
     ; 00000028 00000016  ; 0x16 is written to 0x28 if the branch slot of `BSR` is executed.
     ; 0000002C AAAAAAAA  ; TrueVar is written to 0x2C if `BSR` jumps to the correct instruction.
     ; 00000030 00000011  ; 0x11 is written to 0x30 if the branch slot of `RTS` is executed.
+    ; 00000034 00000008  ; 0x08 is written to 0x34 if the branch slot of `BSRF` is executed.
+    ; 00000038 AAAAAAAA  ; TrueVar is written to 0x38 if `BSRF` jumps to the correct instruction.
+    ; 0000003C 00000022  ; 0x22 is written to 0x3C if the bracnh slot of `RTS` is executed.
 
     align 4
     LTORG
