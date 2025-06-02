@@ -1968,10 +1968,22 @@ begin
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
                  "*2 + PC)", LogFile);
+
+             -- assert false
+             -- severity ERROR;
  
-             assert false
-             severity ERROR;
- 
+             Instruction_DelayedBranchTaken <= '1';
+             PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
+
+             Instruction_PCAddrMode <= PCAddrMode_RELATIVE_12;
+             PMAUOff12  <= d12_format_d;
+
+             Instruction_PRWriteEn <= '1';
+
+             -- Control signals to write PC to PR.
+             SysRegSrc              <= SysRegSrc_PC;
+             -- SysRegSel              <= SysRegSel_PR;
+             Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
  
          -- BSRF Rm
          -- m format
@@ -2008,12 +2020,16 @@ begin
  
          elsif std_match(IR, RTS) then
 
+             -- assert false
+             -- severity ERROR;
+
              LogWithTime(l,
                  "sh2_control.vhd: Decoded RTS", LogFile);
  
-             assert false
-             severity ERROR;
- 
+             Instruction_PCAddrMode         <= PCAddrMode_PR_DIRECT;
+             Instruction_DelayedBranchTaken <= '1';
+             PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
+
 
         -- System Control Instructions ----------------------------------------
 

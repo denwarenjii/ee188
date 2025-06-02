@@ -625,7 +625,10 @@ begin
     -- write-enables (like GBRWriteEn and PRWriteEn) must be enabled seperately.
     NextSysReg <= RegB      when SysRegSrc = SysRegSrc_RegB  else
                   MemDataIn when SysRegSrc = SysRegSrc_DB    else
-                  PCRegOut  when SysRegSrc = SysRegSrc_PC    else
+
+                  -- The return address of a BSR is the PC at the point of decoding the BSR plus 4.
+                  std_logic_vector(unsigned(PCRegOut) + to_unsigned(4, 32))  when SysRegSrc = SysRegSrc_PC    else
+
                   (others => 'X');
 
     GBRIn <= NextSysReg;
