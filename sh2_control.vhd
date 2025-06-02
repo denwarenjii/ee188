@@ -1652,19 +1652,24 @@ begin
  
          -- JSR @Rm
          -- m format
-         elsif
-         std_match(IR, JSR) then
+         -- Delayed branch, PC -> PR, Rm -> PC
+         elsif std_match(IR, JSR) then
 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded JSR @R" & to_string(slv_to_uint(m_format_m)), LogFile);
- 
-             assert false
-             severity ERROR;
+
+             RegBSel <= slv_to_uint(m_format_m);
+
+             Instruction_DelayedBranchTaken <= '1';
+             PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
+             Instruction_PCAddrMode         <= PCAddrMode_REG_DIRECT;
+
+             Instruction_PRWriteEn <= '1';
+
+             SysRegSrc <= SysRegSrc_PC;
+             Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
  
          elsif std_match(IR, RTS) then
-
-             -- assert false
-             -- severity ERROR;
 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded RTS", LogFile);

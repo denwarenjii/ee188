@@ -8,6 +8,13 @@
 ;   BF/S  <label>
 ;   BT    <label>
 ;   BT/S  <label>
+;   BRA   <label>
+;   BRAF  Rm
+;   BSR   <label>
+;   BSRF  Rm
+;   JMP  @Rm
+;   JSR  @Rm
+;   RTS
 ;
 ; Branches are tested by writing to memory based on address we jump to. Note 
 ; that if jumps do not work at all, we will encounter the "exit" signal and
@@ -18,6 +25,9 @@
 ; Revision History:                                                            
 ;   26 May 2025  Chris M.  Initial revision.                                   
 ;                                                                             
+; TODO:
+;   - Use long-word constants instead of manually calculating addresses.
+;   - Format nicely.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Start:
@@ -238,7 +248,7 @@ TRGET_BRAF:
 
     ; MOV #$36, R0          ; 17 * 2 + 2 = 36 
 
-    MOV.L  TRGET_JMP_DATA, R0
+    MOV.L  TRGET_JMP_DATA, R0 ;Load target address of JMP into R0
 
     MOV  #2,  R3        ; Values to test execution of branch slot.
     MOV  #5,  R4
@@ -286,6 +296,21 @@ TRGET_JMP:
     MOV  TrueVar,   R1    ; the correct target.
     MOV  R1,       @R0
 
+    ; -- Test JSR -------------------------------------------------------------
+
+    MOV.L   TRGET_JSR_DATA, R0 ; Load target address of JSR into R0
+
+
+    MOV   #10,     R3   ; Values to check the execution of the branch slot.
+    MOV   #20,     R4
+
+    JSR   @R0   
+    ADD   R3,      R4   ; Branch slot of JSR
+
+    NOP                 ; RTS returns here.
+
+    MOV   #$50,   R0    ; Write the result of RTS's branch slot, 0x33 at 0x50
+    MOV   R1,    @R0
 
 End:
 
@@ -293,6 +318,21 @@ End:
     ; as system exit.
     MOV     #-4,  R0
     MOV.B   R0,  @R0
+
+
+
+TRGET_JSR:
+
+    MOV     #$48,     R0  ; Write the result of the JSR branch slot, 0x1E, at 0x48.
+    MOV     R4,      @R0
+
+    MOV.L   TrueVar,  R1  ; Write TrueVar at 0x4C to signal that JSR jumped to 
+    MOV     #$4C,     R0  ; the correct target.
+    MOV     R1,      @R0
+
+    RTS                   ; Return
+    MOV     #$33,     R1  ; Branch slot of RTS
+
 
    
     ; Expected memory:
@@ -314,7 +354,9 @@ End:
     ; 0000003C 00000022  ; 0x22 is written to 0x3C if the branch slot of `RTS` is executed.
     ; 00000040 00000007  ; 0x07 is written to 0x40 if the branch slot of `JMP` is executed.
     ; 00000044 AAAAAAAA  ; TrueVar is written to 0x44 if `JMP` jumps to the correct target.
-    ; 00000048 
+    ; 00000048 0000001E  ; 0x1E is written to 0x48 if the branch slot of `JSR` is executed.
+    ; 0000004C AAAAAAAA  ; TrueVar is written to 0x4C if `JSR` jumps to the correct target.
+    ; 00000050 00000033  ; 0x33 is written to 0x50 if the branch slot of `RTS` is executed.
 
     align 4
     LTORG
@@ -322,3 +364,4 @@ End:
 TrueVar:         dc.l $AAAAAAAA
 FalseVar:        dc.l $BBBBBBBB
 TRGET_JMP_DATA:  dc.l TRGET_JMP
+TRGET_JSR_DATA:  dc.l TRGET_JSR
