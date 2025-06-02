@@ -1,3 +1,20 @@
+; shift.asm
+;
+; Testing ALU shift operations
+;
+; This file tests the following instructions:
+;   ROTL	Rn
+;   ROTR	Rn
+;   ROTCL	Rn
+;   ROTCR	Rn
+;   SHAL	Rn
+;   SHAR	Rn
+;   SHLL	Rn
+;   SHLR	Rn
+;
+; Revision History:
+;   12 May 2025     Zack Huang      Initial revision.
+
 ProgramStart:
     ; ROTL
     MOV #-1, R0;    R0 <- 0xFFFFFFFF

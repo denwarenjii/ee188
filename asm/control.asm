@@ -1,3 +1,24 @@
+; control.asm
+;
+; Testing all control register operations
+;
+; This file tests the following instructions:
+;   STC     SR, Rn
+;   STC     GBR, Rn
+;   STC     VBR, Rn
+;   STC.L   SR, @-Rn
+;   STC.L   GBR, @-Rn
+;   STC.L   VBR, @-Rn
+;   STS     MACH, Rn
+;   STS     MACL, Rn
+;   STS     PR, Rn
+;   STS.L   MACH, @-Rn
+;   STS.L   MACL, @-Rn
+;   STS.L   PR, @-Rn
+;
+; Revision History:
+;   25 May 2025     Zack Huang      Initial revision.
+
 ProgramStart:
     ; Test LDS
     MOV #$F, R0;

@@ -1,3 +1,25 @@
+; system.asm
+;
+; Testing system register operations
+;
+; This file tests the following instructions:
+;   LDC	    Rm, SR
+;   LDC	    Rm, GBR
+;   LDC	    Rm, VBR
+;   LDC.L	@Rm+, SR
+;   LDC.L	@Rm+, GBR
+;   LDC.L	@Rm+, VBR
+;   STC	    SR, Rn
+;   STC	    GBR, Rn
+;   STC	    VBR, Rn
+;   STC.L	SR, @-Rn
+;   STC.L	GBR, @-Rn
+;   STC.L	VBR, @-Rn
+;
+; Revision History:
+;   12 May 2025     Zack Huang      Initial revision.
+;   16 May 2025     Zack Huang      add in .L variants
+
 ProgramStart:
     ; Test LDC
     MOV #$F, R0;

@@ -1,3 +1,13 @@
+; mov_Reg.asm
+;
+; Tests simple register MOVs
+;
+; This file tests the following instructions:
+;   MOV  Rm, Rn
+;
+; Revision History:
+;   11 May 2025     Zack Huang      Initial revision.
+
 ProgramStart:
     ; Move constant through each register
     MOV #15, R0;
@@ -19,7 +29,7 @@ ProgramStart:
 
     ; Write contents of R15 to memory
     MOV #0, R0;
-    MOV R15, @R0;
+    MOV R15, @R0    ; expect R0 <- 15
 
     ; Quit test program
     MOV #-4, R0;

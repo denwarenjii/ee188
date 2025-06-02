@@ -1,3 +1,16 @@
+; reg_indirect.asm
+;
+; Testing indirect register addressing
+;
+; This file tests the following instructions:
+;     MOV.B Rm, @Rn
+;     MOV.W Rm, @Rn
+;     MOV.L Rm, @Rn
+;
+; Revision History:
+;   11 May 2025     Zack Huang      Initial revision.
+;   14 May 2025     Zack Huang      Ensure endianness is consistent
+
 ProgramStart:
     ; Write 0A0B0C0D to 0x00000000 using byte mode addressing
     ; Note, for the purposes of testing, all longwords in memory are

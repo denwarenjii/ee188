@@ -1,3 +1,21 @@
+; cmp.asm
+;
+; Testing all comparison operations
+;
+; This file tests the following instructions:
+;   CMP/EQ  #imm,RO
+;   CMP/EQ  Rm, Rn
+;   CMP/HS  Rm, Rn
+;   CMP/GE  Rm, Rn
+;   CMP/HI  Rm, Rn
+;   CMP/GT  Rm, Rn
+;   CMP/PL  Rn
+;   CMP/PZ  Rn
+;   CMP/STR Rm, Rn
+;
+; Revision History:
+;   25 May 2025     Zack Huang      Initial revision.
+
 ProgramStart:
     ; Test CMP/EQ (when unequal)
     MOV #50, R1;

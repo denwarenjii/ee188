@@ -1,3 +1,16 @@
+; ext.asm
+;
+; Testing all sign/zero extend instructions
+;
+; This file tests the following instructions:
+;   EXTS.B  Rm, Rn
+;   EXTS.W  Rm, Rn
+;   EXTU.B  Rm, Rn
+;   EXTU.W  Rm, Rn
+;
+; Revision History:
+;   25 May 2025     Zack Huang      Initial revision.
+
 ProgramStart:
     ; Test EXTU.B
     MOV #-1, R0;

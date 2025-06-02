@@ -1,3 +1,18 @@
+; bshift.asm
+;
+; Testing barrel shift instructions
+;
+; This file tests the following instructions:
+;     SHLL2 Rn
+;     SHLR2 Rn
+;     SHLL8 Rn
+;     SHLR8 Rn
+;     SHLL16 Rn
+;     SHLR16 Rn
+;
+; Revision History:
+;   25 May 2025     Zack Huang      Initial revision.
+
 ProgramStart:
     ; Test SHLL2
     MOV #$F, R0;
