@@ -523,12 +523,12 @@ begin
     memory_tx : entity work.MemoryInterfaceTx
     port map (
         -- Inputs:
-        clock     => clock,
-        MemEnable => MemEnable,
-        ReadWrite => ReadWrite,
-        MemMode   => MemMode,
-        Address   => unsigned(MemAddress),
-        MemDataOut=> MemDataOut,
+        clock      => clock,
+        MemEnable  => MemEnable,
+        ReadWrite  => ReadWrite,
+        MemMode    => MemMode,
+        Address    => unsigned(MemAddress),
+        MemDataOut => MemDataOut,
         -- Outputs:
         RE => ReadMask,
         WE => WriteMask,
