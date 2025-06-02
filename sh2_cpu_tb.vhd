@@ -22,6 +22,7 @@ use std.textio.all;
 
 use work.Logging.all;
 use work.ANSIEscape.all;
+use work.SH2ControlConstants.all;
 
 entity sh2_cpu_tb is
 end sh2_cpu_tb;
@@ -92,65 +93,80 @@ architecture behavioral of sh2_cpu_tb is
 
 begin
 
-    CPU_RD  <= CPU_RE0 and CPU_RE1 and CPU_RE2 and CPU_RE3;
-    TEST_RD <= TEST_RE0 and TEST_RE1 and TEST_RE2 and TEST_RE3;
+    -- We initialize two memory units: one called RAM for data memory, and one
+    -- called ROM for program memory. We enforce that the CPU is not able to
+    -- write to ROM. To allow both the CPU and test bench to communicate with
+    -- the memory units, we fully mux every control signal to/from the two
+    -- memory units. When CPU_ACTIVE is true, all of memory control signals are
+    -- routed between the CPU and memory. When CPU_ACTIVE is false, all of the
+    -- memory control signals are routed to/from the testbench signals.
 
-    CPU_WR  <= CPU_WE0 and CPU_WE1 and CPU_WE2 and CPU_WE3;
-    TEST_WR <= TEST_WE0 and TEST_WE1 and TEST_WE2 and TEST_WE3;
+    CPU_RD  <= CPU_RE0 and CPU_RE1 and CPU_RE2 and CPU_RE3;         -- CPU read signal, active low
+    TEST_RD <= TEST_RE0 and TEST_RE1 and TEST_RE2 and TEST_RE3;     -- testbench read signal, active low
 
+    CPU_WR  <= CPU_WE0 and CPU_WE1 and CPU_WE2 and CPU_WE3;         -- CPU write signal, active low
+    TEST_WR <= TEST_WE0 and TEST_WE1 and TEST_WE2 and TEST_WE3;     -- testbench write signal, active low
+
+    -- Muxing between the CPU address bus and testbench address bus based on CPU_ACTIVE
     ROM_AB <= CPU_AB when CPU_ACTIVE else TEST_AB;
 
+    -- Muxing between the CPU address bus and testbench address bus based on CPU_ACTIVE
     RAM_AB <= CPU_AB when CPU_ACTIVE else TEST_AB;
 
-    ROM_DB <= CPU_DB  when     CPU_ACTIVE and CPU_WR  = '0' and CPU_MEMSEL  = '1'  else
-              TEST_DB when not CPU_ACTIVE and TEST_WR = '0' and TEST_MEMSEL = '1' else
+    -- Muxing between the CPU data bus and testbench data bus based on
+    -- CPU_ACTIVE and if the memory unit is being selected. Set the data bus to
+    -- high impedance if not being used.
+    ROM_DB <= CPU_DB  when     CPU_ACTIVE and CPU_WR  = '0' and CPU_MEMSEL  = MEMSEL_ROM  else
+              TEST_DB when not CPU_ACTIVE and TEST_WR = '0' and TEST_MEMSEL = MEMSEL_ROM else
               (others => 'Z');
 
-    RAM_DB <= CPU_DB  when     CPU_ACTIVE and CPU_WR  = '0' and CPU_MEMSEL  = '0'  else
-              TEST_DB when not CPU_ACTIVE and TEST_WR = '0' and TEST_MEMSEL = '0' else
+    -- Muxing between the CPU data bus and testbench data bus based on
+    -- CPU_ACTIVE and if the memory unit is being selected. Set the data bus to
+    -- high impedance if not being used.
+    RAM_DB <= CPU_DB  when     CPU_ACTIVE and CPU_WR  = '0' and CPU_MEMSEL  = MEMSEL_RAM  else
+              TEST_DB when not CPU_ACTIVE and TEST_WR = '0' and TEST_MEMSEL = MEMSEL_RAM else
               (others => 'Z');
 
-    CPU_DB <= RAM_DB when CPU_MEMSEL = '0' and CPU_RD = '0' else
-              ROM_DB when CPU_MEMSEL = '1' and CPU_RD = '0' else
+    -- Muxing between the RAM and ROM data bus based on the selected memory.
+    -- Set the data bus to high impedance if not being used.
+    CPU_DB <= RAM_DB when CPU_MEMSEL = MEMSEL_RAM and CPU_RD = '0' else
+              ROM_DB when CPU_MEMSEL = MEMSEL_ROM and CPU_RD = '0' else
               (others => 'Z');
 
+    -- Muxing between the RAM and ROM data bus based on the selected memory.
+    -- Set the data bus to high impedance if not being used.
     TEST_DB <= RAM_DB when TEST_MEMSEL = '0' and TEST_RD = '0' else
                ROM_DB when TEST_MEMSEL = '1' and TEST_RD = '0' else
               (others => 'Z');
 
-    ROM_WE0 <= '1' when CPU_ACTIVE else
-               TEST_WE0 when TEST_MEMSEL = '1' else
-               '1';
+    -- Mux the write-enable signals between the CPU and testbench signals based on CPU_ACTIVE
+    -- and if the memory unit is currently selected. Note that we ignore the CPU control
+    -- signals in this case since we don't want ROM to be writeable by the CPU.
+    ROM_WE0 <= '1' when CPU_ACTIVE else TEST_WE0 when TEST_MEMSEL = '1' else '1';
+    ROM_WE1 <= '1' when CPU_ACTIVE else TEST_WE1 when TEST_MEMSEL = '1' else '1';
+    ROM_WE2 <= '1' when CPU_ACTIVE else TEST_WE2 when TEST_MEMSEL = '1' else '1';
+    ROM_WE3 <= '1' when CPU_ACTIVE else TEST_WE3 when TEST_MEMSEL = '1' else '1';
 
-    ROM_WE1 <= '1' when CPU_ACTIVE else
-               TEST_WE1 when TEST_MEMSEL = '1' else
-               '1';
-
-    ROM_WE2 <= '1' when CPU_ACTIVE else
-               TEST_WE2 when TEST_MEMSEL = '1' else
-               '1';
-
-    ROM_WE3 <= '1' when CPU_ACTIVE else
-               TEST_WE3 when TEST_MEMSEL = '1' else
-               '1';
-
-    ROM_RE0 <= CPU_RE0 when CPU_ACTIVE and CPU_MEMSEL = '1' else
+    -- Mux the read-enable signals between the CPU and testbench signals based on CPU_ACTIVE
+    -- and if the memory unit is currently selected
+    ROM_RE0 <= CPU_RE0  when CPU_ACTIVE and CPU_MEMSEL = '1' else
                TEST_RE0 when not CPU_ACTIVE and TEST_MEMSEL = '1' else
                '1';
 
-    ROM_RE1 <= CPU_RE1 when CPU_ACTIVE and CPU_MEMSEL = '1' else
+    ROM_RE1 <= CPU_RE1  when CPU_ACTIVE and CPU_MEMSEL = '1' else
                TEST_RE1 when not CPU_ACTIVE and TEST_MEMSEL = '1' else
                '1';
 
-    ROM_RE2 <= CPU_RE2 when CPU_ACTIVE and CPU_MEMSEL = '1' else
+    ROM_RE2 <= CPU_RE2  when CPU_ACTIVE and CPU_MEMSEL = '1' else
                TEST_RE2 when not CPU_ACTIVE and TEST_MEMSEL = '1' else
                '1';
 
-    ROM_RE3 <= CPU_RE3 when CPU_ACTIVE and CPU_MEMSEL = '1' else
+    ROM_RE3 <= CPU_RE3  when CPU_ACTIVE and CPU_MEMSEL = '1' else
                TEST_RE3 when not CPU_ACTIVE and TEST_MEMSEL = '1' else
                '1';
 
-
+    -- Mux the write-enable signals between the CPU and testbench signals based on CPU_ACTIVE
+    -- and if the memory unit is currently selected
     RAM_WE0 <= CPU_WE0 when CPU_ACTIVE and CPU_MEMSEL = '0' else
                TEST_WE0 when not CPU_ACTIVE and TEST_MEMSEL = '0' else
                '1';
@@ -167,6 +183,8 @@ begin
                TEST_WE3 when not CPU_ACTIVE and TEST_MEMSEL = '0' else
                '1';
 
+    -- Mux the read-enable signals between the CPU and testbench signals based on CPU_ACTIVE
+    -- and if the memory unit is currently selected
     RAM_RE0 <= CPU_RE0 when CPU_ACTIVE and CPU_MEMSEL = '0' else
                TEST_RE0 when not CPU_ACTIVE and TEST_MEMSEL = '0' else
                '1';
@@ -213,6 +231,7 @@ begin
                 to_string(16#3000#) & " to " & to_string(16#3000# + 1024), LogFile);
     LogWithTime("sh2_cpu_tb.vhd: [RAM] Valid Data Memory Range is 0x0000 to 0x40000", LogFile);
 
+    -- Instantiate RAM memory unit
     ram : entity work.MEMORY32x32
     generic map (
         MEMSIZE => 1024,
@@ -245,6 +264,7 @@ begin
                 to_string(16#3000#) & " to " & to_string(16#3000# + 1024), LogFile);
     LogWithTime("sh2_cpu_tb.vhd: [ROM] Valid Program Memory Range is 0x0000 to 0x40000", LogFile);
 
+    -- Instantiate ROM memory unit
     rom : entity work.MEMORY32x32
     generic map (
         MEMSIZE => 1024,
@@ -269,10 +289,15 @@ begin
 
     process
 
-        -- Assumes that address is word-aligned
+        -- Writes a word of data to a given memory address using the testbench
+        -- control signals. Requires that the address is word-aligned.
         procedure WriteWord(address : unsigned; data : std_logic_vector) is
         begin
-            TEST_AB <= std_logic_vector(address);
+            assert address mod 2 = 0
+            report "WriteWord: Cannot write word to unaligned address"
+            severity error;
+
+            TEST_AB <= std_logic_vector(address);   -- Output address to address bus
 
             -- Shift word of data over to correct location
             TEST_DB(15 downto 0)  <= data when address mod 4 = 0 else (others => 'X');
@@ -295,11 +320,14 @@ begin
             wait for 5 ns;  -- wait for signal to propagate
         end procedure;
 
-        -- assumes address is longword-aligned
+        -- Reads a longword of data from a given memory address using the
+        -- testbench control signals. Assumes that the address is
+        -- longword-aligned.
         procedure ReadLongword(address : unsigned ; data : out std_logic_vector) is
         begin
-            TEST_AB <= std_logic_vector(address);
-            TEST_DB <= (others => 'Z');  -- Data bus unused, don't set
+            TEST_AB <= std_logic_vector(address);   -- Output address to address bus
+            TEST_DB <= (others => 'Z');             -- Data bus unused, don't set
+
             -- Read all 4 bytes of longword
             TEST_RE0 <= '0';
             TEST_RE1 <= '0';
@@ -316,38 +344,47 @@ begin
             TEST_RE1 <= '1';
             TEST_RE2 <= '1';
             TEST_RE3 <= '1';
+
             wait for 5 ns;  -- wait for signal to propagate
         end procedure;
 
-        -- Reading in a binary file byte-by-byte
+        -- Reads in a binary file and writes each byte into program memory
+        -- using the testbench control signals. Is used so that we can test
+        -- the SH-2 CPU on real assembled machine code.
         -- Reference: https://stackoverflow.com/a/42581872
         procedure LoadProgram(path : string) is
+            -- Used to read a file byte-by-byte
             type char_file_t is file of character;
             file char_file : char_file_t;
+
+            -- A single character/byte read from a file
             variable char_v : character;
             subtype byte_t is natural range 0 to 255;
             variable byte_v : byte_t;
 
-            variable curr_opcode : std_logic_vector(15 downto 0);
-            variable curr_pc     : unsigned(31 downto 0);
+            variable curr_opcode : std_logic_vector(15 downto 0);   -- the current instruction bits
+            variable curr_pc     : unsigned(31 downto 0);           -- the current program address
         begin
             -- Write to ROM
             CPU_ACTIVE <= false;
             TEST_MEMSEL <= '1';
 
-            curr_pc := to_unsigned(0, 32);
+            curr_pc := to_unsigned(0, 32);  -- the current address in program memory
 
-            -- read file as "characters" to get individual bytes
-            file_open(char_file, path & ".bin");
+            file_open(char_file, path & ".bin"); -- read file as "characters" to get individual bytes
             while not endfile(char_file) loop
-                -- read low byte of instruction
+                -- Read a byte from the file
                 read(char_file, char_v);
                 byte_v := character'pos(char_v);
+
+                -- set low byte of instruction
                 curr_opcode(7 downto 0) := std_logic_vector(to_unsigned(byte_v, 8));
 
-                -- read high byte of instruction
+                -- Read a byte from the file
                 read(char_file, char_v);
                 byte_v := character'pos(char_v);
+
+                -- set high byte of instruction
                 curr_opcode(15 downto 8) := std_logic_vector(to_unsigned(byte_v, 8));
 
                 LogWithTime(
@@ -358,65 +395,83 @@ begin
                 -- Write instruction word into memory
                 WriteWord(curr_pc, curr_opcode);
 
+                -- Increment program address
                 curr_pc := curr_pc + 2;
             end loop;
-            file_close(char_file);
+
+            file_close(char_file);      -- close file
         end procedure;
 
+        -- Dumps the bytes in data memory to a file in a human-readable format
+        -- for debugging. The start position and total length of memory to be
+        -- output are given as arguments.
         procedure DumpMemory(path : string; start : integer; length : integer) is
-            file out_file : text;
-            variable curr_line : line;
-            variable curr_addr   : unsigned(31 downto 0);
-            variable data_out    : std_logic_vector(31 downto 0);
-            variable curr_byte   : std_logic_vector(7 downto 0);
+            file out_file       : text;         -- output file
+            variable curr_line  : line;         -- current line to output
+
+            variable curr_addr  : unsigned(31 downto 0);            -- current address to read
+            variable data_out   : std_logic_vector(31 downto 0);    -- data at current address
+            variable curr_byte  : std_logic_vector(7 downto 0);     -- printing data byte-by-byte
         begin
             -- Access RAM
             CPU_ACTIVE <= false;
             TEST_MEMSEL <= '0';
 
+            -- Write to output file
             file_open(out_file, path & ".dump", write_mode);
 
+            -- File header
             write(curr_line, YELLOW & "Memory dump for " & path & ANSI_RESET);
             writeline(out_file, curr_line);
 
             curr_addr := to_unsigned(start, 32);
             for i in 1 to length loop
-                ReadLongword(curr_addr, data_out);
+                ReadLongword(curr_addr, data_out);              -- read longword from memory
 
-                write(curr_line, to_hstring(curr_addr) & " ");
+                write(curr_line, to_hstring(curr_addr) & " ");  -- display address
 
+                -- Output longword bytes in reverse order to convert from
+                -- big-endian (memory) to little-endian (to be output).
                 for j in 3 downto 0 loop
-                    curr_byte := data_out(7 + 8 * j downto 8 * j);
+                    curr_byte := data_out(7 + 8 * j downto 8 * j);  -- get current byte
 
+                    -- Color unitialized memory grey.
                     if (curr_byte = "XXXXXXXX" or   curr_byte = "UUUUUUUU") then
-                        -- Color unitialized memory grey.
                         write(curr_line, GREY);
                     end if;
 
-                    write(curr_line, to_hstring(curr_byte) & " ");
-                    write(curr_line, ANSI_RESET);
-
+                    write(curr_line, to_hstring(curr_byte) & " ");  -- write byte
+                    write(curr_line, ANSI_RESET);                   -- reset color
                 end loop;
 
-                writeline(out_file, curr_line);
-
-                curr_addr := curr_addr + 4;
+                writeline(out_file, curr_line);         -- output line to file
+                curr_addr := curr_addr + 4;             -- increment data address
             end loop;
         end procedure;
 
+        -- Reads an "expect" file from memory and checks if this file matches with
+        -- the current contents of memory. This is done so that we can test the
+        -- SH-2 CPU for correctness.
+        --
+        -- Note that the expect files contain only lines of the form:
+        --   AAAAAAAA BBBBBBBB ; optional comment
+        -- where AAAAAAAA is a hexadecimal address and BBBBBBBB is 32 bits of data.
+        -- This function checks that the data at every address matches the data
+        -- provided in the expect files.
         procedure CheckOutput(path : string) is
-            file test_file : text;
-            variable row   : line;
+            file test_file : text;  -- test file
+            variable row   : line;  -- current line in test file
 
-            variable address : unsigned(31 downto 0);
-            variable expected_value : std_logic_vector(31 downto 0);
-            variable actual_value : std_logic_vector(31 downto 0);
+            variable address : unsigned(31 downto 0);                   -- memory address to check
+            variable expected_value : std_logic_vector(31 downto 0);    -- expected value given in test file
+            variable actual_value : std_logic_vector(31 downto 0);      -- actual contents of memory
         begin
             -- Access RAM
             CPU_ACTIVE <= false;
             TEST_MEMSEL <= '0';
 
-            file_open(test_file, path & ".expect", read_mode);
+            file_open(test_file, path & ".expect", read_mode);  -- read expect file
+
             while not endfile(test_file) loop
                 -- Read expected address/value pairs from test file
                 readline(test_file, row);
@@ -443,7 +498,8 @@ begin
         end procedure;
 
         -- We define the CPU exit signal to be when it tries to access
-        -- address 0xFFFFFFFC (signed integer representation of -4);
+        -- address 0xFFFFFFFC (signed integer representation of -4) for
+        -- the sake of testing
         impure function CheckDone return boolean is
         begin
             return CPU_AB = X"FFFFFFFC";
