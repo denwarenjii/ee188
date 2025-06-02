@@ -22,6 +22,7 @@
 --     26 May 25  Chris M.          Add internal signal for XTRCT instruction
 --                                  register manipulation. Also added this
 --                                  as possible input to RegDataIn.
+--     01 Jun 25  Zack Huang        Finishing documentation
 ----------------------------------------------------------------------------
 
 
@@ -200,23 +201,27 @@ architecture structural of sh2cpu is
     signal WriteMask   : std_logic_vector(3 downto 0);      -- write enable mask (active low)
     signal MemDataIn   : std_logic_vector(31 downto 0);     -- the data read in from memory
 
-    -- CPU system/control registers
-    signal MemOutSel        : std_logic_vector(2 downto 0);
-    signal Disp             : std_logic_vector(11 downto 0);
-    signal TSel             : std_logic_vector(2 downto 0);
+    -- CPU internal control signals
+    signal MemOutSel        : std_logic_vector(2 downto 0);     -- source for data that should be output to memory
     signal RegDataInSel     : std_logic_vector(3 downto 0);     -- source for register input data
     signal TFlagSel         : std_logic_vector(2 downto 0);     -- source for next value of T flag
-
     signal Immediate        : std_logic_vector(7 downto 0);     -- immediate value from instruction
     signal ImmediateMode    : std_logic;                        -- immediate extension mode (zero or signed)
-    signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
-    signal ALUOpBSel        : std_logic;
+    signal ALUOpBSel        : std_logic;                        -- source for ALU Operand B
+    signal SysRegCtrl       : std_logic_vector(1 downto 0);     -- how to update system registers 
+    signal SysRegSel        : std_logic_vector(2 downto 0);     -- system register select 
+    signal SysRegSrc        : std_logic_vector(1 downto 0);     -- source for data to input into a system register
+    signal TNext            : std_logic;                        -- Next value for T bit
+    signal ExtMode          : std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
+    signal MemAddrSel       : std_logic;                        -- whether to output PMAU or DMAU address
+    signal TCmpSel          : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
+    signal DelayedBranchTaken   : std_logic;                    -- Whether the delayed branch is taken or not.
     
-    signal SR               : std_logic_vector(31 downto 0);  -- Status register.
-    signal VBR              : std_logic_vector(31 downto 0);  -- Vector Base Register.
-    signal MACL             : std_logic_vector(31 downto 0);  -- Multiply and Accumulate Low.
-    signal MACH             : std_logic_vector(31 downto 0);  -- Multiply and Accumulate High.
-
+    -- CPU system/control registers
+    signal SR               : std_logic_vector(31 downto 0);    -- Status register.
+    signal VBR              : std_logic_vector(31 downto 0);    -- Vector Base Register.
+    signal MACL             : std_logic_vector(31 downto 0);    -- Multiply and Accumulate Low.
+    signal MACH             : std_logic_vector(31 downto 0);    -- Multiply and Accumulate High.
 
     -- Aliases for status register bits.
     alias MBit  : std_logic is SR(9);   -- The M and Q bits are used by DIVOU/S and DIV1 instructions.
@@ -228,17 +233,16 @@ architecture structural of sh2cpu is
     alias SBit  : std_logic is SR(1);   -- Used by MAC instructions.
     alias TBit  : std_logic is SR(0);   -- True flag.
 
-    signal SysRegCtrl       : std_logic_vector(1 downto 0);
-    signal SysRegSel        : std_logic_vector(2 downto 0);
-    signal SysRegSrc        : std_logic_vector(1 downto 0);
-
-    signal NextSysReg       : std_logic_vector(31 downto 0);
-
-    signal TNext        : std_logic;    -- Next value for T bit
-
-    signal ExtMode     : std_logic_vector(1 downto 0);      -- mode for extending register value (zero or signed)
-
-    signal ExtendedReg : std_logic_vector(31 downto 0);     -- extended register value (for EXT* instructions)
+    -- Intermediate terms
+    signal ExtendedReg      : std_logic_vector(31 downto 0);    -- extended register value (for EXT* instructions)
+    signal NextSysReg       : std_logic_vector(31 downto 0);    -- data to input into a system register
+    signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
+    signal TCmp             : std_logic;                        -- The value of T generated from a compare
+    signal StrCmp           : std_logic;                        -- used to compare the bytes of RegA and RegB
+    signal SysReg           : std_logic_vector(31 downto 0);    -- Value of selected system/control register
+    signal PCNext           : std_logic_vector(31 downto 0);    -- The current PC incremented by two.
+    signal PrevPCReg        : std_logic_vector(31 downto 0);    -- the prevous value fo PC
+    signal PCUsed           : std_logic_vector(31 downto 0);    -- The PC that will be fetched from program memory.
 
     -- RegA with the upper and lower halves of the low two bytes swapped (for the SWAP.B instruction).
     signal RegASwapB : std_logic_vector(31 downto 0);
@@ -249,34 +253,15 @@ architecture structural of sh2cpu is
     -- The center 32-bits of RegB and RegA (ie, low word of RegB and high word of RegA).
     signal RegB_RegA_Center : std_logic_vector(31 downto 0);
 
-    signal MemAddrSel  : std_logic;
-
-    signal TCmp         : std_logic;
-    signal TCmpSel      : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
-
-    signal StrCmp       : std_logic;    -- used to compare the bytes of RegA and RegB
-
-    -- Value of the current system/control reginster of interest
-    signal SysReg   : std_logic_vector(31 downto 0);
-
-    -- Whether the delayed branch is taken or not.
-    signal DelayedBranchTaken : std_logic;
-
-    -- The current PC incremented by two.
-    signal PCNext : std_logic_vector(31 downto 0);
-
-    signal PrevPCReg : std_logic_vector(31 downto 0);
-
-    -- The PC that will be fetched from program memory.
-    signal PCUsed : std_logic_vector(31 downto 0);
-
 begin
 
+    -- Output read enable signals when clock is low
     RE0 <= ReadMask(0) when (not clock) else '1';
     RE1 <= ReadMask(1) when (not clock) else '1';
     RE2 <= ReadMask(2) when (not clock) else '1';
     RE3 <= ReadMask(3) when (not clock) else '1';
 
+    -- Output write enable signals when clock is low
     WE0 <= WriteMask(0) when (not clock) else '1';
     WE1 <= WriteMask(1) when (not clock) else '1';
     WE2 <= WriteMask(2) when (not clock) else '1';
@@ -285,6 +270,7 @@ begin
     StorePCReg : process(clock)
     begin
         if rising_edge(clock) then
+            -- Store previous PC on rising clock
             PrevPCReg <= PCRegOut;
         end if;
     end process;
@@ -292,19 +278,16 @@ begin
     -- The "next" PC is the current value of the PC register (NOT PCCalcOut) + 2.
     PCNext <= std_logic_vector(unsigned(PrevPCReg) + to_unsigned(2, 32));
 
-    PCUsed <= PCNext when (DelayedBranchTaken = '1') else
-              PCCalcOut;
+    -- Decide which value of PC should be used
+    PCUsed <= PCNext when (DelayedBranchTaken = '1') else PCCalcOut;
 
+    -- Decide which memory address to output
     with MemAddrSel select 
         MemAddress <=  PCUsed           when MemAddrSel_PMAU,
-                       DataAddress     when MemAddrSel_DMAU,
-                       (others => 'Z') when others;
+                       DataAddress      when MemAddrSel_DMAU,
+                       (others => 'Z')  when others;
 
-        -- MemAddress <=  PCOut           when MemAddrSel_PMAU,
-        --                DataAddress     when MemAddrSel_DMAU,
-        --                (others => 'Z') when others;
-
-    AB <= MemAddress;
+    AB <= MemAddress;   -- Output memory address to the address bus
 
     -- What to output to the data bus (to be written to an address).
     with MemOutSel select
@@ -313,14 +296,12 @@ begin
                         SysReg          when MemOut_SysReg,
                         (others => 'Z') when others;
 
+    -- Compute the zero/sign-extended immediate from an instruction
     ImmediateExt(7 downto 0) <= Immediate;
-
     with ImmediateMode select
         ImmediateExt(31 downto 8) <= (others => Immediate(7)) when ImmediateMode_SIGN,
                                      (others => '0')          when ImmediateMode_ZERO,
                                      (others => 'X')          when others;
-                                 
-                                 
 
     -- RegA with the high and low bytes swapped.
     RegASwapB <= RegA(31 downto 16) & RegA(7 downto 0) & RegA(15 downto 8);
@@ -331,6 +312,7 @@ begin
     -- The center 32-bits of RegB and RegA (ie, low word of RegB and high word of RegA).
     RegB_RegA_Center <= RegB(15 downto 0) & RegA(31 downto 16);
     
+    -- the zero/sign-extended version of register B
     with ExtMode select
         ExtendedReg <= SignExtend(LowByte(RegB))  when  Ext_Sign_B_RegA,
                        SignExtend(LowWord(RegB))  when  Ext_Sign_W_RegA,
@@ -338,6 +320,7 @@ begin
                        ZeroExtend(LowWord(RegB))  when  Ext_Zero_W_RegA,
                        (others => 'X') when others;
 
+    -- Choose which system register to select
     with SysRegSel select
         SysReg <= SR      when SysRegSel_SR,
                   GBROut  when SysRegSel_GBR,
@@ -361,7 +344,7 @@ begin
                      MemDataIn                  when  RegDataIn_DB,
 
                      -- Extract the T bit from the status register.
-                     SR and x"00000001"         when  RegDataIn_SR_TBit,
+                     SR and X"00000001"         when  RegDataIn_SR_TBit,
                      PROut                      when  RegDataIn_PR,
                      (others => 'X')            when  others;
 
@@ -397,14 +380,16 @@ begin
     );
 
 
-    -- ALU Input mux
+    -- Always use RegA as Operand A for ALU
     OperandA <= RegA;
 
+    -- Input mux for ALU Operand B
     with ALUOpBSel select
         OperandB <=  RegB            when ALUOpB_RegB,
                      ImmediateExt    when ALUOpB_Imm,
                      (others => 'X') when others;
 
+    -- If two registers share a byte value
     StrCmp <= '1' when (RegA(31 downto 24) = RegB(31 downto 24)) or
                        (RegA(23 downto 16) = RegB(23 downto 16)) or
                        (RegA(15 downto 8)  = RegB(15 downto 8))  or
@@ -422,7 +407,7 @@ begin
                 StrCmp                              when TCMP_STR,  -- 1 if Rn byte matches Rm byte
                 'X' when others;
 
-
+    -- Select what value T should be set to
     with TFlagSel select
         TNext <=  TBit       when TFlagSel_T,           -- retain T flag
                   Cout       when TFlagSel_Carry,       -- Set T flag to ALU carry flag
@@ -433,6 +418,7 @@ begin
                   TCmp       when TFlagSel_CMP,         -- compute T flag based on compare result
                   'X'        when others;
 
+    -- Route ALU control signals
     alu : entity work.sh2alu
     port map (
         -- Inputs:
@@ -452,7 +438,6 @@ begin
         Sign     => Sign
     );
 
-
     -- Use RegA1 (@Rn) if we are writing and RegA2 (@Rm) if we are reading.
     with ReadWrite select
         RegSrc <= RegA2           when Mem_READ,
@@ -468,6 +453,7 @@ begin
                  RegA2            when Mem_WRITE,
                  (others => 'X')  when others;
 
+    -- Route DMAU control signals
     dmau : entity work.sh2dmau
     port map (
         -- Inputs:
@@ -483,7 +469,6 @@ begin
         OffScalarSel => OffScalarSel,
         IncDecSel    => IncDecSel,
         Clk          => clock,
-
         -- Outputs:
         Address    => DataAddress,
         AddrSrcOut => AddrSrcOut,
@@ -492,14 +477,12 @@ begin
 
 
     -- Default PC in is all zeroes.
-
     PCIn <= (others => '0');
-
 
     -- PMAU Register input is always RegB.
     RegIn <= RegB;
 
-
+    -- Route PMAU control signals
     pmau : entity work.sh2pmau
     port map (
         -- Inputs:
@@ -514,12 +497,12 @@ begin
         Clk         => clock,
         Reset       => Reset,
         -- Outputs:
-        -- PCOut       => PCOut,
         PCRegOut    => PCRegOut,
         PCCalcOut   => PCCalcOut,
         PROut       => PROut
     );
 
+    -- Route memory interface control signals
     memory_tx : entity work.MemoryInterfaceTx
     port map (
         -- Inputs:
@@ -535,6 +518,7 @@ begin
         DB => DB
     );
 
+    -- Route memory interface control signals
     memory_rx : entity work.MemoryInterfaceRx
     port map (
         -- Inputs:
@@ -546,6 +530,7 @@ begin
         MemDataIn => MemDataIn
     );
 
+    -- Route control unit control signals
     control_unit : entity work.SH2Control
     port map (
         -- Inputs:
@@ -564,7 +549,6 @@ begin
         MemEnable    => MemEnable,
         ReadWrite    => ReadWrite,
         MemMode      => MemMode,
-        Disp         => Disp,
         MemSel       => MemSel,
         MemOutSel    => MemOutSel,
         MemAddrSel   => MemAddrSel,
@@ -576,7 +560,6 @@ begin
         CinCmd       => CinCmd,
         SCmd         => SCmd,
         ALUCmd       => ALUCmd,
-        TSel         => TSel,
         TCmpSel      => TCmpSel,
 
         -- Register Array control signals:
@@ -615,7 +598,6 @@ begin
 
         -- Branch control signals.
         DelayedBranchTaken => DelayedBranchTaken
-
     );
 
     -- Mux system register input values based on SysRegSrc. Note that individual
@@ -628,20 +610,24 @@ begin
 
                   (others => 'X');
 
-    GBRIn <= NextSysReg;
-    PRIn  <= NextSysReg;
+    GBRIn <= NextSysReg;    -- set GBR to selected sysreg value (when GBRWriteEn active)
+    PRIn  <= NextSysReg;    -- set PR to selected sysreg value (when PRWriteEn active)
 
     register_proc: process(clock, reset)
     begin
         if reset = '0' then
-            SR  <=  (others => '0');
-            VBR <=  (others => '0');
-        elsif rising_edge(clock) then
-            SR(0) <= TNext;
+            -- Reset system registers (async)
+            SR   <=  (others => '0');
+            VBR  <=  (others => '0');
+            MACH <=  (others => '0');
+            MACL <=  (others => '0');
 
-            -- LogWithTime(l, "sh2_cpu.vhd: PC is 0x" & to_hstring(PCOut), LogFile);
+        elsif rising_edge(clock) then
+            SR(0) <= TNext;     -- set new value of T
 
             if SysRegCtrl = SysRegCtrl_LOAD then
+                -- Load new value into a system register
+                -- (note that PR and GBR are handled separately)
                 if SysRegSel = SysRegSel_SR then
                     SR <= NextSysReg;
                 elsif SysRegSel = SysRegSel_VBR then
@@ -652,11 +638,14 @@ begin
                     MACL <= NextSysReg;
                 end if;
             elsif SysRegCtrl = SysRegCtrl_CLEAR then
+                -- Clear a system register value
+                -- (note that PR and GBR are handled separately)
                 if SysRegSel = SysRegSel_SR then
                     SR <= (others => '0');
                 elsif SysRegSel = SysRegSel_VBR then
                     VBR <= (others => '0');
                 elsif (SysRegSel = SysRegSel_MACH) or (SysRegSel = SysRegSel_MACL) then
+                    -- Reset both MACH and MACL for CLRMAC instruction
                     MACH <= (others => '0');
                     MACL <= (others => '0');
                 end if;

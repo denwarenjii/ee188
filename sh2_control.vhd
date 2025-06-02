@@ -348,7 +348,6 @@ entity  SH2Control  is
         MemAddrSel  : out std_logic;
         ReadWrite   : out std_logic;                        -- if should do memory read (0) or write (1)
         MemMode     : out std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
-        Disp        : out std_logic_vector(11 downto 0);    -- memory displacement
         MemSel      : out std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
 
         Immediate   : out std_logic_vector(7 downto 0);     -- 8-bit immediate
@@ -364,8 +363,6 @@ entity  SH2Control  is
         CinCmd      : out std_logic_vector(1 downto 0);     -- carry in operation
         SCmd        : out std_logic_vector(2 downto 0);     -- shift operation
         ALUCmd      : out std_logic_vector(1 downto 0);     -- ALU result select
-
-        TSel        : out std_logic_vector(2 downto 0);     -- if T should be updated to a new value (T/C/V/0/1)
         TCmpSel     : out std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
 
         -- register array control signals
