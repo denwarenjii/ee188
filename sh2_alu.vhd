@@ -13,6 +13,7 @@
 --
 --  Revision History:
 --     26 Apr 25    Zack Huang      copied over from HW 1, prepare for testing
+--     25 May 25    Zack Huang      added barrel shifter (extra credit instructions)
 --
 ------------------------------------------------------------------------------
 
@@ -276,6 +277,7 @@ begin
                          "0000000000000000" & OperandA(31 downto 16)    when BSCmd_R16,
                          (others => 'X') when others;
 
+    -- Mux between the generic ALU and the barrel shifter to get the result
     Result <= BarrelShifter when ALUCmd = ALUCmd_BSHIFT else ALUResult;
 
 end architecture structural;

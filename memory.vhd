@@ -147,10 +147,6 @@ begin
             else
                 Curr_RAM <= (others => (others => 'X'));
                 RamAddr <= -1;
-                -- outside of any allowable address range - generate an error
-                -- assert (false)
-                --     report  "Attempt to write to a non-existant address"
-                --     severity  ERROR;
             end if;
         end if;
     end process;
