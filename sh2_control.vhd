@@ -262,8 +262,9 @@ package SH2ControlConstants is
     constant SysRegCtrl_LOAD    : std_logic_vector(1 downto 0) := "01";     -- load system register with new value
     constant SysRegCtrl_CLEAR   : std_logic_vector(1 downto 0) := "10";     -- clear system register
 
-    constant SysRegSrc_RegB     : std_logic := '0';     -- load system register from register bus B
-    constant SysRegSrc_DB       : std_logic := '1';     -- load system register from data bus
+    constant SysRegSrc_RegB     : std_logic_vector(1 downto 0) := "00";     -- load system register from register bus B
+    constant SysRegSrc_DB       : std_logic_vector(1 downto 0) := "01";     -- load system register from data bus
+    constant SysRegSrc_PC       : std_logic_vector(1 downto 0) := "10";     -- load system register from PC
 
     -- BIT DECODED - DO NOT CHANGE
     constant SysRegSel_System   : std_logic_vector(2 downto 0) := "0--";
@@ -371,7 +372,7 @@ entity  SH2Control  is
         -- System control signals
         SysRegCtrl      : out std_logic_vector(1 downto 0);
         SysRegSel       : out std_logic_vector(2 downto 0);
-        SysRegSrc       : out std_logic;
+        SysRegSrc       : out std_logic_vector(1 downto 0);
 
         -- Branch control signals:
         DelayedBranchTaken : out std_logic  -- Whether the delayed branch is taken or not.

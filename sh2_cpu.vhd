@@ -233,7 +233,7 @@ architecture structural of sh2cpu is
 
     signal SysRegCtrl       : std_logic_vector(1 downto 0);
     signal SysRegSel        : std_logic_vector(2 downto 0);
-    signal SysRegSrc        : std_logic;
+    signal SysRegSrc        : std_logic_vector(1 downto 0);
 
     signal NextSysReg       : std_logic_vector(31 downto 0);
 
@@ -623,8 +623,9 @@ begin
 
     -- Mux system register input values based on SysRegSrc. Note that individual
     -- write-enables (like GBRWriteEn and PRWriteEn) must be enabled seperately.
-    NextSysReg <= RegB      when SysRegSrc = SysRegSrc_RegB else
-                  MemDataIn when SysRegSrc = SysRegSrc_DB else
+    NextSysReg <= RegB      when SysRegSrc = SysRegSrc_RegB  else
+                  MemDataIn when SysRegSrc = SysRegSrc_DB    else
+                  PCRegOut  when SysRegSrc = SysRegSrc_PC    else
                   (others => 'X');
 
     GBRIn <= NextSysReg;
