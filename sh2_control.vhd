@@ -655,8 +655,13 @@ begin
             FCmd      <= FCmd_B;
 
             -- Bit-decode carry in value
-            CinCmd <= CinCmd_CIN when IR(1 downto 0) = "10" else    -- ADDC
-                      CinCmd_ZERO;                                  -- ADD, ADDV
+
+
+            if (IR(1 downto 0) = "10") then
+                CinCmd <= CinCmd_CIN; -- ADDC
+            else
+                CinCmd <= CinCmd_ZERO; -- ADD, ADDV
+            end if;
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
@@ -682,8 +687,12 @@ begin
             FCmd      <= FCmd_BNOT;
 
             -- Bit-decode carry in value
-            CinCmd <= CinCmd_CINBAR when IR(1 downto 0) = "10" else     -- SUBC
-                      CinCmd_ONE;                                       -- SUB, SUBV
+
+            if (IR (1 downto 0) = "10") then
+                CinCmd <= CinCmd_CINBAR; -- SUBC
+            else
+                CinCmd <= CinCmd_ONE; -- SUB, SUBV
+            end if;
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
@@ -722,8 +731,12 @@ begin
             Instruction_RegEnableIn <= '1';
 
             -- Bit-decoding T flag select
-            Instruction_TFlagSel <= TFlagSel_Carry when IR(0) = '0' else    -- NEGC
-                                    TFlagSel_T;                             -- NEG
+
+            if (IR(0) = '0') then
+                Instruction_TFlagSel <= TFlagSel_Carry; -- NEGC
+            else
+                Instruction_TFlagSel <= TFlagSel_T; -- NEG
+            end if; 
 
             -- ALU signals for negation
             ALUOpBSel <= ALUOpB_RegB;
@@ -731,8 +744,11 @@ begin
             FCmd      <= FCmd_BNOT;
 
             -- Bit-decode carry in value
-            CinCmd <= CinCmd_CINBAR when IR(0) = '0' else   -- NEGC
-                      CinCmd_ONE;                           -- NEG
+            if (IR(0) = '0') then
+                CinCmd <= CinCmd_CINBAR; -- NEGC
+            else
+                CinCmd <= CinCmd_ONE; -- NEG
+            end if;
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
@@ -780,17 +796,24 @@ begin
             Instruction_RegEnableIn <= IR(1) or IR(0);   -- exclude TST
 
             -- Enable TFlagSel for TST
-            Instruction_TFlagSel <= TFlagSel_Zero when IR(1 downto 0) = "00"    -- TST
-                                    else TFlagSel_T;                            -- AND, OR, XOR
+            if (IR(1 downto 0) = "00") then
+                Instruction_TFlagSel <= TFlagSel_Zero; -- TST
+            else
+                Instruction_TFlagSel <= TFlagSel_T; -- AND, OR, XOR 
+            end if;
 
             -- ALU signals for logic instructions using the FBlock
             ALUOpBSel <= ALUOpB_RegB;
             LoadA     <= '1';
 
             -- Bit-decode f-block operation
-            FCmd <= FCmd_AND when IR(1) = '0'           else    -- AND, TST
-                    FCmd_XOR when IR(1 downto 0) = "10" else    -- XOR
-                    FCmd_OR;                                    -- OR
+            if (IR(1) = '0') then
+                FCmd <= FCmd_AND; -- AND, TST
+            elsif (IR(1 downto 0) = "10") then
+                FCmd <= FCmd_XOR; -- XOR
+            else
+                FCmd <= FCmd_XOR; -- OR
+            end if;
 
             CinCmd <= CinCmd_ZERO;
             SCmd   <= "XXX";
@@ -809,17 +832,25 @@ begin
             ImmediateMode        <= ImmediateMode_ZERO;
 
             -- Enable TFlagSel for TST
-            Instruction_TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00"    -- TST
-                                    else TFlagSel_T;                            -- AND, OR, XOR
+            if (IR(9 downto 0) = "00") then
+                Instruction_TFlagSel <= TFlagSel_Zero; -- TST
+            else
+                Instruction_TFlagSel <= TFlagSel_T; -- AND, OR, XOR
+            end if;
 
             -- ALU signals for logic instructions using the FBlock
             ALUOpBSel <= ALUOpB_Imm;
             LoadA     <= '1';
 
+
             -- Bit-decode f-block operation
-            FCmd <= FCmd_AND when IR(9) = '0' else              -- AND, TST
-                    FCmd_XOR when IR(9 downto 8) = "10" else    -- XOR
-                    FCmd_OR;                                    -- OR
+            if (IR(9) = '0') then
+                FCmd <= FCmd_AND; -- AND, TST
+            elsif (IR(9 downto 8) = "10") then
+                FCmd <= FCmd_XOR; -- XOR
+            else
+                FCmd <= FCmd_OR; -- OR
+            end if;
 
             CinCmd <= CinCmd_ZERO;
             SCmd   <= "XXX";
@@ -938,8 +969,11 @@ begin
             FCmd      <= "XXXX";
 
             -- Bit-decode carry command
-            CinCmd    <= CinCmd_CIN when (IR(5) and IR(2)) = '1' else   -- ROTCL, ROTCR
-                         CinCmd_ZERO;                                   -- all others   
+            if ((IR(5) and IR(2)) = '1') then
+                CinCmd  <= CinCmd_CIN; -- ROTCL, ROTCR
+            else
+                CinCmd  <= CinCmd_ZERO; -- all others   
+            end if;
 
             SCmd   <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
@@ -1170,8 +1204,11 @@ begin
           Instruction_MemEnable   <= '1';
           Instruction_ReadWrite   <= ReadWrite_WRITE;
 
-          Instruction_WordMode    <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
-                                     WordMode;
+          if (IR(8) = '0') then
+              Instruction_WordMode <= ByteMode; -- bit-decode byte/word mode
+          else
+              Instruction_WordMode <= WordMode; -- all others.
+          end if;
           
           -- Output RegB (R0) to memory data bus
           MemOutSel <= MemOut_RegB;
@@ -1186,8 +1223,14 @@ begin
           -- DMAU signals for Indirect register addressing with displacement
           BaseSel       <=  BaseSel_REG;
           IndexSel      <=  IndexSel_OFF4;
-          OffScalarSel  <=  OffScalarSel_ONE when IR(8) = '0' else      -- bit-decode byte/word
-                            OffScalarSel_TWO;
+
+          -- bit-decode byte/word
+          if (IR(8) = '0') then
+              OffScalarSel  <=  OffScalarSel_ONE;
+          else
+              OffScalarSel <=  OffScalarSel_TWO;
+          end if;
+
           IncDecSel     <=  IncDecSel_NONE;
           DMAUOff4      <=  nd4_format_d;
 
@@ -1241,15 +1284,28 @@ begin
 
             Instruction_MemEnable  <=  '1';            -- Instr uses memory.
             Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
-            Instruction_WordMode   <=  ByteMode when IR(8) = '0' else       -- bit-decode word mode
-                                       WordMode;
+
+            -- Bit-decode word mode
+            if (IR(8) = '0') then
+                Instruction_WordMode <= ByteMode;
+            else
+                Instruction_WordMode <= WordMode;
+            end if;
+
+
             Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
             -- DMAU signals for Indirect register addressing with displacement (byte mode)
             BaseSel      <= BaseSel_REG;
             IndexSel     <= IndexSel_OFF4;
-            OffScalarSel <= OffScalarSel_ONE when IR(8) = '0' else          -- bit-decode offset scale
-                            OffScalarSel_TWO;
+
+            -- bit-decode offset scale
+            if (IR(8) = '0') then
+                OffScalarSel <= OffScalarSel_ONE;
+            else
+                OffScalarSel <= OffScalarSel_TWO;
+            end if;
+
             IncDecSel    <= IncDecSel_NONE;
             DMAUOff4     <= md_format_d;
 
@@ -1452,8 +1508,11 @@ begin
             RegInSel     <= slv_to_uint(nm_format_n);
 
             -- Bit decode if whether byte or word mode
-            RegDataInSel <= RegDataIn_RegA_SWAP_B when IR(0) = '0' else
-                            RegDataIn_RegA_SWAP_W;
+            if (IR(0) = '0') then
+                RegDataInSel <= RegDataIn_RegA_SWAP_B;
+            else
+                RegDataInSel <= RegDataIn_RegA_SWAP_W;
+            end if;
 
             Instruction_RegEnableIn <= '1';
 

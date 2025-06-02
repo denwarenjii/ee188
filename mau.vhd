@@ -35,7 +35,7 @@ use ieee.std_logic_1164.all;
 package array_type_pkg is
 
 --  a 2D array of std_logic (VHDL-2008)
-   type  std_logic_array  is  array (natural range<>) of std_logic_vector;
+   type  std_logic_array  is  array (natural range<>) of std_logic_vector(31 downto 0);
 
 
 end package;
@@ -144,20 +144,20 @@ entity  MemUnit  is
     generic (
         srcCnt       : integer;
         offsetCnt    : integer;
-        maxIncDecBit : integer := 0; -- default is only inc/dec bit 0
-        wordsize     : integer := 16 -- default address width is 16 bits
+        maxIncDecBit : integer := 0 -- default is only inc/dec bit 0
+        -- wordsize     : integer := 16 -- default address width is 16 bits
     );
 
     port(
-        AddrSrc    : in      std_logic_array(srccnt - 1 downto 0)(wordsize - 1 downto 0);
+        AddrSrc    : in      std_logic_array(srccnt - 1 downto 0);
         SrcSel     : in      integer  range srccnt - 1 downto 0;
-        AddrOff    : in      std_logic_array(offsetcnt - 1 downto 0)(wordsize - 1 downto 0);
+        AddrOff    : in      std_logic_array(offsetcnt - 1 downto 0);
         OffsetSel  : in      integer  range offsetcnt - 1 downto 0;
         IncDecSel  : in      std_logic;
         IncDecBit  : in      integer  range maxIncDecBit downto 0;
         PrePostSel : in      std_logic;
-        Address    : out     std_logic_vector(wordsize - 1 downto 0);
-        AddrSrcOut : buffer  std_logic_vector(wordsize - 1 downto 0)
+        Address    : out     std_logic_vector(31 downto 0);
+        AddrSrcOut : buffer  std_logic_vector(31 downto 0)
     );
 
 end  MemUnit;
@@ -177,24 +177,24 @@ architecture  dataflow  of  MemUnit  is
 
     -- intermediate carry results
     --   for adder
-    signal  acarry : std_logic_vector(wordsize downto 0);
+    signal  acarry : std_logic_vector(32 downto 0);
     --   for incrementer/decrementer
-    signal  idcarry : std_logic_vector(wordsize downto 0);
+    signal  idcarry : std_logic_vector(31 downto 0);
 
     -- source address, depends on whether doing pre- or post- inc/dec
-    signal  SrcAddr : std_logic_vector(wordsize - 1 downto 0);
+    signal  SrcAddr : std_logic_vector(31 downto 0);
 
     -- input to incrementer/decrementer adder, depends on whether doing an
     --    increment or decrement and which bit it is being applied to
-    signal  IncDecIn : std_logic_vector(wordsize - 1 downto 0);
+    signal  IncDecIn : std_logic_vector(31 downto 0);
 
     -- incremented/decremented source address
-    signal  OutSrcAddr : std_logic_vector(wordsize - 1 downto 0);
+    signal  OutSrcAddr : std_logic_vector(31 downto 0);
 
 
-    signal SrcSelMux : std_logic_vector(wordsize - 1 downto 0);
+    signal SrcSelMux : std_logic_vector(31 downto 0);
 
-    signal AddrOffMux : std_logic_vector(wordsize - 1 downto 0);
+    signal AddrOffMux : std_logic_vector(31 downto 0);
 
 begin
 

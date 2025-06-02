@@ -103,10 +103,36 @@ begin
                 case MemMode is
                     when ByteMode =>
                         -- Enable only the specific byte being read
-                        RE(0) <= '0' when address mod 4 = 0 else '1';
-                        RE(1) <= '0' when address mod 4 = 1 else '1';
-                        RE(2) <= '0' when address mod 4 = 2 else '1';
-                        RE(3) <= '0' when address mod 4 = 3 else '1';
+
+                        if (address mod 4 = 0) then
+                            RE(0) <= '0';
+                        else
+                            RE(0) <= '1';
+                        end if;
+
+                        if (address mod 4 = 1) then
+                            RE(1) <= '0';
+                        else
+                            RE(1) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            RE(2) <= '0';
+                        else
+                            RE(2) <= '1';
+                        end if;
+
+                        if (address mod 4 = 3) then
+                            RE(3) <= '0';
+                        else
+                            RE(3) <= '1';
+                        end if;
+
+
+                        -- RE(0) <= '0' when address mod 4 = 0 else '1';
+                        -- RE(1) <= '0' when address mod 4 = 1 else '1';
+                        -- RE(2) <= '0' when address mod 4 = 2 else '1';
+                        -- RE(3) <= '0' when address mod 4 = 3 else '1';
 
                         LogWithTime(l, "memory_interface.vhd: Reading byte at address 0x" & to_hstring(address), LogFile);
 
@@ -116,10 +142,35 @@ begin
                         severity error;
 
                         -- Enable only the specific pair of bytes being read (address must be word-aligned)
-                        RE(0) <= '0' when address mod 4 = 0 else '1';
-                        RE(1) <= '0' when address mod 4 = 0 else '1';
-                        RE(2) <= '0' when address mod 4 = 2 else '1';
-                        RE(3) <= '0' when address mod 4 = 2 else '1';
+
+                        if (address mod 4 = 0) then
+                            RE(0) <= '0';
+                        else
+                            RE(0) <= '1';
+                        end if;
+
+                        if (address mod 4 = 0) then
+                            RE(1) <= '0';
+                        else
+                            RE(1) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            RE(2) <= '0';
+                        else
+                            RE(2) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            RE(3) <= '0';
+                        else
+                            RE(3) <= '1';
+                        end if;
+
+                        -- RE(0) <= '0' when address mod 4 = 0 else '1';
+                        -- RE(1) <= '0' when address mod 4 = 0 else '1';
+                        -- RE(2) <= '0' when address mod 4 = 2 else '1';
+                        -- RE(3) <= '0' when address mod 4 = 2 else '1';
 
                         LogWithTime(l, "memory_interface.vhd: Reading word at address 0x" & to_hstring(address), LogFile);
 
@@ -150,11 +201,36 @@ begin
                 -- Enable specific bytes based on memory mode
                 case MemMode is
                     when ByteMode =>
+
+                        if (address mod 4 = 0) then
+                            WE(0) <= '0';
+                        else
+                            WE(0) <= '1';
+                        end if;
+
+                        if (address mod 4 = 1) then
+                            WE(1) <= '0';
+                        else
+                            WE(1) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            WE(2) <= '0';
+                        else
+                            WE(2) <= '1';
+                        end if;
+
+                        if (address mod 4 = 3) then
+                            WE(3) <= '0';
+                        else
+                            WE(3) <= '1';
+                        end if;
+                        
                         -- Enable only the specific byte being written
-                        WE(0) <= '0' when address mod 4 = 0 else '1';
-                        WE(1) <= '0' when address mod 4 = 1 else '1';
-                        WE(2) <= '0' when address mod 4 = 2 else '1';
-                        WE(3) <= '0' when address mod 4 = 3 else '1';
+                        -- WE(0) <= '0' when address mod 4 = 0 else '1';
+                        -- WE(1) <= '0' when address mod 4 = 1 else '1';
+                        -- WE(2) <= '0' when address mod 4 = 2 else '1';
+                        -- WE(3) <= '0' when address mod 4 = 3 else '1';
 
                         -- Set the correct data bus byte to the byte being written
                         if address mod 4 = 0 then 
@@ -176,10 +252,35 @@ begin
                         severity error;
 
                         -- Enable only the specific pair of bytes being read (address must be word-aligned)
-                        WE(0) <= '0' when address mod 4 = 0 else '1';
-                        WE(1) <= '0' when address mod 4 = 0 else '1';
-                        WE(2) <= '0' when address mod 4 = 2 else '1';
-                        WE(3) <= '0' when address mod 4 = 2 else '1';
+                        if (address mod 4 = 0) then
+                            WE(0) <= '0';
+                        else
+                            WE(0) <= '1';
+                        end if;
+
+                        if (address mod 4 = 0) then
+                            WE(1) <= '0';
+                        else
+                            WE(1) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            WE(2) <= '0';
+                        else
+                            WE(2) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            WE(3) <= '0';
+                        else
+                            WE(3) <= '1';
+                        end if;
+
+
+                        -- WE(0) <= '0' when address mod 4 = 0 else '1';
+                        -- WE(1) <= '0' when address mod 4 = 0 else '1';
+                        -- WE(2) <= '0' when address mod 4 = 2 else '1';
+                        -- WE(3) <= '0' when address mod 4 = 2 else '1';
 
                         if address mod 4 = 0 then
                             -- Convert input data from little-endian to big-endian by reversing the bytes,
