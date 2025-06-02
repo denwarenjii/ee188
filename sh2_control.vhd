@@ -49,7 +49,10 @@ package SH2InstructionEncodings is
 
   subtype Instruction is std_logic_vector(15 downto 0);
 
-  -- Data Transfer Instruction:
+
+  -- Instruction encodings.
+
+  -- Data Transfer Instructions:
   constant  MOV_IMM_RN            :  Instruction := "1110------------";  -- MOV #imm, Rn
 
   constant  MOV_AT_DISP_PC_RN     :  Instruction := "1-01------------";  -- MOV.X @(disp, PC), Rn (for bit decoding.)
@@ -215,33 +218,50 @@ use ieee.numeric_std.all;
 package SH2ControlConstants is
 
     -- Internal control signals for controlling muxes within the CPU
-    constant RegDataIn_ALUResult        : std_logic_vector(3 downto 0) := "0000";
-    constant RegDataIn_Immediate        : std_logic_vector(3 downto 0) := "0001";
-    constant RegDataIn_RegA             : std_logic_vector(3 downto 0) := "0010";
-    constant RegDataIn_RegB             : std_logic_vector(3 downto 0) := "0011";
-    constant RegDataIn_SysReg           : std_logic_vector(3 downto 0) := "0100";
-    constant RegDataIn_RegA_SWAP_B      : std_logic_vector(3 downto 0) := "0111";
-    constant RegDataIn_RegA_SWAP_W      : std_logic_vector(3 downto 0) := "1000";
-    constant RegDataIn_REGB_REGA_CENTER : std_logic_vector(3 downto 0) := "1001";
-    constant RegDataIn_SR_TBit          : std_logic_vector(3 downto 0) := "1010"; -- TODO: rename this.
-    constant RegDataIn_PR               : std_logic_vector(3 downto 0) := "1011";
-    constant RegDataIn_DB               : std_logic_vector(3 downto 0) := "1100";
-    constant RegDataIn_Ext              : std_logic_vector(3 downto 0) := "1101";
 
-    constant Ext_Sign_B_RegA : std_logic_vector(1 downto 0) := "10"; -- BIT DECODED - DO NOT CHANGE
-    constant Ext_Sign_W_RegA : std_logic_vector(1 downto 0) := "11"; -- BIT DECODED - DO NOT CHANGE
-    constant Ext_Zero_B_RegA : std_logic_vector(1 downto 0) := "00"; -- BIT DECODED - DO NOT CHANGE
-    constant Ext_Zero_W_RegA : std_logic_vector(1 downto 0) := "01"; -- BIT DECODED - DO NOT CHANGE
+    -- Constants for RegDataInSel in sh2_cpu architecture. Used to determine what to input to the
+    -- register array's RegDataIn.
+    --
+    constant RegDataIn_ALUResult        : std_logic_vector(3 downto 0) := "0000"; -- ALU result
+    constant RegDataIn_Immediate        : std_logic_vector(3 downto 0) := "0001"; -- Sign-extended 8-bit immediate
+    constant RegDataIn_RegA             : std_logic_vector(3 downto 0) := "0010"; -- RegA output
+    constant RegDataIn_RegB             : std_logic_vector(3 downto 0) := "0011"; -- RegB output
+    constant RegDataIn_SysReg           : std_logic_vector(3 downto 0) := "0100"; -- System register
+    constant RegDataIn_RegA_SWAP_B      : std_logic_vector(3 downto 0) := "0111"; -- RegA output with low two bytes swapped
+    constant RegDataIn_RegA_SWAP_W      : std_logic_vector(3 downto 0) := "1000"; -- RegA output with low/high words swapped
+    constant RegDataIn_REGB_REGA_CENTER : std_logic_vector(3 downto 0) := "1001"; -- Low word of RegB and high word of RegA
+    constant RegDataIn_SR_TBit          : std_logic_vector(3 downto 0) := "1010"; -- T-bit (in the LSB)
+    constant RegDataIn_PR               : std_logic_vector(3 downto 0) := "1011"; -- Procedure Register (PR)
+    constant RegDataIn_DB               : std_logic_vector(3 downto 0) := "1100"; -- Data Bus (DB) value
+    constant RegDataIn_Ext              : std_logic_vector(3 downto 0) := "1101"; -- Sign/zero extended register values.
 
+    -- Constants for ExtMode in sh2_cpu architecture. Used to determine how RegB will be extended
+    -- to a long-word.
+    --
+    -- WARNING: Changing these will break bit decoding of instructions.
+    --
+    constant Ext_Sign_B_RegA : std_logic_vector(1 downto 0) := "10";  -- Sign extend low byte of Reg A
+    constant Ext_Sign_W_RegA : std_logic_vector(1 downto 0) := "11";  -- Sign extend low word of Reg A
+    constant Ext_Zero_B_RegA : std_logic_vector(1 downto 0) := "00";  -- Zero extend low byte of Reg A
+    constant Ext_Zero_W_RegA : std_logic_vector(1 downto 0) := "01";  -- Zero extend low word of Reg A
+
+
+    -- Constants for ReadWrite used in memory_tx architecture. Determines whether to read or
+    -- write to memory.
+    --
     constant ReadWrite_READ     : std_logic := '0';
     constant ReadWrite_WRITE    : std_logic := '1';
 
-    constant MemOut_RegA    : std_logic_vector(2 downto 0) := "000";
-    constant MemOut_RegB    : std_logic_vector(2 downto 0) := "001";
-    constant MemOut_SysReg  : std_logic_vector(2 downto 0) := "010";
+    -- Constants for selecting what to output to MemDataOut in memory_tx entity in the sh2_cpu 
+    -- entity.
+    --
+    constant MemOut_RegA    : std_logic_vector(2 downto 0) := "000"; -- Output RegA to data bus
+    constant MemOut_RegB    : std_logic_vector(2 downto 0) := "001"; -- Output RegB to data bus
+    constant MemOut_SysReg  : std_logic_vector(2 downto 0) := "010"; -- Output a system register to data bus
 
-    constant ALUOpB_RegB    : std_logic := '0';
-    constant ALUOpB_Imm     : std_logic := '1';
+    
+    constant ALUOpB_RegB    : std_logic := '0'; -- Use RegB as B input to ALU. 
+    constant ALUOpB_Imm     : std_logic := '1'; -- Use immediate as B input to ALU
 
     constant TFlagSel_T         : std_logic_vector(2 downto 0) := "000";    -- Have T retain its value
     constant TFlagSel_Zero      : std_logic_vector(2 downto 0) := "001";    -- Set T to the ALU zero flag
@@ -252,8 +272,10 @@ package SH2ControlConstants is
     constant TFlagSel_CMP       : std_logic_vector(2 downto 0) := "110";    -- set T to a value computed from
                                                                             -- the ALU flags
 
-    -- BIT DECODED - DO NOT CHANGE
-    constant TCMP_EQ            : std_logic_vector(2 downto 0) := "000";
+    -- WARNING: Changing these will break bit decoding of instuctions.
+
+    -- How to calculate the T-bit in the 
+    constant TCMP_EQ            : std_logic_vector(2 downto 0) := "000"; -- 
     constant TCMP_HS            : std_logic_vector(2 downto 0) := "010";
     constant TCMP_GE            : std_logic_vector(2 downto 0) := "011";
     constant TCMP_HI            : std_logic_vector(2 downto 0) := "110";
@@ -274,7 +296,7 @@ package SH2ControlConstants is
     constant SysRegSrc_DB       : std_logic_vector(1 downto 0) := "01";     -- load system register from data bus
     constant SysRegSrc_PC       : std_logic_vector(1 downto 0) := "10";     -- load system register from PC
 
-    -- BIT DECODED - DO NOT CHANGE
+    -- WARNING: Changing these will break bit decoding of instuctions.
     constant SysRegSel_System   : std_logic_vector(2 downto 0) := "0--";
     constant SysRegSel_SR       : std_logic_vector(2 downto 0) := "000";
     constant SysRegSel_GBR      : std_logic_vector(2 downto 0) := "001";
@@ -580,11 +602,11 @@ begin
         Instruction_ReadWrite  <= 'X';
         Instruction_WordMode   <= "XX";
         MemOutSel              <= "XXX";
-        Instruction_MemSel     <= MemSel_RAM;       -- access data memory by default
-        Instruction_MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default
+        Instruction_MemSel     <= MemSel_RAM;       -- access data memory by default. TODO: change name
+        Instruction_MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default. TODO: change name
 
         -- Register enables
-        Instruction_RegEnableIn    <= '0';             -- Disable register write
+        Instruction_RegEnableIn <= '0';             -- Disable register write
         Instruction_RegAxStore  <= '0';             -- Disable writing to address register.
         Instruction_TFlagSel    <= TFlagSel_T;      -- Keep T flag the same
         Instruction_GBRWriteEn  <= '0';             -- Don't write to GBR.
