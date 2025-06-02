@@ -90,16 +90,16 @@ begin
     output_proc: process(MemEnable, ReadWrite, MemMode, Address, MemDataOut, clock)
       variable l : line;
 
-      pure function is_x(vec : std_logic_vector) return boolean is
-      begin
-          for i in vec'range loop
-              if vec(i) = 'X' or vec(i) = 'U' or vec(i) = 'W' or 
-              vec(i) = 'Z' or vec(i) = '-' then
-                  return true;
-              end if;
-          end loop;
-          return false;
-      end function;
+      -- pure function is_x(vec : std_logic_vector) return boolean is
+      -- begin
+      --     for i in vec'range loop
+      --         if vec(i) = 'X' or vec(i) = 'U' or vec(i) = 'W' or 
+      --         vec(i) = 'Z' or vec(i) = '-' then
+      --             return true;
+      --         end if;
+      --     end loop;
+      --     return false;
+      -- end function;
 
   begin
         -- When clock goes low, if this interface is enabled and should perform

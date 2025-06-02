@@ -371,7 +371,6 @@ entity  SH2Control  is
         RegInSel    : out integer  range 15 downto 0;       -- which register to write data to
         RegASel     : out integer  range 15 downto 0;       -- which register to read to bus A
         RegBSel     : out integer  range 15 downto 0;       -- which register to read to bus B
-        RegAxIn     : out std_logic_vector(31 downto 0);    -- data to write to an address register
         RegAxInSel  : out integer  range 15 downto 0;       -- which address register to write to
         RegAxStore  : out std_logic;                        -- if data should be written to the address register
         RegA1Sel    : out integer  range 15 downto 0;       -- which register to read to address bus 1
@@ -391,7 +390,6 @@ entity  SH2Control  is
         PRWriteEn       : out std_logic;                      -- Enable writing to PR.
         PMAUOff8        : out std_logic_vector(7 downto 0);   -- 8-bit offset for relative addressing.
         PMAUOff12       : out std_logic_vector(11 downto 0);  -- 12-bit offset for relative addressing.
-        PCIn            : out std_logic_vector(31 downto 0);  -- PC input for parallel loading.
         PCWriteCtrl     : out std_logic_vector(1 downto 0);   -- What to write to the PC register inside
                                                               -- the PMAU. Can either hold current value,
                                                               -- write PCIn, or write calculated PC. 

@@ -109,7 +109,7 @@ begin
         RegA1 => RegA1,
         RegA2 => RegA2,
         -- unused
-        RegDIn => (others => '0'),
+        RegDIn => X"0000000000000000",
         RegDInSel => 0,
         RegDStore => '0',
         RegDSel => 0

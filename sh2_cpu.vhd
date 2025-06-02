@@ -568,7 +568,7 @@ begin
         RegInSel        => RegInSel,
         RegASel         => RegASel,
         RegBSel         => RegBSel,
-        RegAxIn         => RegAxIn,
+        -- RegAxIn         => RegAxIn,
         RegAxInSel      => RegAxInSel,
         RegAxStore      => RegAxStore,
         RegA1Sel        => RegA1Sel,
@@ -587,7 +587,6 @@ begin
         PCAddrMode   => PCAddrMode,
         PRWriteEn    => PRWriteEn,
         PCWriteCtrl  => PCWriteCtrl,
-        PCIn         => PCIn,
         PMAUOff8     => PMAUOff8,
         PMAUOff12    => PMAUOff12,
 
