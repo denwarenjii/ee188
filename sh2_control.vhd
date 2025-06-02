@@ -24,7 +24,7 @@
 -- TODO:                                                                                           -
 --  - Remove redundant assignment of default signals.                                              -
 --  - Better names for:                                                                            -
---      Instruction_EnableIn, EnableIn                                                             -
+--      Instruction_RegEnableIn, RegEnableIn                                                       -
 --                                                                                                 -
 --  - Generate DMAU signals with vectors.                                                          -
 --  - Document register output conventions.                                                        -
@@ -345,7 +345,7 @@ entity  SH2Control  is
 
         -- register array control signals
         RegDataInSel: out std_logic_vector(3 downto 0);     -- source for register input data
-        EnableIn    : out std_logic;                        -- if data should be written to an input register
+        RegEnableIn : out std_logic;                        -- if data should be written to an input register
         RegInSel    : out integer  range 15 downto 0;       -- which register to write data to
         RegASel     : out integer  range 15 downto 0;       -- which register to read to bus A
         RegBSel     : out integer  range 15 downto 0;       -- which register to read to bus B
@@ -475,7 +475,7 @@ architecture dataflow of sh2control is
 
   -- Register write enable for the current instruction. Output to RegisterArray 
   -- during the execute state so that it is high when the rising clock of the writeback state occurs.
-  signal Instruction_EnableIn  : std_logic;   
+  signal Instruction_RegEnableIn  : std_logic;   
 
   -- Address register write enable for the current instruction. Output to RegisterArray 
   -- during the execute state so that it is high when the rising clock of the writeback state occurs.
@@ -552,7 +552,7 @@ begin
                       '0'                    when others;       -- don't change GBR
 
     -- Only modify registers after execute clock
-    EnableIn <= Instruction_EnableIn when state = execute else '0';
+    RegEnableIn <= Instruction_RegEnableIn when state = execute else '0';
 
     -- Only modify address registers after execute clock
     RegAxStore <= Instruction_RegAxStore when state = execute else '0';
@@ -584,7 +584,7 @@ begin
         Instruction_MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default
 
         -- Register enables
-        Instruction_EnableIn    <= '0';             -- Disable register write
+        Instruction_RegEnableIn    <= '0';             -- Disable register write
         Instruction_RegAxStore  <= '0';             -- Disable writing to address register.
         Instruction_TFlagSel    <= TFlagSel_T;      -- Keep T flag the same
         Instruction_GBRWriteEn  <= '0';             -- Don't write to GBR.
@@ -621,7 +621,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
             Instruction_TFlagSel <= '0' & IR(1 downto 0);
@@ -648,7 +648,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
             Instruction_TFlagSel <= '0' & IR(1 downto 0);
@@ -674,7 +674,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
             Instruction_TFlagSel <= TFlagSel_Zero;
@@ -696,7 +696,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
             -- Bit-decoding T flag select
             Instruction_TFlagSel <= TFlagSel_Carry when IR(0) = '0' else    -- NEGC
@@ -724,7 +724,7 @@ begin
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_Ext;
             ExtMode              <= IR(1 downto 0);     -- bit-decode extension mode
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
         elsif std_match(IR, ADD_IMM_RN) then
             -- ADD #imm, Rn
@@ -734,7 +734,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
             Immediate            <= ni_format_i;
 
             -- ALU signals for addition
@@ -754,7 +754,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= IR(1) or IR(0);   -- exclude TST
+            Instruction_RegEnableIn <= IR(1) or IR(0);   -- exclude TST
 
             -- Enable TFlagSel for TST
             Instruction_TFlagSel <= TFlagSel_Zero when IR(1 downto 0) = "00"    -- TST
@@ -781,7 +781,7 @@ begin
 
             RegInSel             <= 0;
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= IR(9) or IR(8);   -- exclude TST
+            Instruction_RegEnableIn <= IR(9) or IR(8);   -- exclude TST
             Immediate            <= i_format_i;
             ImmediateMode        <= ImmediateMode_ZERO;
 
@@ -811,7 +811,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
             -- ALU signals for logical negation
             ALUOpBSel <= ALUOpB_RegB;
@@ -905,7 +905,7 @@ begin
             RegASel              <= to_integer(unsigned(n_format_n));
             RegInSel             <= to_integer(unsigned(n_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
             Instruction_TFlagSel <= TFlagSel_Carry;
 
@@ -930,7 +930,7 @@ begin
             RegASel              <= to_integer(unsigned(n_format_n));
             RegInSel             <= to_integer(unsigned(n_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
             Instruction_TFlagSel <= TFlagSel_T;
 
@@ -950,7 +950,7 @@ begin
           
             RegInSel             <= to_integer(unsigned(ni_format_n));
             RegDataInSel         <= RegDataIn_Immediate;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
             Immediate            <= ni_format_i;
 
         -- MOV.W @(disp, PC), Rn
@@ -965,7 +965,7 @@ begin
 
           RegInSel             <= to_integer(unsigned(nd8_format_n));   -- Writing to register n 
           RegDataInSel         <= RegDataIn_DB;                         -- Writing output of data bus to register. 
-          Instruction_EnableIn <= '1';                                  -- Writes to register. 
+          Instruction_RegEnableIn <= '1';                                  -- Writes to register. 
 
           RegASel <= to_integer(unsigned(nd8_format_n));
 
@@ -992,7 +992,7 @@ begin
 
           RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
           RegDataInSel         <= RegDataIn_DB;                        -- Writing output of data bus to register. 
-          Instruction_EnableIn <= '1';                                 -- Writes to register. 
+          Instruction_RegEnableIn <= '1';                                 -- Writes to register. 
 
           -- Instruction reads from longword memory.
           Instruction_MemEnable <= '1';
@@ -1020,7 +1020,7 @@ begin
             RegBSel              <= to_integer(unsigned(nm_format_m));
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_RegB;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
         -- MOV.X Rm, @Rn
         -- nm format
@@ -1069,7 +1069,7 @@ begin
 
           RegInSel             <= to_integer(unsigned(nm_format_n));
           RegDataInSel         <= RegDataIn_DB;
-          Instruction_EnableIn <= '1';
+          Instruction_RegEnableIn <= '1';
 
 
         -- MOV.B Rm, @-Rn
@@ -1119,7 +1119,7 @@ begin
           -- Write output of Data Bus to Rn
           RegInSel             <= to_integer(unsigned(nm_format_n));
           RegDataInSel         <= RegDataIn_DB;
-          Instruction_EnableIn <= '1';  -- Enable writing to registers.
+          Instruction_RegEnableIn <= '1';  -- Enable writing to registers.
 
           -- Write the incremented address to Rm
           RegAxInSel             <= to_integer(unsigned(nm_format_m));
@@ -1211,7 +1211,7 @@ begin
             -- Writing sign-extended byte from data bus to R0.
             RegInSel             <= 0;             -- Select R0 to write to.
             RegDataInSel         <= RegDataIn_DB;  -- Write DataBus to reg.
-            Instruction_EnableIn <= '1';           -- Enable Reg writing for this instruction.
+            Instruction_RegEnableIn <= '1';           -- Enable Reg writing for this instruction.
 
             -- Output @Rm from RegA2
             RegA2Sel <= to_integer(unsigned(md_format_m));
@@ -1243,7 +1243,7 @@ begin
           -- Writing longword from data bus to Rn.
           RegInSel             <= to_integer(unsigned(nmd_format_n));   -- Select Rn to write to.
           RegDataInSel         <= RegDataIn_DB;                         -- Write DataBus to reg.
-          Instruction_EnableIn <= '1';                                  -- Enable Reg writing for this instruction.
+          Instruction_RegEnableIn <= '1';                                  -- Enable Reg writing for this instruction.
 
            -- Output @Rm from RegA2
            RegA2Sel <= to_integer(unsigned(nmd_format_m));
@@ -1306,7 +1306,7 @@ begin
             -- Writing sign-extended byte from data bus to Rn.
             RegInSel             <= slv_to_uint(nm_format_n);     -- Select Rn to write to.
             RegDataInSel         <= RegDataIn_DB;                 -- Write DataBus to reg.
-            Instruction_EnableIn <= '1';                          -- Enable Reg writing for this instruction.
+            Instruction_RegEnableIn <= '1';                          -- Enable Reg writing for this instruction.
 
             -- Output @Rm from RegA2
             RegA2Sel <= slv_to_uint(nm_format_m);
@@ -1387,7 +1387,7 @@ begin
 
            RegInSel             <= 0;               -- Write to R0
            RegDataInSel         <= RegDataIn_DB;    -- Write Data bus to R0
-           Instruction_EnableIn <= '1';             -- Enable register writing for this instruction.
+           Instruction_RegEnableIn <= '1';             -- Enable register writing for this instruction.
            
            Instruction_MemEnable <= '1';    
            Instruction_ReadWrite <= ReadWrite_READ;
@@ -1413,7 +1413,7 @@ begin
             --
             RegInSel             <= to_integer(unsigned(n_format_n));
             RegDataInSel         <= RegDataIn_SR_TBit;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
 
         -- SWAP.B Rm, Rn
@@ -1432,7 +1432,7 @@ begin
             RegDataInSel <= RegDataIn_RegA_SWAP_B when IR(0) = '0' else
                             RegDataIn_RegA_SWAP_W;
 
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
 
         -- XTRCT Rm, Rn
@@ -1451,7 +1451,7 @@ begin
 
             RegDataInSel <= RegDataIn_REGB_REGA_CENTER;
 
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
             
 
 
@@ -1709,7 +1709,7 @@ begin
             -- selects data source to store to a register through bit decoding
             SysRegSel <= "0" & IR(5 downto 4);
             RegDataInSel <= RegDataIn_SysReg;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
         elsif std_match(IR, STS_SYS_RN) then
 
@@ -1723,7 +1723,7 @@ begin
             -- selects data source to store to a register through bit decoding
             SysRegSel <= "1" & IR(5 downto 4);
             RegDataInSel <= RegDataIn_SysReg;
-            Instruction_EnableIn <= '1';
+            Instruction_RegEnableIn <= '1';
 
         elsif std_match(IR, STC_L_SYS_RN) then
 
@@ -1876,9 +1876,6 @@ begin
         elsif std_match(IR, NOP) then
 
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
-
-            -- TODO: WTF ???? 
-            -- Instruction_PCAddrMode <= PCAddrMode_INC;
 
         elsif not is_x(IR) then
             report "Unrecognized instruction: " & to_hstring(IR);

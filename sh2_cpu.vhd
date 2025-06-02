@@ -124,7 +124,7 @@ architecture structural of sh2cpu is
 
     -- Register array inputs
     signal RegDataIn  : std_logic_vector(31 downto 0);      -- data to write to a register
-    signal EnableIn   : std_logic;                          -- if data should be written to an input register
+    signal RegEnableIn: std_logic;                          -- if data should be written to an input register
     signal RegInSel   : integer  range 15 downto 0;         -- which register to write data to
     signal RegASel    : integer  range 15 downto 0;         -- which register to read to bus A
     signal RegBSel    : integer  range 15 downto 0;         -- which register to read to bus B
@@ -363,7 +363,7 @@ begin
         clock       => clock,
         reset       => reset,
         RegDataIn   => RegDataIn,
-        EnableIn    => EnableIn,
+        EnableIn    => RegEnableIn,
         RegInSel    => RegInSel,
         RegASel     => RegASel,
         RegBSel     => RegBSel,
@@ -564,7 +564,7 @@ begin
 
         -- Register Array control signals:
         RegDataInSel    => RegDataInSel,
-        EnableIn        => EnableIn,
+        RegEnableIn     => RegEnableIn,
         RegInSel        => RegInSel,
         RegASel         => RegASel,
         RegBSel         => RegBSel,
