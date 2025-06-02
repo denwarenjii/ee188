@@ -75,30 +75,39 @@ package SH2InstructionEncodings is
   constant  MOV_W_RM_AT_MINUS_RN  :  Instruction := "0010--------0101";  -- MOV.W Rm, @-Rn
   constant  MOV_L_RM_AT_MINUS_RN  :  Instruction := "0010--------0110";  -- MOV.L Rm, @-Rn
 
+  constant  MOV_AT_RM_PLUS_RN     :  Instruction := "0110--------01--";  -- MOV.X @Rm+, Rn (for bit decoding)
   constant  MOV_B_AT_RM_PLUS_RN   :  Instruction := "0110--------0100";  -- MOV.B @Rm+, Rn
   constant  MOV_W_AT_RM_PLUS_RN   :  Instruction := "0110--------0101";  -- MOV.W @Rm+, Rn
   constant  MOV_L_AT_RM_PLUS_RN   :  Instruction := "0110--------0110";  -- MOV.W @Rm+, Rn
 
+  constant  MOV_R0_AT_DISP_RN     :  Instruction := "1000000---------";  -- MOV.{B,W} RO, @(disp,Rn)
   constant  MOV_B_R0_AT_DISP_RN   :  Instruction := "10000000--------";  -- MOV.B RO, @(disp,Rn)
   constant  MOV_W_R0_AT_DISP_RN   :  Instruction := "10000001--------";  -- MOV.W RO, @(disp,Rn)
+
   constant  MOV_L_RM_AT_DISP_RN   :  Instruction := "0001------------";  -- MOV.L Rm, @(disp, Rn)
 
+  constant  MOV_AT_DISP_RM_R0     :  Instruction := "1000010---------";  -- MOV.{B,W} @(disp, Rm), R0
   constant  MOV_B_AT_DISP_RM_R0   :  Instruction := "10000100--------";  -- MOV.B @(disp, Rm), R0
   constant  MOV_W_AT_DISP_RM_R0   :  Instruction := "10000101--------";  -- MOV.W @(disp, Rm), R0
+
   constant  MOV_L_AT_DISP_RM_RN   :  Instruction := "0101------------";  -- MOV.L @(disp, Rm), Rn
 
+  constant  MOV_RM_AT_R0_RN       :  Instruction := "0000--------01--";  -- MOV.X Rm, @(R0, Rn)
   constant  MOV_B_RM_AT_R0_RN     :  Instruction := "0000--------0100";  -- MOV.B Rm, @(R0, Rn)
   constant  MOV_W_RM_AT_R0_RN     :  Instruction := "0000--------0101";  -- MOV.W Rm, @(R0, Rn)
   constant  MOV_L_RM_AT_R0_RN     :  Instruction := "0000--------0110";  -- MOV.L Rm, @(R0, Rn)
 
+  constant  MOV_AT_R0_RM_RN       :  Instruction := "0000--------11--";  -- MOV.X @(R0, Rm), Rn
   constant  MOV_B_AT_R0_RM_RN     :  Instruction := "0000--------1100";  -- MOV.B @(R0, Rm), Rn
   constant  MOV_W_AT_R0_RM_RN     :  Instruction := "0000--------1101";  -- MOV.W @(R0, Rm), Rn
   constant  MOV_L_AT_R0_RM_RN     :  Instruction := "0000--------1110";  -- MOV.L @(R0, Rm), Rn
 
+  constant  MOV_R0_AT_DISP_GBR    :  Instruction := "110000----------";  -- MOV.X R0, @(disp, GBR)
   constant  MOV_B_R0_AT_DISP_GBR  :  Instruction := "11000000--------";  -- MOV.B R0, @(disp, GBR)
   constant  MOV_W_R0_AT_DISP_GBR  :  Instruction := "11000001--------";  -- MOV.W R0, @(disp, GBR)
   constant  MOV_L_R0_AT_DISP_GBR  :  Instruction := "11000010--------";  -- MOV.L R0, @(disp, GBR)
 
+  constant  MOV_AT_DISP_GBR_R0    :  Instruction := "110001----------";  -- MOV.X @(disp, GBR), R0
   constant  MOV_B_AT_DISP_GBR_R0  :  Instruction := "11000100--------";  -- MOV.B @(disp, GBR), R0
   constant  MOV_W_AT_DISP_GBR_R0  :  Instruction := "11000101--------";  -- MOV.W @(disp, GBR), R0
   constant  MOV_L_AT_DISP_GBR_R0  :  Instruction := "11000110--------";  -- MOV.L @(disp, GBR), R0
@@ -107,6 +116,7 @@ package SH2InstructionEncodings is
 
   constant  MOVT_RN               :  Instruction := "0000----00101001";  -- MOVT Rn
 
+  constant  SWAP_RM_RN            :  Instruction := "0110--------100-";  -- SWAP.{B,W} Rm, Rn
   constant  SWAP_B_RM_RN          :  Instruction := "0110--------1000";  -- SWAP.B Rm, Rn
   constant  SWAP_W_RM_RN          :  Instruction := "0110--------1001";  -- SWAP.W Rm, Rn
 
@@ -1105,11 +1115,9 @@ begin
 
         -- MOV.B @Rm+, Rn
         -- nm format
-        elsif std_match(IR, MOV_B_AT_RM_PLUS_RN) then
-          -- report "Instruction: [MOV.B @Rm+, Rn] not implemented."
-          -- severity ERROR;
+        elsif std_match(IR, MOV_AT_RM_PLUS_RN) then
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.B @R" & to_string(slv_to_uint(nm_format_m)) &
+            "sh2_control.vhd: Decoded MOV.{B,W,L} @R" & to_string(slv_to_uint(nm_format_m)) &
             "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
           -- MOV with post-increment. This Instruction reads a byte, word,
@@ -1119,7 +1127,7 @@ begin
           -- Reads a byte from memory.
           Instruction_MemEnable <= '1';             -- Uses memory.
           Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-          Instruction_WordMode  <= ByteMode;        -- A byte.
+          Instruction_WordMode  <= IR(1 downto 0);  -- bit-decode memory word mode
 
           -- Output @Rm from RegA2
           RegA2Sel <= to_integer(unsigned(nm_format_m));
@@ -1133,88 +1141,30 @@ begin
           RegAxInSel             <= to_integer(unsigned(nm_format_m));
           Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
           
-          -- DMAU signals for post-increment indirect register addressing (byte mode)
+          -- DMAU signals for post-increment indirect register addressing
           BaseSel      <= BaseSel_REG;
           IndexSel     <= IndexSel_NONE;
-          OffScalarSel <= OffScalarSel_ONE;
+          OffScalarSel <= IR(1 downto 0);       -- bit-decode offset scalar select
           IncDecSel    <= IncDecSel_POST_INC;
 
-        -- MOV.W @Rm+, Rn
-        elsif std_match(IR, MOV_W_AT_RM_PLUS_RN) then
-          -- report "Instruction: [MOV.W @Rm+, Rn] not implemented."
-          -- severity ERROR;
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.W @R" & to_string(slv_to_uint(nm_format_m)) &
-            "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
-          -- Reads a word from memory.
-          Instruction_MemEnable <= '1';             -- Uses memory.
-          Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-          Instruction_WordMode  <= WordMode;        -- A word.
-
-          -- Output @Rm from RegA2
-          RegA2Sel <= to_integer(unsigned(nm_format_m));
-
-          -- Write output of Data Bus to Rn
-          RegInSel             <= to_integer(unsigned(nm_format_n));
-          RegDataInSel         <= RegDataIn_DB;
-          Instruction_EnableIn <= '1';  -- Enable writing to registers.
-
-          -- Write the incremented address to Rm
-          RegAxInSel             <= to_integer(unsigned(nm_format_m));
-          Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
-          
-          -- DMAU signals for post-increment indirect register addressing (word mode)
-          BaseSel      <= BaseSel_REG;
-          IndexSel     <= IndexSel_NONE;
-          OffScalarSel <= OffScalarSel_TWO;
-          IncDecSel    <= IncDecSel_POST_INC;
-
-        -- MOV.L @Rm+, Rn
-        elsif std_match(IR, MOV_L_AT_RM_PLUS_RN) then
-
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L @R" & to_string(slv_to_uint(nm_format_m)) &
-            "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
-
-          -- Reads a longword from memory.
-          Instruction_MemEnable <= '1';             -- Uses memory.
-          Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-          Instruction_WordMode  <= LongwordMode;    -- A longword.
-
-          -- Output @Rm from RegA2
-          RegA2Sel <= to_integer(unsigned(nm_format_m));
-
-          -- Write output of Data Bus to Rn
-          RegInSel             <= to_integer(unsigned(nm_format_n));
-          RegDataInSel         <= RegDataIn_DB;
-          Instruction_EnableIn <= '1';  -- Enable writing to registers.
-
-          -- Write the incremented address to Rm
-          RegAxInSel             <= to_integer(unsigned(nm_format_m));
-          Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
-          
-          -- DMAU signals for post-increment indirect register addressing (longword mode)
-          BaseSel      <= BaseSel_REG;
-          IndexSel     <= IndexSel_NONE;
-          OffScalarSel <= OffScalarSel_FOUR;
-          IncDecSel    <= IncDecSel_POST_INC;
-
-        -- MOV.B RO, @(disp,Rn)
+        -- MOV.{B,W} RO, @(disp,Rn)
         -- nd4 format
         -- Note that the displacement depends on the mode of the address, so in
         -- byte mode, the displacement represents bytes, in word mode it represents
         -- words, etc. This is done to maximize it's range.
-        elsif std_match(IR, MOV_B_R0_AT_DISP_RN) then
+        elsif std_match(IR, MOV_R0_AT_DISP_RN) then
 
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.B R0, @(0x" & to_hstring(nd4_format_d) &
+            "sh2_control.vhd: Decoded MOV.{B,W} R0, @(0x" & to_hstring(nd4_format_d) &
             ", " & to_string(slv_to_uint(nd4_format_n)) & ")", LogFile);
 
           -- Instruction writes a byte to data memory.
           Instruction_MemEnable   <= '1';
           Instruction_ReadWrite   <= ReadWrite_WRITE;
-          Instruction_WordMode    <= ByteMode;
+
+          Instruction_WordMode    <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
+                                     WordMode;
           
           -- Output RegB (R0) to memory data bus
           MemOutSel <= MemOut_RegB;
@@ -1226,43 +1176,13 @@ begin
           -- to write to.
           RegA1Sel <= to_integer(unsigned(nd4_format_n));
 
-          -- DMAU signals for Indirect register addressing with displacement (byte mode)
+          -- DMAU signals for Indirect register addressing with displacement
           BaseSel       <=  BaseSel_REG;
           IndexSel      <=  IndexSel_OFF4;
-          OffScalarSel  <=  OffScalarSel_ONE;
+          OffScalarSel  <=  OffScalarSel_ONE when IR(8) = '0' else      -- bit-decode byte/word
+                            OffScalarSel_TWO;
           IncDecSel     <=  IncDecSel_NONE;
           DMAUOff4      <=  nd4_format_d;
-
-
-        -- MOV.W RO, @(disp,Rn)
-        -- nd4 format
-        elsif std_match(IR, MOV_W_R0_AT_DISP_RN) then
-
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.W R0, @(0x" & to_hstring(nd4_format_d) &
-            ", " & to_string(slv_to_uint(nd4_format_n)) & ")", LogFile);
-
-          -- Instruction writes a word to memory.
-          Instruction_MemEnable   <= '1';
-          Instruction_ReadWrite   <= ReadWrite_WRITE;
-          Instruction_WordMode    <= WordMode;
-
-          -- Output R0 to RegB
-          RegBSel <= 0;
-          
-          -- Output Rn to RegA1. The DMAU will use this to calculate the address
-          -- to write to.
-          RegA1Sel <= to_integer(unsigned(nd4_format_n));
-
-          -- Output RegB (R0) to memory data bus
-          MemOutSel <= MemOut_RegB;
-          
-          -- DMAU signals for Indirect register addressing with displacement (word mode)
-          BaseSel      <= BaseSel_REG;
-          IndexSel     <= IndexSel_OFF4;
-          OffScalarSel <= OffScalarSel_TWO;
-          IncDecSel    <= IncDecSel_NONE;
-          DMAUOff4     <=  nd4_format_d;
 
 
         -- MOV.L Rm, @(disp, Rn)
@@ -1295,14 +1215,13 @@ begin
           DMAUOff4     <= nmd_format_d;
 
 
-        -- MOV.B @(disp, Rm), R0
+        -- MOV.{B,W} @(disp, Rm), R0
         -- md format
         -- Note that these instructions are very similar to MOV @(disp, PC), Rn
-        --
-        elsif std_match(IR, MOV_B_AT_DISP_RM_R0) then
+      elsif std_match(IR, MOV_AT_DISP_RM_R0) then
 
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.B @(0x" & to_hstring(md_format_d) &
+            "sh2_control.vhd: Decoded MOV.{B,W} @(0x" & to_hstring(md_format_d) &
             ", R" & to_string(slv_to_uint(md_format_m)) & "), R0", LogFile);
 
             -- Writing sign-extended byte from data bus to R0.
@@ -1315,48 +1234,17 @@ begin
 
             Instruction_MemEnable  <=  '1';            -- Instr uses memory.
             Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
-            Instruction_WordMode   <=  ByteMode;       -- Reads byte.
+            Instruction_WordMode   <=  ByteMode when IR(8) = '0' else       -- bit-decode word mode
+                                       WordMode;
             Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
             -- DMAU signals for Indirect register addressing with displacement (byte mode)
             BaseSel      <= BaseSel_REG;
             IndexSel     <= IndexSel_OFF4;
-            OffScalarSel <= OffScalarSel_ONE;
+            OffScalarSel <= OffScalarSel_ONE when IR(8) = '0' else          -- bit-decode offset scale
+                            OffScalarSel_TWO;
             IncDecSel    <= IncDecSel_NONE;
             DMAUOff4     <= md_format_d;
-
-
-        -- MOV.W @(disp, Rm), R0
-        -- md format
-        -- Note that these instructions are very similar to MOV @(disp, PC), Rn
-        --
-        elsif std_match(IR, MOV_W_AT_DISP_RM_R0) then
-
-            LogWithTime(l, 
-                "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(md_format_d) &
-                ", R" & to_string(slv_to_uint(md_format_m)) & "), R0", LogFile);
-
-            -- Writing sign-extended word from data bus to R0.
-            RegInSel             <= 0;             -- Select R0 to write to.
-            RegDataInSel         <= RegDataIn_DB;  -- Write DataBus to reg.
-            Instruction_EnableIn <= '1';           -- Enable Reg writing for this instruction.
-
-            -- Output @Rm from RegA2
-            RegA2Sel <= to_integer(unsigned(md_format_m));
-
-            Instruction_MemEnable  <=  '1';            -- Instr uses memory.
-            Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
-            Instruction_WordMode   <=  WordMode;       -- Reads word.
-            Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
-
-            -- DMAU signals for Indirect register addressing with displacement (word mode)
-            BaseSel      <= BaseSel_REG;
-            IndexSel     <= IndexSel_OFF4;
-            OffScalarSel <= OffScalarSel_TWO;
-            IncDecSel    <= IncDecSel_NONE;
-            DMAUOff4     <= md_format_d;
-
-
 
 
         -- MOV.L @(disp, Rm), Rn
@@ -1390,18 +1278,18 @@ begin
           DMAUOff4     <= nmd_format_d;
 
 
-        -- MOV.B Rm, @(R0, Rn)
+        -- MOV.{B,W,L} Rm, @(R0, Rn)
         -- nm format
-        elsif std_match(IR, MOV_B_RM_AT_R0_RN) then
+        elsif std_match(IR, MOV_RM_AT_R0_RN) then
 
           LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.B R" & to_string(slv_to_uint(nm_format_m)) &
+            "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_uint(nm_format_m)) &
             ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
 
           -- Instr writes a byte to memory.
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= ByteMode;
+          Instruction_WordMode  <= IR(1 downto 0);      -- bit-decode memory mode
 
           -- Output Rm to RegB.
           RegBSel <= to_integer(unsigned(nm_format_m));
@@ -1423,81 +1311,12 @@ begin
           IncDecSel     <= IncDecSel_NONE;
         
 
-        -- MOV.W Rm, @(R0, Rn)
+        -- MOV.{B,W,L} @(R0, Rm), Rn
         -- nm format
-        elsif std_match(IR, MOV_W_RM_AT_R0_RN) then
-
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.W R" & to_string(slv_to_uint(nm_format_m)) &
-            ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
-
-          -- Instr writes a word to memory.
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= WordMode;
-
-          -- Output Rm to RegB.
-          RegBSel <= to_integer(unsigned(nm_format_m));
-
-          -- Output Rn to RegA1. The DMAU will use this to calculate the address
-          -- to write to.
-          RegA1Sel <= to_integer(unsigned(nm_format_n));
-
-          -- Output R0 to RegA2.
-          RegA2Sel <= 0;
-
-          -- Output RegB (Rm) to memory data bus. This will be written to memory.
-          MemOutSel <= MemOut_RegB;
-
-
-          -- DMAU Signals for Indirect Register Addressing
-          BaseSel       <= BaseSel_REG;
-          IndexSel      <= IndexSel_R0;
-          OffScalarSel  <= OffScalarSel_ONE;
-          IncDecSel     <= IncDecSel_NONE;
-        
-
-
-        -- MOV.L Rm, @(R0, Rn)
-        -- nm format
-        elsif std_match(IR, MOV_L_RM_AT_R0_RN) then
-
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_uint(nm_format_m)) &
-            ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
-
-          -- Instr writes a longword to memory.
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= LongwordMode;
-
-          -- Output Rm to RegB.
-          RegBSel <= to_integer(unsigned(nm_format_m));
-
-          -- Output Rn to RegA1. The DMAU will use this to calculate the address
-          -- to write to.
-          RegA1Sel <= to_integer(unsigned(nm_format_n));
-
-          -- Output R0 to RegA2.
-          RegA2Sel <= 0;
-
-          -- Output RegB (Rm) to memory data bus. This will be written to memory.
-          MemOutSel <= MemOut_RegB;
-
-
-          -- DMAU Signals for Indirect indexed Register Addressing
-          BaseSel       <= BaseSel_REG;
-          IndexSel      <= IndexSel_R0;
-          OffScalarSel  <= OffScalarSel_ONE;
-          IncDecSel     <= IncDecSel_NONE;
-
-
-        -- MOV.B @(R0, Rm), Rn
-        -- nm format
-        elsif std_match(IR, MOV_B_AT_R0_RM_RN) then
+        elsif std_match(IR, MOV_AT_R0_RM_RN) then
 
             LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.B @(R0, R" & to_string(slv_to_uint(nm_format_m)) &
+              "sh2_control.vhd: Decoded MOV.X @(R0, R" & to_string(slv_to_uint(nm_format_m)) &
               "), R" & to_string(slv_to_uint(nm_format_n)), LogFile);
 
             -- Writing sign-extended byte from data bus to Rn.
@@ -1511,70 +1330,9 @@ begin
             -- Output @R0 from RegA1
             RegA1Sel <= 0;
 
-            Instruction_MemEnable  <=  '1';            -- Instr uses memory.
-            Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
-            Instruction_WordMode   <=  ByteMode;       -- Reads byte.
-            Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
-
-            -- DMAU Signals for Indirect indexed Register Addressing
-            BaseSel       <= BaseSel_REG;
-            IndexSel      <= IndexSel_R0;
-            OffScalarSel  <= OffScalarSel_ONE;
-            IncDecSel     <= IncDecSel_NONE;
-          
-          
-
-        -- MOV.W @(R0, Rm), Rn
-        elsif std_match(IR, MOV_W_AT_R0_RM_RN) then
-
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.W @(R0, R" & to_string(slv_to_uint(nm_format_m)) &
-            "), R" & to_string(slv_to_uint(nm_format_n)), LogFile);
-
-            -- Writing sign-extended word from data bus to Rn.
-            RegInSel             <= slv_to_uint(nm_format_n);     -- Select Rn to write to.
-            RegDataInSel         <= RegDataIn_DB;                 -- Write DataBus to reg.
-            Instruction_EnableIn <= '1';                          -- Enable Reg writing for this instruction.
-
-            -- Output @Rm from RegA2
-            RegA2Sel <= slv_to_uint(nm_format_m);
-
-            -- Output @R0 from RegA1
-            RegA1Sel <= 0;
-
-            Instruction_MemEnable  <=  '1';            -- Instr uses memory.
-            Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
-            Instruction_WordMode   <=  WordMode;       -- Reads Word.
-            Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
-
-            -- DMAU Signals for Indirect indexed Register Addressing
-            BaseSel       <= BaseSel_REG;
-            IndexSel      <= IndexSel_R0;
-            OffScalarSel  <= OffScalarSel_ONE;
-            IncDecSel     <= IncDecSel_NONE;
-           
-
-        -- MOV.L @(R0, Rm), Rn
-        elsif std_match(IR, MOV_L_AT_R0_RM_RN) then
-
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L @(R0, R" & to_string(slv_to_uint(nm_format_m)) &
-            "), R" & to_string(slv_to_uint(nm_format_n)), LogFile);
-
-            -- Writing longword from data bus to Rn.
-            RegInSel             <= slv_to_uint(nm_format_n);     -- Select Rn to write to.
-            RegDataInSel         <= RegDataIn_DB;                 -- Write DataBus to reg.
-            Instruction_EnableIn <= '1';                          -- Enable Reg writing for this instruction.
-
-            -- Output @Rm from RegA2
-            RegA2Sel <= slv_to_uint(nm_format_m);
-
-            -- Output @R0 from RegA1
-            RegA1Sel <= 0;
-
             Instruction_MemEnable  <=  '1';             -- Instr uses memory.
             Instruction_ReadWrite  <=  ReadWrite_READ;  -- Reads.
-            Instruction_WordMode   <=  LongwordMode;    -- Reads longword.
+            Instruction_WordMode   <=  IR(1 downto 0);  -- bit decode memory mode
             Instruction_MemSel     <=  MemSel_RAM;      -- Reads from RAM
 
             -- DMAU Signals for Indirect indexed Register Addressing
@@ -1584,17 +1342,18 @@ begin
             IncDecSel     <= IncDecSel_NONE;
           
 
-        -- MOV.B R0, @(disp, GBR)
+        -- MOV.{B,W,L} R0, @(disp, GBR)
         -- d format
-        elsif std_match(IR, MOV_B_R0_AT_DISP_GBR) then
+        elsif std_match(IR, MOV_R0_AT_DISP_GBR) then
 
           LogWithTime(l,
-            "sh2_control.vhd: Decoded MOV.B R0, @(0x" & to_hstring(d_format_d) &
+            "sh2_control.vhd: Decoded MOV.X R0, @(0x" & to_hstring(d_format_d) &
             ", GBR)", LogFile);
 
+          -- Writing to memory
           Instruction_MemEnable <= '1';
           Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= ByteMode;
+          Instruction_WordMode  <= IR(9 downto 8);      -- bit-decode memory mode
 
           -- Output R0 to RegB.
           RegBSel <= 0;
@@ -1602,139 +1361,17 @@ begin
           -- Output RegB (Rm) to memory data bus. This will be written to memory.
           MemOutSel <= MemOut_RegB;
 
-          -- DMAU signals for Indirect GBR addressing with displacement (Byte Mode)
+          -- DMAU signals for Indirect GBR addressing with displacement
           BaseSel       <=  BaseSel_GBR;
           IndexSel      <=  IndexSel_OFF8;
-          OffScalarSel  <=  OffScalarSel_ONE;
+          OffScalarSel  <=  IR(9 downto 8);     -- bit decode offset scalar select
           IncDecSel     <=  IncDecSel_NONE;
           DMAUOff8      <=  d_format_d;
-
-
-        -- MOV.W R0, @(disp, GBR)
-        -- d format
-        elsif std_match(IR, MOV_W_R0_AT_DISP_GBR) then
-
-          LogWithTime(l,
-            "sh2_control.vhd: Decoded MOV.W R0, @(0x" & to_hstring(d_format_d) &
-            ", GBR)", LogFile);
-
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= WordMode;
-
-          -- Output R0 to RegB.
-          RegBSel <= 0;
-
-          -- Output RegB (Rm) to memory data bus. This will be written to memory.
-          MemOutSel <= MemOut_RegB;
-
-          -- DMAU signals for Indirect GBR addressing with displacement (Word Mode)
-          BaseSel       <=  BaseSel_GBR;
-          IndexSel      <=  IndexSel_OFF8;
-          OffScalarSel  <=  OffScalarSel_TWO;
-          IncDecSel     <=  IncDecSel_NONE;
-          DMAUOff8      <=  d_format_d;
-
-        -- MOV.L R0, @(disp, GBR)
-        -- d format
-        elsif std_match(IR, MOV_L_R0_AT_DISP_GBR) then
-
-          LogWithTime(l,
-            "sh2_control.vhd: Decoded MOV.L R0, @(0x" & to_hstring(d_format_d) &
-            ", GBR)", LogFile);
-
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= LongwordMode;
-
-          -- Output R0 to RegB.
-          RegBSel <= 0;
-
-          -- Output RegB (Rm) to memory data bus. This will be written to memory.
-          MemOutSel <= MemOut_RegB;
-
-
-          -- DMAU signals for Indirect GBR addressing with displacement (LongwordMode Mode)
-          BaseSel      <=  BaseSel_GBR;
-          IndexSel     <=  IndexSel_OFF8;
-          OffScalarSel <=  OffScalarSel_FOUR;
-          IncDecSel    <=  IncDecSel_NONE;
-          DMAUOff8     <=  d_format_d;
-
-
-        -- MOV.B @(disp, GBR), R0
-        -- d format
-        elsif std_match(IR, MOV_B_AT_DISP_GBR_R0) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded MOV.B @(0x" & to_hstring(d_format_d) &
-                ", GBR), R0", LogFile);
-
-           RegInSel             <= 0;             -- Write to R0
-           RegDataInSel         <= RegDataIn_DB;  -- Write Data bus to R0
-           Instruction_EnableIn <= '1';           -- Enable register writing for this instruction.
-           
-           Instruction_MemEnable <= '1';    
-           Instruction_ReadWrite <= ReadWrite_READ;
-           Instruction_WordMode  <= ByteMode;
-
-          -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
-          BaseSel      <=  BaseSel_GBR;
-          IndexSel     <=  IndexSel_OFF8;
-          OffScalarSel <=  OffScalarSel_ONE;
-          IncDecSel    <=  IncDecSel_NONE;
-          DMAUOff8     <=  d_format_d;
-
-
-        -- MOV.W @(disp, GBR), R0
-        elsif std_match(IR, MOV_W_AT_DISP_GBR_R0) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(d_format_d) &
-                ", GBR), R0", LogFile);
-
-           RegInSel             <= 0;             -- Write to R0
-           RegDataInSel         <= RegDataIn_DB;  -- Write Data bus to R0
-           Instruction_EnableIn <= '1';           -- Enable register writing for this instruction.
-           
-           Instruction_MemEnable <= '1';    
-           Instruction_ReadWrite <= ReadWrite_READ;
-           Instruction_WordMode  <= WordMode;
-
-          -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
-          BaseSel      <=  BaseSel_GBR;
-          IndexSel     <=  IndexSel_OFF8;
-          OffScalarSel <=  OffScalarSel_TWO;
-          IncDecSel    <=  IncDecSel_NONE;
-          DMAUOff8     <=  d_format_d;
-
-
-        -- MOV.L @(disp, GBR), R0
-        elsif std_match(IR, MOV_L_AT_DISP_GBR_R0) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(d_format_d) &
-                ", GBR), R0", LogFile);
-
-           RegInSel             <= 0;             -- Write to R0
-           RegDataInSel         <= RegDataIn_DB;  -- Write Data bus to R0
-           Instruction_EnableIn <= '1';           -- Enable register writing for this instruction.
-           
-           Instruction_MemEnable <= '1';    
-           Instruction_ReadWrite <= ReadWrite_READ;
-           Instruction_WordMode  <= LongwordMode;
-
-          -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
-          BaseSel      <=  BaseSel_GBR;
-          IndexSel     <=  IndexSel_OFF8;
-          OffScalarSel <=  OffScalarSel_FOUR;
-          IncDecSel    <=  IncDecSel_NONE;
-          DMAUOff8     <=  d_format_d;
-
 
         -- MOVA @(disp, PC), R0
         -- d format
         -- disp*4 + PC -> R0
+        -- Note: due to bit decoding, this must come before MOV_AT_DISP_GBR_R0
         elsif std_match(IR, MOVA_AT_DISP_PC_R0) then
 
             LogWithTime(l,
@@ -1755,7 +1392,29 @@ begin
             IncDecSel    <= IncDecSel_NONE;
             DMAUOff8     <= nd8_format_d;
 
+        -- MOV.{B,W,L} @(disp, GBR), R0
+        -- d format
+        -- Note: due to bit decoding, this must come after MOVA_AT_DISP_PC_R0
+        elsif std_match(IR, MOV_AT_DISP_GBR_R0) then
 
+            LogWithTime(l,
+                "sh2_control.vhd: Decoded MOV.X @(0x" & to_hstring(d_format_d) &
+                ", GBR), R0", LogFile);
+
+           RegInSel             <= 0;               -- Write to R0
+           RegDataInSel         <= RegDataIn_DB;    -- Write Data bus to R0
+           Instruction_EnableIn <= '1';             -- Enable register writing for this instruction.
+           
+           Instruction_MemEnable <= '1';    
+           Instruction_ReadWrite <= ReadWrite_READ;
+           Instruction_WordMode  <= IR(9 downto 8); -- bit decode memory mode
+
+          -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
+          BaseSel      <=  BaseSel_GBR;
+          IndexSel     <=  IndexSel_OFF8;
+          OffScalarSel <=  IR(9 downto 8);          -- bit decode offset scalar select
+          IncDecSel    <=  IncDecSel_NONE;
+          DMAUOff8     <=  d_format_d;
 
         -- MOVT Rn
         -- n format.
@@ -1776,35 +1435,18 @@ begin
         -- SWAP.B Rm, Rn
         -- nm format
         -- Rm -> Swap upper and lower 2 bytes -> Rn
-        -- TODO: Bit decode this and SWAP.W
-        elsif std_match(IR, SWAP_B_RM_RN) then
+        elsif std_match(IR, SWAP_RM_RN) then
 
             LogWithTime(l,
-                "sh2_control.vhd: Decoded SWAP.B R" & to_string(slv_to_uint(nm_format_m))
+                "sh2_control.vhd: Decoded SWAP.X R" & to_string(slv_to_uint(nm_format_m))
                 & ", R" & to_string(nm_format_n), LogFile);
 
             RegASel      <= slv_to_uint(nm_format_m);
             RegInSel     <= slv_to_uint(nm_format_n);
-            RegDataInSel <= RegDataIn_RegA_SWAP_B;
 
-            Instruction_EnableIn <= '1';
-
-
-        -- SWAP.W Rm, Rn
-        -- nm format
-        -- Rm -> Swap upper and lower word -> Rn
-        elsif std_match(IR, SWAP_W_RM_RN) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded SWAP.W R" & to_string(slv_to_uint(nm_format_m))
-                & ", R" & to_string(nm_format_n), LogFile);
-
-            -- TODO: This is not consistent with the convention that RegB is 
-            -- always Rm !!!
-            --
-            RegASel      <= slv_to_uint(nm_format_m);
-            RegInSel     <= slv_to_uint(nm_format_n);
-            RegDataInSel <= RegDataIn_RegA_SWAP_W;
+            -- Bit decode if whether byte or word mode
+            RegDataInSel <= RegDataIn_RegA_SWAP_B when IR(0) = '0' else
+                            RegDataIn_RegA_SWAP_W;
 
             Instruction_EnableIn <= '1';
 
