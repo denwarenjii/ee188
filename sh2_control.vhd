@@ -409,6 +409,7 @@ end  SH2Control;
 
 architecture dataflow of sh2control is
     
+    -- TODO: Comment FSM and timing.
     type state_t is (
         fetch,
         execute,
