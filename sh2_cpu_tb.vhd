@@ -1,15 +1,23 @@
-  ----------------------------------------------------------------------------
+------------------------------------------------------------------------------
 --
+--  SH2 CPU Testbench
+--
+--  This file contains the full testbench for the SH2 CPU, implemented for EE
+--  188, Spring term 2024-2025. We instantiate the CPU itself along with two
+--  memory units for program memory (ROM) and data memory (RAM). The control
+--  signals for these memory units are muxed between the CPU and the testbench
+--  itself, allowing us to modify/read memory as part of the tests and then
+--  make this memory available to the CPU for simulation. For testing, we are
+--  using real SH2 programs assembled using the AS Macroassembler, which we
+--  load into ROM for the CPU to access. Then, we run the program and then
+--  check the contents of RAM after to see if they match up with the expected
+--  values (written in ".expect" files). Test results are printed to the
+--  console, while logging is output to "log.txt".
 -- 
 --  Revision History:
 --     01 May 25    Zack Huang      initial revision
 --     03 May 25    Zack Huang      working with data/program memory units
---     01 Jun 25    Zack Huang      cleaning up code
---
--- TODO:
---  - Support loading into program memory with assembly directives.
---  - Clear memory between tests (or set to X).
---  - Add more descriptive output for tests (passed, errors, instructions tested).
+--     01 Jun 25    Zack Huang      cleaning up code, finish documentation
 --
 ----------------------------------------------------------------------------
 
@@ -489,6 +497,7 @@ begin
             end loop;
         end procedure;
 
+        -- Simulate one cycle of the clock
         procedure Tick is
         begin
             clock <= '0';
@@ -499,12 +508,14 @@ begin
 
         -- We define the CPU exit signal to be when it tries to access
         -- address 0xFFFFFFFC (signed integer representation of -4) for
-        -- the sake of testing
+        -- the sake of testing.
         impure function CheckDone return boolean is
         begin
             return CPU_AB = X"FFFFFFFC";
         end function;
 
+        -- Resets the CPU and executes the program currently stored in ROM.
+        -- Simply keeps clocking the CPU until the exit condition is met.
         procedure RunCPU is
         begin
             -- Give memory control to CPU
@@ -521,50 +532,52 @@ begin
             end loop;
         end procedure;
 
+        -- Runs a test on the CPU. First loads an assembled program into ROM,
+        -- clocks the CPU until it stops running, then checks if the contents
+        -- of memory match up with the expected values. This procedure requires
+        -- the path of the test, which is then postfixed with ".bin" and
+        -- ".expect" to compute the path of the binary file and expect file,
+        -- respectively. The resulting memory is also dumped to a ".dump" file
+        -- for debugging.
         procedure RunTest(path : string) is
         begin
-            -- report "Running test: " & path;
             LogBothWithTime("Running test: " & path, LogFile);
-            LoadProgram(path);      -- write program in to ROM
-            RunCPU;                 -- execute program
-
-            -- Clock is stopped at this point.
-            DumpMemory(path, 0, 64);
-
-            CheckOutput(path);      -- check RAM has expected values
+            LoadProgram(path);          -- write program in to ROM
+            RunCPU;                     -- execute program
+            DumpMemory(path, 0, 64);    -- dump memory to file
+            CheckOutput(path);          -- check RAM has expected values
         end procedure;
 
     begin
 
-        RunTest("asm/hello");
-        RunTest("asm/mov_reg");
-        RunTest("asm/reg_indirect");
-        RunTest("asm/arith");
-        RunTest("asm/logic");
-        RunTest("asm/shift");
-        RunTest("asm/sr");
-        RunTest("asm/system");
-        RunTest("asm/control");
-        RunTest("asm/mov_wl_at_disp_pc_rn");                -- Tests Mov (disp, PC), Rn
-        RunTest("asm/mov_bwl_at_rm_rn");                    -- Tests Mov @Rm, Rn
-        RunTest("asm/mov_bwl_rm_at_minus_rn");              -- Tests Mov Rm, @-Rn
-        RunTest("asm/mov_bwl_at_rm_plus_rn");               -- Test Mov @Rm+, Rn
-        RunTest("asm/mov_bwl_r0_or_rm_at_disp_rn");         -- Test Mov R0, @(disp, Rn) and Mov Rm, @(disp,Rn)
-        RunTest("asm/mov_bwl_at_disp_rm_r0_or_rn");         -- Test Mov @(disp, Rm), R0 and Mov @(disp, Rm), Rn
-        RunTest("asm/mov_rm_at_r0_rn");                     -- Test Mov Rm, @(R0, Rn)
-        RunTest("asm/mov_b_at_r0_rm_rn");                   -- Test Mov @(R0, Rm), Rn 
-        RunTest("asm/mov_bwl_r0_at_disp_gbr");              -- Test Mov R0, @(disp, GBR)
-        RunTest("asm/mov_at_disp_gbr_r0");                  -- Test Mov @(disp, GBR), R0
-        RunTest("asm/mova_at_disp_pc_r0");                  -- Test Mova @(disp, PC), R0
-        RunTest("asm/movt_rn");                             -- Test Movt Rn
-        RunTest("asm/swap");                                -- Test SWAP.B Rm, Rn and SWAP.W Rm, Rn
-        RunTest("asm/xtrct");                               -- Test XTRCT Rm, Rn
+        -- Run all CPU tests
 
-        RunTest("asm/cmp");     -- Test CMP operations
-        RunTest("asm/ext");     -- Test zero/sign extension instructions
-        RunTest("asm/bshift");  -- Test barrel shift instructions
-
-        RunTest("asm/branch");      -- Test branch instructions.
+        RunTest("asm/mov_reg");                         -- Tests Mov between registers
+        RunTest("asm/reg_indirect");                    -- Tests register indirect addressing
+        RunTest("asm/arith");                           -- Tests arithmetic instructions (add, sub, etc)
+        RunTest("asm/logic");                           -- Tests logic instructions (and, or, xor, etc)
+        RunTest("asm/shift");                           -- Tests shift instructions (shll, shlr, etc)
+        RunTest("asm/cmp");                             -- Test CMP operations
+        RunTest("asm/ext");                             -- Test zero/sign extension instructions
+        RunTest("asm/bshift");                          -- Test barrel shift instructions
+        RunTest("asm/sr");                              -- Tests status register (SETT, CLRT)
+        RunTest("asm/system");                          -- Tests system register operations (LDC, STC)
+        RunTest("asm/control");                         -- Tests control register operations (LDS, STS)
+        RunTest("asm/mov_wl_at_disp_pc_rn");            -- Tests Mov (disp, PC), Rn
+        RunTest("asm/mov_bwl_at_rm_rn");                -- Tests Mov @Rm, Rn
+        RunTest("asm/mov_bwl_rm_at_minus_rn");          -- Tests Mov Rm, @-Rn
+        RunTest("asm/mov_bwl_at_rm_plus_rn");           -- Test Mov @Rm+, Rn
+        RunTest("asm/mov_bwl_r0_or_rm_at_disp_rn");     -- Test Mov R0, @(disp, Rn) and Mov Rm, @(disp,Rn)
+        RunTest("asm/mov_bwl_at_disp_rm_r0_or_rn");     -- Test Mov @(disp, Rm), R0 and Mov @(disp, Rm), Rn
+        RunTest("asm/mov_rm_at_r0_rn");                 -- Test Mov Rm, @(R0, Rn)
+        RunTest("asm/mov_b_at_r0_rm_rn");               -- Test Mov @(R0, Rm), Rn 
+        RunTest("asm/mov_bwl_r0_at_disp_gbr");          -- Test Mov R0, @(disp, GBR)
+        RunTest("asm/mov_at_disp_gbr_r0");              -- Test Mov @(disp, GBR), R0
+        RunTest("asm/mova_at_disp_pc_r0");              -- Test Mova @(disp, PC), R0
+        RunTest("asm/movt_rn");                         -- Test Movt Rn
+        RunTest("asm/swap");                            -- Test SWAP.B Rm, Rn and SWAP.W Rm, Rn
+        RunTest("asm/xtrct");                           -- Test XTRCT Rm, Rn
+        RunTest("asm/branch");                          -- Test branch instructions.
 
         wait;
     end process;
