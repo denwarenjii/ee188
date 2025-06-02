@@ -631,13 +631,10 @@ begin
     PRIn  <= NextSysReg;
 
     register_proc: process(clock, reset)
-      variable l : line;
     begin
         if reset = '0' then
-
             SR  <=  (others => '0');
             VBR <=  (others => '0');
-
         elsif rising_edge(clock) then
             SR(0) <= TNext;
 
@@ -663,8 +660,6 @@ begin
                     MACL <= (others => '0');
                 end if;
             end if;
-
-            LogWithTime(l, "sh2_cpu.vhd: MemDataIn: " & to_hstring(MemDataIn), LogFile);
         end if;
     end process register_proc;
 
