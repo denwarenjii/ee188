@@ -197,6 +197,37 @@ TRGET_BRAF:
     MOV   TrueVar,   R1 ; the target.
     MOV   R1,       @R0
 
+    ; Test BSR
+
+    MOV  #10,   R3  ; Values to test execution of branch slot.
+    MOV  #12,   R4
+
+
+    BSR  TRGET_BSR
+    ADD  R3,    R4
+
+    NOP
+
+    MOV   #$30,   R0    ; Write the result of the RTS branch slot (0x11) at 0x30
+    MOV   R1,    @R0
+
+
+    MOV     #-4,  R0    ; Exit
+    MOV.B   R0,  @R0
+
+
+TRGET_BSR:
+    MOV   #$28,   R0    ; Write result of the BSR branch slot (0x16) at 0x28
+    MOV   R4,    @R0
+
+
+    MOV   #$2C,     R0  ; Write TrueVar at 0x2C to signal that BSR jumped to the
+    MOV   TrueVar,  R1  ; correct target.
+    MOV   R1,      @R0
+
+    RTS                 ; Return to the instruction after the branch slot of BSR
+    MOV   #$11,     R1  ; Branch slot of RTS
+
 End:
 
     ; The test bench interprets a read of 0xFFFFFFFC (-4)
@@ -216,7 +247,9 @@ End:
     ; 0000001C AAAAAAAA  ; TrueVar is written to 0x1C of `BRA` jumps to the correct target.
     ; 00000020 00000010  ; 0x10 is written to 0x20 if the branch slot of the `BRAF` is executed.
     ; 00000024 AAAAAAAA  ; TrueVar is written to 0x24 if `BRAF` jumps to the correct target.
-
+    ; 00000028 00000016  ; 0x16 is written to 0x28 if the branch slot of `BSR` is executed.
+    ; 0000002C AAAAAAAA  ; TrueVar is written to 0x2C if `BSR` jumps to the correct instruction.
+    ; 00000030 00000011  ; 0x11 is written to 0x30 if the branch slot of `RTS` is executed.
 
     align 4
     LTORG
