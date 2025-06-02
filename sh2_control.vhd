@@ -1597,9 +1597,6 @@ begin
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
                  "*2 + PC)", LogFile);
-
-             -- assert false
-             -- severity ERROR;
  
              Instruction_DelayedBranchTaken <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
@@ -1611,18 +1608,30 @@ begin
 
              -- Control signals to write PC to PR.
              SysRegSrc              <= SysRegSrc_PC;
-             -- SysRegSel              <= SysRegSel_PR;
              Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
  
+
          -- BSRF Rm
          -- m format
+         --
+         -- Branch to sub-routine far.
+         -- PC -> PR, Rm + PC -> PC
          elsif std_match(IR, BSRF) then
 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded BSRF R" & to_string(slv_to_uint(m_format_m)), LogFile);
- 
-             assert false
-             severity ERROR;
+
+            -- Basically BSR, but with a different target.
+             Instruction_DelayedBranchTaken <= '1';
+             PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
+
+             Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
+
+             Instruction_PRWriteEn <= '1';
+
+             -- Control signals to write PC to PR.
+             SysRegSrc              <= SysRegSrc_PC;
+             Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
  
  
          -- JMP @Rm
