@@ -1,2 +1,0 @@
-- Remove duplicated utility functions/procedures in test benches.
-- Add reset signals to all entities to avoid numeric_std metavalues.
