@@ -53,19 +53,15 @@
 --
 
 library ieee;
-library std;
-
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
 use std.textio.all;
 
-use work.SH2PmauConstants.all;
-use work.MemoryInterfaceConstants.all;
-use work.SH2ControlConstants.all;
-use work.Logging.all;
 use work.SH2Constants.all;
+use work.SH2ControlConstants.all;
+use work.SH2PmauConstants.all;
 use work.SH2DmauConstants.all;
+use work.MemoryInterfaceConstants.all;
 
 
 entity  SH2CPU  is
@@ -92,17 +88,19 @@ end  SH2CPU;
 
 architecture structural of sh2cpu is
 
+    -- Sign-extends a standard logic vector to the SH2 wordsize
     pure function SignExtend(slv : std_logic_vector) return std_logic_vector is
     begin
-      -- slv -> signed, resize to sign-extend, then convert to slv. 
       return std_logic_vector(resize(signed(slv), SH2_WORDSIZE));
     end function;
 
+    -- Zero-extends a standard logic vector to the SH2 wordsize
     pure function ZeroExtend(slv : std_logic_vector) return std_logic_vector is
     begin
       return std_logic_vector(resize(unsigned(slv), SH2_WORDSIZE));
     end function;
 
+    -- Returns the low byte of a standard logic vector
     pure function LowByte(slv : std_logic_vector) return std_logic_vector is
     begin
       assert slv'length >= 8
@@ -112,6 +110,7 @@ architecture structural of sh2cpu is
       return slv(7 downto 0);
     end function;
 
+    -- Returns the low word of a standard logic vector
     pure function LowWord(slv : std_logic_vector) return std_logic_vector is
     begin
       assert slv'length >= 16
@@ -123,83 +122,83 @@ architecture structural of sh2cpu is
 
 
     -- Register array inputs
-    signal RegDataIn  : std_logic_vector(31 downto 0);    -- data to write to a register
-    signal EnableIn   : std_logic;                        -- if data should be written to an input register
-    signal RegInSel   : integer  range 15 downto 0;       -- which register to write data to
-    signal RegASel    : integer  range 15 downto 0;       -- which register to read to bus A
-    signal RegBSel    : integer  range 15 downto 0;       -- which register to read to bus B
-    signal RegAxIn    : std_logic_vector(31 downto 0);    -- data to write to an address register
-    signal RegAxInSel : integer  range 15 downto 0;       -- which address register to write to
-    signal RegAxStore : std_logic;                        -- if data should be written to the address register
-    signal RegA1Sel   : integer  range 15 downto 0;       -- which register to read to address bus 1
-    signal RegA2Sel   : integer  range 15 downto 0;       -- which register to read to address bus 2
+    signal RegDataIn  : std_logic_vector(31 downto 0);      -- data to write to a register
+    signal EnableIn   : std_logic;                          -- if data should be written to an input register
+    signal RegInSel   : integer  range 15 downto 0;         -- which register to write data to
+    signal RegASel    : integer  range 15 downto 0;         -- which register to read to bus A
+    signal RegBSel    : integer  range 15 downto 0;         -- which register to read to bus B
+    signal RegAxIn    : std_logic_vector(31 downto 0);      -- data to write to an address register
+    signal RegAxInSel : integer  range 15 downto 0;         -- which address register to write to
+    signal RegAxStore : std_logic;                          -- if data should be written to the address register
+    signal RegA1Sel   : integer  range 15 downto 0;         -- which register to read to address bus 1
+    signal RegA2Sel   : integer  range 15 downto 0;         -- which register to read to address bus 2
 
     -- register array outputs
-    signal RegA       : std_logic_vector(31 downto 0);    -- register bus A
-    signal RegB       : std_logic_vector(31 downto 0);    -- register bus B
-    signal RegA1      : std_logic_vector(31 downto 0);    -- address register bus 1
-    signal RegA2      : std_logic_vector(31 downto 0);    -- address register bus 2
+    signal RegA       : std_logic_vector(31 downto 0);      -- register bus A
+    signal RegB       : std_logic_vector(31 downto 0);      -- register bus B
+    signal RegA1      : std_logic_vector(31 downto 0);      -- address register bus 1
+    signal RegA2      : std_logic_vector(31 downto 0);      -- address register bus 2
     
     -- ALU inputs
-    signal OperandA : std_logic_vector(31 downto 0);    -- first operand
-    signal OperandB : std_logic_vector(31 downto 0);    -- second operand
-    signal TIn      : std_logic;                        -- T bit from status register
-    signal LoadA    : std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
-    signal FCmd     : std_logic_vector(3 downto 0);     -- F-Block operation
-    signal CinCmd   : std_logic_vector(1 downto 0);     -- carry in operation
-    signal SCmd     : std_logic_vector(2 downto 0);     -- shift operation
-    signal ALUCmd   : std_logic_vector(1 downto 0);     -- ALU result select
+    signal OperandA : std_logic_vector(31 downto 0);        -- first operand
+    signal OperandB : std_logic_vector(31 downto 0);        -- second operand
+    signal LoadA    : std_logic;                            -- determine if OperandA is loaded ('1') or zeroed ('0')
+    signal FCmd     : std_logic_vector(3 downto 0);         -- F-Block operation
+    signal CinCmd   : std_logic_vector(1 downto 0);         -- carry in operation
+    signal SCmd     : std_logic_vector(2 downto 0);         -- shift operation
+    signal ALUCmd   : std_logic_vector(1 downto 0);         -- ALU result select
 
     -- ALU outputs
-    signal Result   : std_logic_vector(31 downto 0);   -- ALU result
-    signal Cout     : std_logic;                       -- carry out
-    signal Overflow : std_logic;                       -- signed overflow
-    signal Zero     : std_logic;                       -- result is zero
-    signal Sign     : std_logic;                       -- sign of result
+    signal Result   : std_logic_vector(31 downto 0);        -- ALU result
+    signal Cout     : std_logic;                            -- carry out
+    signal Overflow : std_logic;                            -- signed overflow
+    signal Zero     : std_logic;                            -- result is zero
+    signal Sign     : std_logic;                            -- sign of result
 
     -- DMAU inputs
-    signal RegSrc       : std_logic_vector(31 downto 0);
-    signal R0Src        : std_logic_vector(31 downto 0);
-    signal PCSrc        : std_logic_vector(31 downto 0);
-    signal GBRIn        : std_logic_vector(31 downto 0);
-    signal GBRWriteEn   : std_logic;
-    signal DMAUOff4     : std_logic_vector(3 downto 0);
-    signal DMAUOff8     : std_logic_vector(7 downto 0);
-    signal BaseSel      : std_logic_vector(1 downto 0);
-    signal IndexSel     : std_logic_vector(1 downto 0);
-    signal OffScalarSel : std_logic_vector(1 downto 0);
-    signal IncDecSel    : std_logic_vector(1 downto 0);
+    signal RegSrc       : std_logic_vector(31 downto 0);    -- input register
+    signal R0Src        : std_logic_vector(31 downto 0);    -- R0 register input
+    signal PCSrc        : std_logic_vector(31 downto 0);    -- program counter source
+    signal GBRIn        : std_logic_vector(31 downto 0);    -- GBR input
+    signal GBRWriteEn   : std_logic;                        -- GBR write enable, active high
+    signal DMAUOff4     : std_logic_vector(3 downto 0);     -- 4-bit offset
+    signal DMAUOff8     : std_logic_vector(7 downto 0);     -- 8-bit offset
+    signal BaseSel      : std_logic_vector(1 downto 0);     -- which base register source to select
+    signal IndexSel     : std_logic_vector(1 downto 0);     -- which index source to select
+    signal OffScalarSel : std_logic_vector(1 downto 0);     -- what to scale the offset by (1, 2, 4)
+    signal IncDecSel    : std_logic_vector(1 downto 0);     -- post-increment or pre-decrement the base
 
     -- DMAU outputs
-    signal DataAddress  : std_logic_vector(31 downto 0);
-    signal AddrSrcOut   : std_logic_vector(31 downto 0);
-    signal GBROut       : std_logic_vector(31 downto 0);
-
+    signal DataAddress  : std_logic_vector(31 downto 0);    -- output address
+    signal AddrSrcOut   : std_logic_vector(31 downto 0);    -- incremented/decremented address (store back to register)
+    signal GBROut       : std_logic_vector(31 downto 0);    -- GBR output
+                                                            --
     -- PMAU inputs
-    signal RegIn       : std_logic_vector(31 downto 0);
-    signal PRIn        : std_logic_vector(31 downto 0);
-    signal PCAddrMode  : std_logic_vector(2 downto 0);
-    signal PRWriteEn   : std_logic;
-    signal PMAUOff8    : std_logic_vector(7 downto 0);
-    signal PMAUOff12   : std_logic_vector(11 downto 0);
-    signal PCIn        : std_logic_vector(31 downto 0);
-    signal PCWriteCtrl : std_logic_vector(1 downto 0);
+    signal RegIn       : std_logic_vector(31 downto 0);     -- register source input
+    signal PRIn        : std_logic_vector(31 downto 0);     -- PR register input (for writing to PR)
+    signal PRWriteEn   : std_logic;                         -- enable writing to PR (active high) 
+    signal PCAddrMode  : std_logic_vector(2 downto 0);      -- program address mode select signal
+    signal PMAUOff8    : std_logic_vector(7 downto 0);      -- 8-bit signed offset input
+    signal PMAUOff12   : std_logic_vector(11 downto 0);     -- 12-bit signed offset input
+    signal PCIn        : std_logic_vector(31 downto 0);     -- input for parallel loading of PC
+    signal PCWriteCtrl : std_logic_vector(1 downto 0);      -- write control signal for PC
 
     -- PMAU outputs
-    -- signal PCOut       : std_logic_vector(31 downto 0);
-    signal PCCalcOut : std_logic_vector(31 downto 0);
-    signal PCRegOut  : std_logic_vector(31 downto 0);
-    signal PROut     : std_logic_vector(31 downto 0);
+    signal PCCalcOut : std_logic_vector(31 downto 0);       -- calculated PC address output
+    signal PCRegOut  : std_logic_vector(31 downto 0);       -- currenet value of the PC register
+    signal PROut     : std_logic_vector(31 downto 0);       -- PR (procedure register) output
 
-    -- Memory interface inputs/outputs
-    signal MemEnable   : std_logic;
-    signal ReadWrite   : std_logic;
-    signal MemMode     : std_logic_vector(1 downto 0);
-    signal MemAddress  : std_logic_vector(31 downto 0);
-    signal MemDataOut  : std_logic_vector(31 downto 0);
-    signal ReadMask    : std_logic_vector(3 downto 0);
-    signal WriteMask   : std_logic_vector(3 downto 0);
-    signal MemDataIn   : std_logic_vector(31 downto 0);
+    -- Memory interface inputs
+    signal MemEnable   : std_logic;                         -- memory interface enable (active high)
+    signal ReadWrite   : std_logic;                         -- if reading or writing from memory
+    signal MemMode     : std_logic_vector(1 downto 0);      -- memory access mode (byte, word, or longword)
+    signal MemAddress  : std_logic_vector(31 downto 0);     -- memory address bus (MUST BE ALIGNED)
+    signal MemDataOut  : std_logic_vector(31 downto 0);     -- the data to output to memory
+
+    -- Memory interface outputs
+    signal ReadMask    : std_logic_vector(3 downto 0);      -- read enable mask (active low)
+    signal WriteMask   : std_logic_vector(3 downto 0);      -- write enable mask (active low)
+    signal MemDataIn   : std_logic_vector(31 downto 0);     -- the data read in from memory
 
     -- CPU system/control registers
     signal MemOutSel        : std_logic_vector(2 downto 0);
@@ -212,8 +211,6 @@ architecture structural of sh2cpu is
     signal ImmediateMode    : std_logic;                        -- immediate extension mode (zero or signed)
     signal ImmediateExt     : std_logic_vector(31 downto 0);    -- sign-extended immediate
     signal ALUOpBSel        : std_logic;
-
-
     
     signal SR               : std_logic_vector(31 downto 0);  -- Status register.
     signal VBR              : std_logic_vector(31 downto 0);  -- Vector Base Register.
