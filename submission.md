@@ -4,12 +4,17 @@ fontsize: 8pt
 geometry:
 - top=.5in
 - bottom=.5in
-- left=.3in
-- right=.3in
+- left=.5in
+- right=.5in
 linestretch: 1
 mainfont: "DejaVu Serif"
 monofont: "DejaVu Sans Mono"
 ---
+
+**Name**: Christian Miranda and Zachary Huang
+
+**Date:** 06/02/2025
+
 
 # Hitachi SH-2 CPU Design
 
@@ -74,7 +79,64 @@ although it is possible to test the SH-2 CPU without this by invoking
 http://john.ccac.rwth-aachen.de:8000/as/download.html
 
 
-
 ## Extra Credit - Multi-bit shift Instructions (20 points)
 
+All shift instructions are implemented.
+
 ## Extra Credit - Implementation (60 points)
+
+
+The SH-2 CPU design was implemented for the Xilinx Spartan 3E XC3S1200EFGG3204C.
+
+The resource usage summary is provided below. It is in `SH2CPU.syr` in the
+`ise_work/` directory.
+
+```
+
+
+Device utilization summary:
+---------------------------
+
+Selected Device : 3s1200efg320-4 
+
+ Number of Slices:                     2612  out of   8672    30%  
+ Number of Slice Flip Flops:           1005  out of  17344     5%  
+ Number of 4 input LUTs:               4967  out of  17344    28%  
+ Number of IOs:                          77
+ Number of bonded IOBs:                  75  out of    250    30%  
+ Number of GCLKs:                         3  out of     24    12%  
+
+
+
+```
+
+The timing report is in `SH2CPU.par` in the `ise_work/` directory.
+
+
+
+
+
+```
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------
+  Constraint                                |    Check    | Worst Case |  Best Case | Timing |   Timing   
+                                            |             |    Slack   | Achievable | Errors |    Score   
+----------------------------------------------------------------------------------------------------------
+  Autotimespec constraint for clock net clo | SETUP       |         N/A|    32.470ns|     N/A|           0
+  ck_IBUF                                   | HOLD        |     1.064ns|            |       0|           0
+----------------------------------------------------------------------------------------------------------
+  Autotimespec constraint for clock net con | SETUP       |         N/A|     5.782ns|     N/A|           0
+  trol_unit/state_FSM_FFd2                  | HOLD        |     1.390ns|            |       0|           0
+----------------------------------------------------------------------------------------------------------
+
+
+
+```
+
+Thus our maximum clock speed is around 30.8 MHz.
+
+

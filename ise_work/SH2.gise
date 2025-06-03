@@ -71,6 +71,7 @@
   <transforms xmlns="http://www.xilinx.com/XMLSchema">
     <transform xil_pn:end_ts="1748844737" xil_pn:name="TRAN_copyInitialToXSTAbstractSynthesis" xil_pn:start_ts="1748844737">
       <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
     </transform>
     <transform xil_pn:end_ts="1748844737" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="57859553612948214" xil_pn:start_ts="1748844737">
       <status xil_pn:value="SuccessfullyRun"/>
@@ -100,7 +101,9 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="InputChanged"/>
       <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="SH2CPU.lso"/>
       <outfile xil_pn:name="SH2CPU.ngc"/>
@@ -121,6 +124,7 @@
     <transform xil_pn:end_ts="1748848076" xil_pn:in_ck="4108708817662720600" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="-6171394529682663593" xil_pn:start_ts="1748848071">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
       <outfile xil_pn:name="SH2CPU.bld"/>
       <outfile xil_pn:name="SH2CPU.ngd"/>
       <outfile xil_pn:name="SH2CPU_ngdbuild.xrpt"/>
@@ -130,6 +134,7 @@
     <transform xil_pn:end_ts="1748848085" xil_pn:in_ck="4108708817662720601" xil_pn:name="TRANEXT_map_spartan3" xil_pn:prop_ck="3188416950630775481" xil_pn:start_ts="1748848076">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
       <outfile xil_pn:name="SH2CPU.pcf"/>
       <outfile xil_pn:name="SH2CPU_map.map"/>
       <outfile xil_pn:name="SH2CPU_map.mrp"/>
@@ -143,6 +148,7 @@
     <transform xil_pn:end_ts="1748848631" xil_pn:in_ck="7303147542269234674" xil_pn:name="TRANEXT_par_spartan3" xil_pn:prop_ck="6268780068511726196" xil_pn:start_ts="1748848085">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
       <outfile xil_pn:name="SH2CPU.ncd"/>
       <outfile xil_pn:name="SH2CPU.pad"/>
       <outfile xil_pn:name="SH2CPU.par"/>
@@ -157,6 +163,7 @@
     <transform xil_pn:end_ts="1748848631" xil_pn:in_ck="4108708817662720469" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416186" xil_pn:start_ts="1748848622">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForPredecessor"/>
       <outfile xil_pn:name="SH2CPU.twr"/>
       <outfile xil_pn:name="SH2CPU.twx"/>
       <outfile xil_pn:name="_xmsgs/trce.xmsgs"/>
