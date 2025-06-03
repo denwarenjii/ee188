@@ -35,7 +35,6 @@ WORKDIR = work/
 
 WAVEFORM = sh2_cpu_tb.ghw
 
-# BUILDFLAGS = --std=08 -Wuseless -Werror -Wruntime-error -Wnowrite -fsynopsys --workdir=$(WORKDIR)
 BUILDFLAGS = --std=08 -Wuseless -Werror -Wruntime-error -Wnowrite -fsynopsys --workdir=$(WORKDIR)
 
 RUNFLAGS = --ieee-asserts=disable --wave=$(WAVEFORM)
@@ -84,6 +83,10 @@ asm:
 
 test: $(TOPLEVEL) asm
 	ghdl -r $(TOPLEVEL) $(RUNFLAGS)	
+
+# User provided binary files instead of re-assembling asm files.
+test-bin: $(TOPLEVEL)
+	ghdl -r $(TOPLEVEL) $(RUNFLAGS)
 
 clean:
 	ghdl --clean --workdir=$(WORKDIR) --std=08
