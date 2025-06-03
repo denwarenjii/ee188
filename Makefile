@@ -28,6 +28,7 @@
 # sh2_cpu_tb.o: utils.o logging.o AnsiEscape.o sh2_cpu.o memory.o
 # reg.o: logging.o
 
+# Note that some distros use ghdl for ghdl mcode. Change to ghdl-gcc if that is the case
 GHDL = ghdl
 
 # Directory for object files.
@@ -82,14 +83,14 @@ asm:
 	cd asm && $(MAKE)
 
 test: $(TOPLEVEL) asm
-	ghdl -r $(TOPLEVEL) $(RUNFLAGS)	
+	$(GHDL) -r $(TOPLEVEL) $(RUNFLAGS)	
 
 # User provided binary files instead of re-assembling asm files.
 test-bin: $(TOPLEVEL)
-	ghdl -r $(TOPLEVEL) $(RUNFLAGS)
+	$(GHDL) -r $(TOPLEVEL) $(RUNFLAGS)
 
 clean:
-	ghdl --clean --workdir=$(WORKDIR) --std=08
+	$(GHDL) --clean --workdir=$(WORKDIR) --std=08
 	rm -rf asm/*.bin
 # rm -rf *.cf *.o $(WORKDIR)
 
