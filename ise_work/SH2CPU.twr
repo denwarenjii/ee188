@@ -1,0 +1,244 @@
+--------------------------------------------------------------------------------
+Release 14.7 Trace  (lin64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/trce -intstyle ise -v 3 -s 4 -n
+3 -fastpaths -xml SH2CPU.twx SH2CPU.ncd -o SH2CPU.twr SH2CPU.pcf
+
+Design file:              SH2CPU.ncd
+Physical constraint file: SH2CPU.pcf
+Device,package,speed:     xc3s1200e,fg320,-4 (PRODUCTION 1.27 2013-10-13)
+Report level:             verbose report
+
+Environment Variable      Effect 
+--------------------      ------ 
+NONE                      No environment variables were set
+--------------------------------------------------------------------------------
+
+INFO:Timing:2698 - No timing constraints found, doing default enumeration.
+INFO:Timing:3412 - To improve timing, see the Timing Closure User Guide (UG612).
+INFO:Timing:2752 - To get complete path coverage, use the unconstrained paths 
+   option. All paths that are not constrained will be reported in the 
+   unconstrained paths section(s) of the report.
+INFO:Timing:3339 - The clock-to-out numbers in this timing report are based on 
+   a 50 Ohm transmission line loading model.  For the details of this model, 
+   and for more information on accounting for different loading conditions, 
+   please see the device datasheet.
+INFO:Timing:3390 - This architecture does not support a default System Jitter 
+   value, please add SYSTEM_JITTER constraint to the UCF to modify the Clock 
+   Uncertainty calculation.
+INFO:Timing:3389 - This architecture does not support 'Discrete Jitter' and 
+   'Phase Error' calculations, these terms will be zero in the Clock 
+   Uncertainty calculation.  Please make appropriate modification to 
+   SYSTEM_JITTER to account for the unsupported Discrete Jitter and Phase 
+   Error.
+
+
+
+Data Sheet report:
+-----------------
+All values displayed in nanoseconds (ns)
+
+Setup/Hold to clock Reset
+------------+------------+------------+------------------------------+--------+
+            |Max Setup to|Max Hold to |                              | Clock  |
+Source      | clk (edge) | clk (edge) |Internal Clock(s)             | Phase  |
+------------+------------+------------+------------------------------+--------+
+DB<0>       |   -6.985(F)|   19.395(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<1>       |   -6.841(F)|   18.865(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<2>       |   -6.628(F)|   19.451(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<3>       |   -5.377(F)|   18.640(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<4>       |   -6.181(F)|   18.831(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<5>       |   -6.215(F)|   18.825(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<6>       |   -6.433(F)|   18.575(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<7>       |   -3.921(F)|   18.893(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<8>       |   -6.517(F)|   18.229(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<9>       |   -6.973(F)|   18.704(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<10>      |   -7.164(F)|   18.597(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<11>      |   -6.824(F)|   18.807(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<12>      |   -6.729(F)|   18.903(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<13>      |   -7.159(F)|   18.821(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<14>      |   -6.781(F)|   18.983(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<15>      |   -3.078(F)|   19.346(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<16>      |   -7.476(F)|   19.537(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<17>      |   -8.032(F)|   19.613(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<18>      |   -7.465(F)|   19.591(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<19>      |   -7.455(F)|   19.295(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<20>      |   -7.516(F)|   19.286(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<21>      |   -7.645(F)|   19.479(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<22>      |   -6.785(F)|   19.415(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<23>      |   -4.611(F)|   19.627(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<24>      |   -9.549(F)|   19.654(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<25>      |   -9.200(F)|   19.371(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<26>      |   -8.591(F)|   18.888(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<27>      |   -8.992(F)|   19.206(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<28>      |   -9.608(F)|   19.699(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<29>      |   -9.175(F)|   19.355(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<30>      |   -9.821(F)|   19.872(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+DB<31>      |   -2.867(F)|   19.510(F)|memory_rx/MemDataIn_10_not0001|   0.000|
+------------+------------+------------+------------------------------+--------+
+
+Clock clock to Pad
+------------+------------+------------------+--------+
+            | clk (edge) |                  | Clock  |
+Destination |   to PAD   |Internal Clock(s) | Phase  |
+------------+------------+------------------+--------+
+AB<0>       |   21.346(R)|clock_IBUF        |   0.000|
+AB<1>       |   28.094(R)|clock_IBUF        |   0.000|
+AB<2>       |   23.639(R)|clock_IBUF        |   0.000|
+AB<3>       |   23.678(R)|clock_IBUF        |   0.000|
+AB<4>       |   25.119(R)|clock_IBUF        |   0.000|
+AB<5>       |   26.072(R)|clock_IBUF        |   0.000|
+AB<6>       |   28.024(R)|clock_IBUF        |   0.000|
+AB<7>       |   27.836(R)|clock_IBUF        |   0.000|
+AB<8>       |   29.134(R)|clock_IBUF        |   0.000|
+AB<9>       |   28.982(R)|clock_IBUF        |   0.000|
+AB<10>      |   29.351(R)|clock_IBUF        |   0.000|
+AB<11>      |   29.916(R)|clock_IBUF        |   0.000|
+AB<12>      |   29.853(R)|clock_IBUF        |   0.000|
+AB<13>      |   32.966(R)|clock_IBUF        |   0.000|
+AB<14>      |   31.474(R)|clock_IBUF        |   0.000|
+AB<15>      |   32.174(R)|clock_IBUF        |   0.000|
+AB<16>      |   33.857(R)|clock_IBUF        |   0.000|
+AB<17>      |   35.287(R)|clock_IBUF        |   0.000|
+AB<18>      |   35.042(R)|clock_IBUF        |   0.000|
+AB<19>      |   38.348(R)|clock_IBUF        |   0.000|
+AB<20>      |   36.741(R)|clock_IBUF        |   0.000|
+AB<21>      |   33.978(R)|clock_IBUF        |   0.000|
+AB<22>      |   37.744(R)|clock_IBUF        |   0.000|
+AB<23>      |   35.934(R)|clock_IBUF        |   0.000|
+AB<24>      |   39.277(R)|clock_IBUF        |   0.000|
+AB<25>      |   36.460(R)|clock_IBUF        |   0.000|
+AB<26>      |   38.785(R)|clock_IBUF        |   0.000|
+AB<27>      |   39.170(R)|clock_IBUF        |   0.000|
+AB<28>      |   37.455(R)|clock_IBUF        |   0.000|
+AB<29>      |   39.287(R)|clock_IBUF        |   0.000|
+AB<30>      |   39.470(R)|clock_IBUF        |   0.000|
+AB<31>      |   40.211(R)|clock_IBUF        |   0.000|
+DB<0>       |    9.250(R)|clock_IBUF        |   0.000|
+DB<1>       |    9.339(R)|clock_IBUF        |   0.000|
+DB<2>       |    9.176(R)|clock_IBUF        |   0.000|
+DB<3>       |    9.375(R)|clock_IBUF        |   0.000|
+DB<4>       |    9.533(R)|clock_IBUF        |   0.000|
+DB<5>       |    9.807(R)|clock_IBUF        |   0.000|
+DB<6>       |    9.888(R)|clock_IBUF        |   0.000|
+DB<7>       |    9.014(R)|clock_IBUF        |   0.000|
+DB<8>       |    8.920(R)|clock_IBUF        |   0.000|
+DB<9>       |    8.614(R)|clock_IBUF        |   0.000|
+DB<10>      |    8.679(R)|clock_IBUF        |   0.000|
+DB<11>      |    9.191(R)|clock_IBUF        |   0.000|
+DB<12>      |    8.798(R)|clock_IBUF        |   0.000|
+DB<13>      |    8.386(R)|clock_IBUF        |   0.000|
+DB<14>      |    8.670(R)|clock_IBUF        |   0.000|
+DB<15>      |    8.281(R)|clock_IBUF        |   0.000|
+DB<16>      |    8.264(R)|clock_IBUF        |   0.000|
+DB<17>      |    8.853(R)|clock_IBUF        |   0.000|
+DB<18>      |    8.386(R)|clock_IBUF        |   0.000|
+DB<19>      |    8.397(R)|clock_IBUF        |   0.000|
+DB<20>      |    8.288(R)|clock_IBUF        |   0.000|
+DB<21>      |    8.765(R)|clock_IBUF        |   0.000|
+DB<22>      |    8.811(R)|clock_IBUF        |   0.000|
+DB<23>      |    8.637(R)|clock_IBUF        |   0.000|
+DB<24>      |    8.068(R)|clock_IBUF        |   0.000|
+DB<25>      |    8.327(R)|clock_IBUF        |   0.000|
+DB<26>      |    7.953(R)|clock_IBUF        |   0.000|
+DB<27>      |    7.984(R)|clock_IBUF        |   0.000|
+DB<28>      |    7.864(R)|clock_IBUF        |   0.000|
+DB<29>      |    7.870(R)|clock_IBUF        |   0.000|
+DB<30>      |    8.461(R)|clock_IBUF        |   0.000|
+DB<31>      |    8.360(R)|clock_IBUF        |   0.000|
+MemSel      |   11.885(R)|clock_IBUF        |   0.000|
+RE0         |   25.916(R)|clock_IBUF        |   0.000|
+RE1         |   28.832(R)|clock_IBUF        |   0.000|
+RE2         |   27.005(R)|clock_IBUF        |   0.000|
+RE3         |   29.844(R)|clock_IBUF        |   0.000|
+WE0         |   26.913(R)|clock_IBUF        |   0.000|
+WE1         |   28.770(R)|clock_IBUF        |   0.000|
+WE2         |   28.614(R)|clock_IBUF        |   0.000|
+WE3         |   29.136(R)|clock_IBUF        |   0.000|
+------------+------------+------------------+--------+
+
+Clock to Setup on destination clock Reset
+---------------+---------+---------+---------+---------+
+               | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock   |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+---------------+---------+---------+---------+---------+
+Reset          |         |         |   12.817|   12.817|
+clock          |         |         |   24.370|         |
+---------------+---------+---------+---------+---------+
+
+Clock to Setup on destination clock clock
+---------------+---------+---------+---------+---------+
+               | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock   |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+---------------+---------+---------+---------+---------+
+Reset          |   31.766|   32.463|         |         |
+clock          |   32.470|    8.678|         |         |
+---------------+---------+---------+---------+---------+
+
+Pad to Pad
+---------------+---------------+---------+
+Source Pad     |Destination Pad|  Delay  |
+---------------+---------------+---------+
+Reset          |AB<0>          |   19.276|
+Reset          |AB<1>          |   26.449|
+Reset          |AB<2>          |   21.787|
+Reset          |AB<3>          |   21.826|
+Reset          |AB<4>          |   23.267|
+Reset          |AB<5>          |   24.220|
+Reset          |AB<6>          |   26.129|
+Reset          |AB<7>          |   25.941|
+Reset          |AB<8>          |   27.239|
+Reset          |AB<9>          |   27.087|
+Reset          |AB<10>         |   27.456|
+Reset          |AB<11>         |   28.021|
+Reset          |AB<12>         |   27.958|
+Reset          |AB<13>         |   31.071|
+Reset          |AB<14>         |   29.579|
+Reset          |AB<15>         |   30.446|
+Reset          |AB<16>         |   33.262|
+Reset          |AB<17>         |   33.392|
+Reset          |AB<18>         |   33.147|
+Reset          |AB<19>         |   36.453|
+Reset          |AB<20>         |   34.846|
+Reset          |AB<21>         |   33.433|
+Reset          |AB<22>         |   35.849|
+Reset          |AB<23>         |   34.039|
+Reset          |AB<24>         |   37.399|
+Reset          |AB<25>         |   35.132|
+Reset          |AB<26>         |   36.890|
+Reset          |AB<27>         |   37.275|
+Reset          |AB<28>         |   36.400|
+Reset          |AB<29>         |   37.392|
+Reset          |AB<30>         |   39.116|
+Reset          |AB<31>         |   38.804|
+Reset          |RE0            |   24.271|
+Reset          |RE1            |   27.187|
+Reset          |RE2            |   25.360|
+Reset          |RE3            |   28.199|
+Reset          |WE0            |   25.268|
+Reset          |WE1            |   27.125|
+Reset          |WE2            |   26.969|
+Reset          |WE3            |   27.491|
+clock          |RE0            |   13.939|
+clock          |RE1            |   11.881|
+clock          |RE2            |   12.674|
+clock          |RE3            |   13.642|
+clock          |WE0            |   12.183|
+clock          |WE1            |   12.497|
+clock          |WE2            |   13.500|
+clock          |WE3            |   13.548|
+---------------+---------------+---------+
+
+
+Analysis completed Mon Jun  2 00:17:11 2025 
+--------------------------------------------------------------------------------
+
+Trace Settings:
+-------------------------
+Trace Settings 
+
+Peak Memory Usage: 407 MB
+
+
+
