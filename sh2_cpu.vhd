@@ -31,6 +31,7 @@
 --                                  register manipulation. Also added this
 --                                  as possible input to RegDataIn.
 --     01 Jun 25  Zack Huang        Finishing documentation
+--     07 Jun 25  Zack Huang        Move all control signals into record types for organization    -
 --
 ----------------------------------------------------------------------------
 
@@ -68,7 +69,7 @@ use ieee.numeric_std.all;
 use std.textio.all;
 
 use work.SH2Constants.all;
-use work.SH2ControlConstants.all;
+use work.SH2ControlSignals.all;
 use work.SH2PmauConstants.all;
 use work.SH2DmauConstants.all;
 use work.MemoryInterfaceConstants.all;

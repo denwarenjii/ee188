@@ -30,7 +30,7 @@ use std.textio.all;
 
 use work.Logging.all;
 use work.ANSIEscape.all;
-use work.SH2ControlConstants.all;
+use work.SH2ControlSignals.all;
 
 entity sh2_cpu_tb is
 end sh2_cpu_tb;

@@ -115,6 +115,16 @@
       "file": "utils.vhd",
       "library": "work",
       "language": "vhdl"
+    },
+    {
+      "file": "sh2_instructions.vhd",
+      "library": "work",
+      "language": "vhdl"
+    },
+    {
+      "file": "sh2_signals.vhd",
+      "library": "work",
+      "language": "vhdl"
     }
   ]
 }

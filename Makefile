@@ -9,6 +9,8 @@
 # memory_interface.vhd
 # sh2_dmau.vhd
 # sh2_alu.vhd
+# sh2_instructions.vhd
+# sh2_signals.vhd
 # sh2_control.vhd
 # sh2_reg.vhd
 # sh2_cpu.vhd
@@ -22,7 +24,7 @@
 # sh2_pmau.o:  sh2_constants.o  mau.o
 # memory_interface.o: utils.o logging.o
 # sh2_dmau.o: mau.o sh2_constants.o
-# sh2_control.o: memory_interface.o logging.o sh2_pmau.o sh2_dmau.o sh2_alu.o utils.o
+# sh2_control.o: memory_interface.o logging.o sh2_pmau.o sh2_dmau.o sh2_alu.o utils.o sh2_instructions.o sh2_signals.o
 # sh2_cpu.o: sh2_pmau.o memory_interface.o sh2_control.o logging.o sh2_constants.o sh2_dmau.o sh2_reg.o sh2_alu.o
 # memory.o: logging.o utils.o
 # sh2_cpu_tb.o: utils.o logging.o AnsiEscape.o sh2_cpu.o memory.o
@@ -42,7 +44,8 @@ RUNFLAGS = --ieee-asserts=disable --wave=$(WAVEFORM)
 
 SOURCES = utils.vhd logging.vhd AnsiEscape.vhd sh2_constants.vhd mau.vhd sh2_pmau.vhd \
 		  memory_interface.vhd sh2_dmau.vhd sh2_alu.vhd sh2_control.vhd sh2_reg.vhd \
-		  sh2_cpu.vhd memory.vhd sh2_cpu_tb.vhd reg.vhd alu.vhd 
+		  sh2_cpu.vhd memory.vhd sh2_cpu_tb.vhd reg.vhd alu.vhd sh2_instructions.vhd \
+		  sh2_signals.vhd
 
 OBJECTS = $(patsubst %.vhd,$(WORKDIR)%.o,$(SOURCES))
 
@@ -63,10 +66,11 @@ $(WORKDIR)memory_interface.o: $(WORKDIR)utils.o $(WORKDIR)logging.o
 $(WORKDIR)sh2_dmau.o: $(WORKDIR)mau.o $(WORKDIR)sh2_constants.o
 
 $(WORKDIR)sh2_control.o: $(WORKDIR)memory_interface.o $(WORKDIR)logging.o  $(WORKDIR)sh2_pmau.o \
-						 $(WORKDIR)sh2_dmau.o $(WORKDIR)sh2_alu.o  $(WORKDIR)utils.o
+						 $(WORKDIR)sh2_dmau.o $(WORKDIR)sh2_alu.o  $(WORKDIR)utils.o $(WORKDIR)sh2_instructions.o $(WORKDIR)sh2_signals.o
 
 $(WORKDIR)sh2_cpu.o: $(WORKDIR)sh2_pmau.o $(WORKDIR)memory_interface.o $(WORKDIR)sh2_control.o \
 					 $(WORKDIR)logging.o $(WORKDIR)sh2_constants.o $(WORKDIR)sh2_dmau.o $(WORKDIR)sh2_reg.o $(WORKDIR)sh2_alu.o
+					 
 
 $(WORKDIR)memory.o:  $(WORKDIR)logging.o $(WORKDIR)utils.o
 
@@ -91,6 +95,7 @@ test-bin: $(TOPLEVEL)
 
 clean:
 	$(GHDL) --clean --workdir=$(WORKDIR) --std=08
+	rm -rf work/*
 	rm -rf asm/*.bin
 # rm -rf *.cf *.o $(WORKDIR)
 
