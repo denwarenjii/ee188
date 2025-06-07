@@ -133,15 +133,7 @@ architecture structural of sh2cpu is
 
     -- Register array inputs
     signal RegDataIn  : std_logic_vector(31 downto 0);      -- data to write to a register
-    signal RegEnableIn: std_logic;                          -- if data should be written to an input register
-    signal RegInSel   : integer  range 15 downto 0;         -- which register to write data to
-    signal RegASel    : integer  range 15 downto 0;         -- which register to read to bus A
-    signal RegBSel    : integer  range 15 downto 0;         -- which register to read to bus B
     signal RegAxIn    : std_logic_vector(31 downto 0);      -- data to write to an address register
-    signal RegAxInSel : integer  range 15 downto 0;         -- which address register to write to
-    signal RegAxStore : std_logic;                          -- if data should be written to the address register
-    signal RegA1Sel   : integer  range 15 downto 0;         -- which register to read to address bus 1
-    signal RegA2Sel   : integer  range 15 downto 0;         -- which register to read to address bus 2
 
     -- register array outputs
     signal RegA       : std_logic_vector(31 downto 0);      -- register bus A
@@ -152,11 +144,6 @@ architecture structural of sh2cpu is
     -- ALU inputs
     signal OperandA : std_logic_vector(31 downto 0);        -- first operand
     signal OperandB : std_logic_vector(31 downto 0);        -- second operand
-    signal LoadA    : std_logic;                            -- determine if OperandA is loaded ('1') or zeroed ('0')
-    signal FCmd     : std_logic_vector(3 downto 0);         -- F-Block operation
-    signal CinCmd   : std_logic_vector(1 downto 0);         -- carry in operation
-    signal SCmd     : std_logic_vector(2 downto 0);         -- shift operation
-    signal ALUCmd   : std_logic_vector(1 downto 0);         -- ALU result select
 
     -- ALU outputs
     signal Result   : std_logic_vector(31 downto 0);        -- ALU result
@@ -170,13 +157,6 @@ architecture structural of sh2cpu is
     signal R0Src        : std_logic_vector(31 downto 0);    -- R0 register input
     signal PCSrc        : std_logic_vector(31 downto 0);    -- program counter source
     signal GBRIn        : std_logic_vector(31 downto 0);    -- GBR input
-    signal GBRWriteEn   : std_logic;                        -- GBR write enable, active high
-    signal DMAUOff4     : std_logic_vector(3 downto 0);     -- 4-bit offset
-    signal DMAUOff8     : std_logic_vector(7 downto 0);     -- 8-bit offset
-    signal BaseSel      : std_logic_vector(1 downto 0);     -- which base register source to select
-    signal IndexSel     : std_logic_vector(1 downto 0);     -- which index source to select
-    signal OffScalarSel : std_logic_vector(1 downto 0);     -- what to scale the offset by (1, 2, 4)
-    signal IncDecSel    : std_logic_vector(1 downto 0);     -- post-increment or pre-decrement the base
 
     -- DMAU outputs
     signal DataAddress  : std_logic_vector(31 downto 0);    -- output address
@@ -186,12 +166,6 @@ architecture structural of sh2cpu is
     -- PMAU inputs
     signal RegIn       : std_logic_vector(31 downto 0);     -- register source input
     signal PRIn        : std_logic_vector(31 downto 0);     -- PR register input (for writing to PR)
-    signal PRWriteEn   : std_logic;                         -- enable writing to PR (active high) 
-    signal PCAddrMode  : std_logic_vector(2 downto 0);      -- program address mode select signal
-    signal PMAUOff8    : std_logic_vector(7 downto 0);      -- 8-bit signed offset input
-    signal PMAUOff12   : std_logic_vector(11 downto 0);     -- 12-bit signed offset input
-    signal PCIn        : std_logic_vector(31 downto 0);     -- input for parallel loading of PC
-    signal PCWriteCtrl : std_logic_vector(1 downto 0);      -- write control signal for PC
 
     -- PMAU outputs
     signal PCCalcOut : std_logic_vector(31 downto 0);       -- calculated PC address output
@@ -199,9 +173,6 @@ architecture structural of sh2cpu is
     signal PROut     : std_logic_vector(31 downto 0);       -- PR (procedure register) output
 
     -- Memory interface inputs
-    signal MemEnable   : std_logic;                         -- memory interface enable (active high)
-    signal ReadWrite   : std_logic;                         -- if reading or writing from memory
-    signal MemMode     : std_logic_vector(1 downto 0);      -- memory access mode (byte, word, or longword)
     signal MemAddress  : std_logic_vector(31 downto 0);     -- memory address bus (MUST BE ALIGNED)
     signal MemDataOut  : std_logic_vector(31 downto 0);     -- the data to output to memory
 
@@ -211,19 +182,6 @@ architecture structural of sh2cpu is
     signal MemDataIn   : std_logic_vector(31 downto 0);     -- the data read in from memory
 
     -- CPU internal control signals
-    signal MemOutSel        : std_logic_vector(2 downto 0);     -- source for data that should be output to memory
-    signal RegDataInSel     : std_logic_vector(3 downto 0);     -- source for register input data
-    signal TFlagSel         : std_logic_vector(2 downto 0);     -- source for next value of T flag
-    signal Immediate        : std_logic_vector(7 downto 0);     -- immediate value from instruction
-    signal ImmediateMode    : std_logic;                        -- immediate extension mode (zero or signed)
-    signal ALUOpBSel        : std_logic;                        -- source for ALU Operand B
-    signal SysRegCtrl       : std_logic_vector(1 downto 0);     -- how to update system registers 
-    signal SysRegSel        : std_logic_vector(2 downto 0);     -- system register select 
-    signal SysRegSrc        : std_logic_vector(1 downto 0);     -- source for data to input into a system register
-    signal TNext            : std_logic;                        -- Next value for T bit
-    signal ExtMode          : std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
-    signal MemAddrSel       : std_logic;                        -- whether to output PMAU or DMAU address
-    signal TCmpSel          : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
     signal DelayedBranchTaken   : std_logic;                    -- Whether the delayed branch is taken or not.
     
     -- CPU system/control registers
@@ -252,6 +210,7 @@ architecture structural of sh2cpu is
     signal PCNext           : std_logic_vector(31 downto 0);    -- The current PC incremented by two.
     signal PrevPCReg        : std_logic_vector(31 downto 0);    -- the prevous value fo PC
     signal PCUsed           : std_logic_vector(31 downto 0);    -- The PC that will be fetched from program memory.
+    signal TNext            : std_logic;                        -- next value for T bit in SR
 
     -- RegA with the upper and lower halves of the low two bytes swapped (for the SWAP.B instruction).
     signal RegASwapB : std_logic_vector(31 downto 0);
@@ -261,6 +220,13 @@ architecture structural of sh2cpu is
 
     -- The center 32-bits of RegB and RegA (ie, low word of RegB and high word of RegA).
     signal RegB_RegA_Center : std_logic_vector(31 downto 0);
+
+    signal MemCtrl             : mem_ctrl_t;                       -- memory interface control signals
+    signal ALUCtrl             : alu_ctrl_t;                       -- ALU control signals
+    signal RegCtrl             : reg_ctrl_t;                       -- register array control signals
+    signal DMAUCtrl            : dmau_ctrl_t;                      -- DMAU control signals
+    signal PMAUCtrl            : pmau_ctrl_t;                      -- PMAU control signals
+    signal SysCtrl             : sys_ctrl_t;                       -- system control signals
 
 begin
 
@@ -291,24 +257,26 @@ begin
     PCUsed <= PCNext when (DelayedBranchTaken = '1') else PCCalcOut;
 
     -- Decide which memory address to output
-    with MemAddrSel select 
+    with MemCtrl.AddrSel select 
         MemAddress <=  PCUsed           when MemAddrSel_PMAU,
                        DataAddress      when MemAddrSel_DMAU,
                        (others => 'Z')  when others;
 
     AB <= MemAddress;   -- Output memory address to the address bus
 
+    MemSel <= MemCtrl.Sel;
+
     -- What to output to the data bus (to be written to an address).
-    with MemOutSel select
+    with MemCtrl.OutSel select
         MemDataOut <=   RegA            when MemOut_RegA,
                         RegB            when MemOut_RegB,
                         SysReg          when MemOut_SysReg,
                         (others => 'Z') when others;
 
     -- Compute the zero/sign-extended immediate from an instruction
-    ImmediateExt(7 downto 0) <= Immediate;
-    with ImmediateMode select
-        ImmediateExt(31 downto 8) <= (others => Immediate(7)) when ImmediateMode_SIGN,
+    ImmediateExt(7 downto 0) <= AluCtrl.Immediate;
+    with AluCtrl.ImmediateMode select
+        ImmediateExt(31 downto 8) <= (others => AluCtrl.Immediate(7)) when ImmediateMode_SIGN,
                                      (others => '0')          when ImmediateMode_ZERO,
                                      (others => 'X')          when others;
 
@@ -322,7 +290,7 @@ begin
     RegB_RegA_Center <= RegB(15 downto 0) & RegA(31 downto 16);
     
     -- the zero/sign-extended version of register B
-    with ExtMode select
+    with AluCtrl.ExtMode select
         ExtendedReg <= SignExtend(LowByte(RegB))  when  Ext_Sign_B_RegA,
                        SignExtend(LowWord(RegB))  when  Ext_Sign_W_RegA,
                        ZeroExtend(LowByte(RegB))  when  Ext_Zero_B_RegA,
@@ -330,7 +298,7 @@ begin
                        (others => 'X') when others;
 
     -- Choose which system register to select
-    with SysRegSel select
+    with SysCtrl.RegSel select
         SysReg <= SR      when SysRegSel_SR,
                   GBROut  when SysRegSel_GBR,
                   VBR     when SysRegSel_VBR,
@@ -340,7 +308,7 @@ begin
                   (others => 'X') when others;
 
     -- Select the data to write the the register based on the decoded instruction.
-    with RegDataInSel select 
+    with RegCtrl.DataInSel select 
         RegDataIn <= Result                     when  RegDataIn_ALUResult,
                      ImmediateExt               when  RegDataIn_Immediate,
                      RegA                       when  RegDataIn_RegA,
@@ -361,7 +329,7 @@ begin
     -- The address being stored to a register is the pre-decremented or 
     -- post-incremented address when we are in that mode. If we are not in 
     -- that mode, it is just the normal address.
-    with IncDecSel select 
+    with DMAUCtrl.IncDecSel select 
         RegAxIn <= AddrSrcOut  when IncDecSel_PRE_DEC | IncDecSel_POST_INC,
                    DataAddress when others;
 
@@ -372,15 +340,15 @@ begin
         clock       => clock,
         reset       => reset,
         RegDataIn   => RegDataIn,
-        EnableIn    => RegEnableIn,
-        RegInSel    => RegInSel,
-        RegASel     => RegASel,
-        RegBSel     => RegBSel,
+        EnableIn    => RegCtrl.EnableIn,
+        RegInSel    => RegCtrl.InSel,
+        RegASel     => RegCtrl.ASel,
+        RegBSel     => RegCtrl.BSel,
         RegAxIn     => RegAxIn,
-        RegAxInSel  => RegAxInSel,
-        RegAxStore  => RegAxStore,
-        RegA1Sel    => RegA1Sel,
-        RegA2Sel    => RegA2Sel,
+        RegAxInSel  => RegCtrl.AxInSel,
+        RegAxStore  => RegCtrl.AxStore,
+        RegA1Sel    => RegCtrl.A1Sel,
+        RegA2Sel    => RegCtrl.A2Sel,
         -- Outputs:
         RegA    => RegA,
         RegB    => RegB,
@@ -393,7 +361,7 @@ begin
     OperandA <= RegA;
 
     -- Input mux for ALU Operand B
-    with ALUOpBSel select
+    with ALUCtrl.OpBSel select
         OperandB <=  RegB            when ALUOpB_RegB,
                      ImmediateExt    when ALUOpB_Imm,
                      (others => 'X') when others;
@@ -407,7 +375,7 @@ begin
 
     -- Compute T flag value based on ALU output flags. Used for operations
     -- of the form CMP/XX.
-    with TCmpSel select
+    with AluCtrl.TCmpSel select
         TCmp <= Zero                                when TCMP_EQ,   -- 1 if Rn = Rm
                 Cout                                when TCMP_HS,   -- 1 if Rn >= Rm, unsigned
                 not (Sign xor Overflow)             when TCMP_GE,   -- 1 if Rn >= Rm, signed
@@ -417,7 +385,7 @@ begin
                 'X' when others;
 
     -- Select what value T should be set to
-    with TFlagSel select
+    with AluCtrl.TFlagSel select
         TNext <=  TBit       when TFlagSel_T,           -- retain T flag
                   Cout       when TFlagSel_Carry,       -- Set T flag to ALU carry flag
                   Overflow   when TFlagSel_Overflow,    -- Set T flag to ALU overflow flag
@@ -434,11 +402,11 @@ begin
         OperandA => OperandA,
         OperandB => OperandB,
         TIn      => TBit,
-        LoadA    => LoadA,
-        FCmd     => FCmd,
-        CinCmd   => CinCmd,
-        SCmd     => SCmd,
-        ALUCmd   => ALUCmd,
+        LoadA    => ALUCtrl.LoadA,
+        FCmd     => ALUCtrl.FCmd,
+        CinCmd   => ALUCtrl.CinCmd,
+        SCmd     => ALUCtrl.SCmd,
+        ALUCmd   => ALUCtrl.ALUCmd,
         -- Outputs:
         Result   => Result,
         Cout     => Cout,
@@ -448,7 +416,7 @@ begin
     );
 
     -- Use RegA1 (@Rn) if we are writing and RegA2 (@Rm) if we are reading.
-    with ReadWrite select
+    with MemCtrl.ReadWrite select
         RegSrc <= RegA2           when Mem_READ,
                   RegA1           when Mem_WRITE,
                   (others => 'X') when others;
@@ -457,7 +425,7 @@ begin
     PCSrc <= PCUsed;
 
     -- R0 comes from RegA2 when we are reading and RegA1 when we are writing.
-    with ReadWrite select
+    with MemCtrl.ReadWrite select
         R0Src <= RegA1            when Mem_READ,
                  RegA2            when Mem_WRITE,
                  (others => 'X')  when others;
@@ -470,13 +438,13 @@ begin
         R0Src        => R0Src,
         PCSrc        => PCSrc,
         GBRIn        => GBRIn,
-        GBRWriteEn   => GBRWriteEn,
-        Off4         => DMAUOff4,
-        Off8         => DMAUOff8,
-        BaseSel      => BaseSel,
-        IndexSel     => IndexSel,
-        OffScalarSel => OffScalarSel,
-        IncDecSel    => IncDecSel,
+        GBRWriteEn   => DMAUCtrl.GBRWriteEn,
+        Off4         => DMAUCtrl.Off4,
+        Off8         => DMAUCtrl.Off8,
+        BaseSel      => DMAUCtrl.BaseSel,
+        IndexSel     => DMAUCtrl.IndexSel,
+        OffScalarSel => DMAUCtrl.OffScalarSel,
+        IncDecSel    => DMAUCtrl.IncDecSel,
         Clk          => clock,
         -- Outputs:
         Address    => DataAddress,
@@ -484,9 +452,6 @@ begin
         GBROut     => GBROut
     );
 
-
-    -- Default PC in is all zeroes.
-    PCIn <= (others => '0');
 
     -- PMAU Register input is always RegB.
     RegIn <= RegB;
@@ -497,12 +462,12 @@ begin
         -- Inputs:
         RegIn       => RegIn,
         PRIn        => PRIn,
-        PRWriteEn   => PRWriteEn,
-        PCIn        => PCIn,
-        PCWriteCtrl => PCWriteCtrl,
-        Off8        => PMAUOff8,
-        Off12       => PMAUOff12,
-        PCAddrMode  => PCAddrMode,
+        PRWriteEn   => PMAUCtrl.PRWriteEn,
+        PCIn        => (others => '0'),
+        PCWriteCtrl => PMAUCtrl.PCWriteCtrl,
+        Off8        => PMAUCtrl.Off8,
+        Off12       => PMAUCtrl.Off12,
+        PCAddrMode  => PMAUCtrl.PCAddrMode,
         Clk         => clock,
         Reset       => Reset,
         -- Outputs:
@@ -516,9 +481,9 @@ begin
     port map (
         -- Inputs:
         clock      => clock,
-        MemEnable  => MemEnable,
-        ReadWrite  => ReadWrite,
-        MemMode    => MemMode,
+        MemEnable  => MemCtrl.Enable,
+        ReadWrite  => MemCtrl.ReadWrite,
+        MemMode    => MemCtrl.Mode,
         Address    => unsigned(MemAddress),
         MemDataOut => MemDataOut,
         -- Outputs:
@@ -531,8 +496,8 @@ begin
     memory_rx : entity work.MemoryInterfaceRx
     port map (
         -- Inputs:
-        MemEnable => MemEnable,
-        MemMode => MemMode,
+        MemEnable => MemCtrl.Enable,
+        MemMode => MemCtrl.Mode,
         Address => unsigned(MemAddress),
         DB      => DB,
         -- Outputs:
@@ -549,61 +514,12 @@ begin
         reset       => reset,
 
         -- Outputs:
-        Immediate       => Immediate,
-        ImmediateMode   => ImmediateMode,
-        TFlagSel        => TFlagSel,
-        ExtMode         => ExtMode,
-
-        -- Memory interface control signals:
-        MemEnable    => MemEnable,
-        ReadWrite    => ReadWrite,
-        MemMode      => MemMode,
-        MemSel       => MemSel,
-        MemOutSel    => MemOutSel,
-        MemAddrSel   => MemAddrSel,
-
-        -- ALU control signals:
-        ALUOpBSel    => ALUOpBSel,
-        LoadA        => LoadA,
-        FCmd         => FCmd,
-        CinCmd       => CinCmd,
-        SCmd         => SCmd,
-        ALUCmd       => ALUCmd,
-        TCmpSel      => TCmpSel,
-
-        -- Register Array control signals:
-        RegDataInSel    => RegDataInSel,
-        RegEnableIn     => RegEnableIn,
-        RegInSel        => RegInSel,
-        RegASel         => RegASel,
-        RegBSel         => RegBSel,
-        RegAxIn         => RegAxIn,
-        RegAxInSel      => RegAxInSel,
-        RegAxStore      => RegAxStore,
-        RegA1Sel        => RegA1Sel,
-        RegA2Sel        => RegA2Sel,
-
-        -- DMAU control signals:
-        GBRWriteEn      => GBRWriteEn,
-        DMAUOff4        => DMAUOff4,
-        DMAUOff8        => DMAUOff8,
-        BaseSel         => BaseSel,
-        IndexSel        => IndexSel,
-        OffScalarSel    => OffScalarSel,
-        IncDecSel       => IncDecSel,
-
-        -- PMAU control signals:
-        PCAddrMode   => PCAddrMode,
-        PRWriteEn    => PRWriteEn,
-        PCWriteCtrl  => PCWriteCtrl,
-        PCIn         => PCIn,
-        PMAUOff8     => PMAUOff8,
-        PMAUOff12    => PMAUOff12,
-
-        -- system control signals
-        SysRegCtrl  => SysRegCtrl,
-        SysRegSel   => SysRegSel,
-        SysRegSrc   => SysRegSrc,
+        MemCtrl => MemCtrl,
+        ALUCtrl => ALUCtrl,
+        RegCtrl => RegCtrl,
+        DMAUCtrl => DMAUCtrl,
+        PMAUCtrl => PMAUCtrl,
+        SysCtrl => SysCtrl,
 
         -- Branch control signals.
         DelayedBranchTaken => DelayedBranchTaken
@@ -611,11 +527,11 @@ begin
 
     -- Mux system register input values based on SysRegSrc. Note that individual
     -- write-enables (like GBRWriteEn and PRWriteEn) must be enabled seperately.
-    NextSysReg <= RegB      when SysRegSrc = SysRegSrc_RegB  else
-                  MemDataIn when SysRegSrc = SysRegSrc_DB    else
+    NextSysReg <= RegB      when SysCtrl.RegSrc = SysRegSrc_RegB  else
+                  MemDataIn when SysCtrl.RegSrc = SysRegSrc_DB    else
 
                   -- The return address of a BSR is the PC at the point of decoding the BSR plus 4.
-                  std_logic_vector(unsigned(PCRegOut) + to_unsigned(4, 32))  when SysRegSrc = SysRegSrc_PC    else
+                  std_logic_vector(unsigned(PCRegOut) + to_unsigned(4, 32))  when SysCtrl.RegSrc = SysRegSrc_PC    else
 
                   (others => 'X');
 
@@ -634,26 +550,26 @@ begin
         elsif rising_edge(clock) then
             SR(0) <= TNext;     -- set new value of T
 
-            if SysRegCtrl = SysRegCtrl_LOAD then
+            if SysCtrl.RegCtrl = SysRegCtrl_LOAD then
                 -- Load new value into a system register
                 -- (note that PR and GBR are handled separately)
-                if SysRegSel = SysRegSel_SR then
+                if SysCtrl.RegSel = SysRegSel_SR then
                     SR <= NextSysReg;
-                elsif SysRegSel = SysRegSel_VBR then
+                elsif SysCtrl.RegSel = SysRegSel_VBR then
                     VBR <= NextSysReg;
-                elsif SysRegSel = SysRegSel_MACH then
+                elsif SysCtrl.RegSel = SysRegSel_MACH then
                     MACH <= NextSysReg;
-                elsif SysRegSel = SysRegSel_MACL then
+                elsif SysCtrl.RegSel = SysRegSel_MACL then
                     MACL <= NextSysReg;
                 end if;
-            elsif SysRegCtrl = SysRegCtrl_CLEAR then
+            elsif SysCtrl.RegCtrl = SysRegCtrl_CLEAR then
                 -- Clear a system register value
                 -- (note that PR and GBR are handled separately)
-                if SysRegSel = SysRegSel_SR then
+                if SysCtrl.RegSel = SysRegSel_SR then
                     SR <= (others => '0');
-                elsif SysRegSel = SysRegSel_VBR then
+                elsif SysCtrl.RegSel = SysRegSel_VBR then
                     VBR <= (others => '0');
-                elsif (SysRegSel = SysRegSel_MACH) or (SysRegSel = SysRegSel_MACL) then
+                elsif (SysCtrl.RegSel = SysRegSel_MACH) or (SysCtrl.RegSel = SysRegSel_MACL) then
                     -- Reset both MACH and MACL for CLRMAC instruction
                     MACH <= (others => '0');
                     MACL <= (others => '0');

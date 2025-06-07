@@ -315,6 +315,73 @@ package SH2ControlConstants is
     -- constant DelayedBR_SLOT   : std_logic_vector(1 downto 0);
     -- constant DelayedBR_TARGET : std_logic_vector(1 downto 0);
 
+    -- Memory interface control signals
+    type mem_ctrl_t is record
+        Enable      : std_logic;                        -- if memory needs to be accessed (read or write)
+        AddrSel     : std_logic;
+        ReadWrite   : std_logic;                        -- if should do memory read (0) or write (1)
+        Mode        : std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
+        Sel         : std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
+        OutSel      : std_logic_vector(2 downto 0);     -- what should be output to memory
+    end record;
+
+    -- ALU control signals
+    type alu_ctrl_t is record
+        OpBSel      : std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
+        LoadA       : std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
+        FCmd        : std_logic_vector(3 downto 0);     -- F-Block operation
+        CinCmd      : std_logic_vector(1 downto 0);     -- carry in operation
+        SCmd        : std_logic_vector(2 downto 0);     -- shift operation
+        ALUCmd      : std_logic_vector(1 downto 0);     -- ALU result select
+        TCmpSel     : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
+        Immediate   : std_logic_vector(7 downto 0);     -- 8-bit immediate
+        ImmediateMode : std_logic;                        -- Immediate extension mode
+        ExtMode     : std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
+        TFlagSel    : std_logic_vector(2 downto 0);     -- source for next value of T flag
+    end record;
+
+    -- Register array control signals
+    type reg_ctrl_t is record
+        DataInSel   : std_logic_vector(3 downto 0);     -- source for register input data
+        EnableIn    : std_logic;                        -- if data should be written to an input register
+        InSel       : integer range 15 downto 0;        -- which register to write data to
+        ASel        : integer range 15 downto 0;        -- which register to read to bus A
+        BSel        : integer range 15 downto 0;        -- which register to read to bus B
+        AxInSel     : integer range 15 downto 0;        -- which address register to write to
+        AxStore     : std_logic;                        -- if data should be written to the address register
+        A1Sel       : integer range 15 downto 0;        -- which register to read to address bus 1
+        A2Sel       : integer range 15 downto 0;        -- which register to read to address bus 2
+    end record;
+
+    -- DMAU control signals
+    type dmau_ctrl_t is record
+        GBRWriteEn  : std_logic;
+        Off4        : std_logic_vector(3 downto 0);
+        Off8        : std_logic_vector(7 downto 0);
+        BaseSel     : std_logic_vector(1 downto 0);
+        IndexSel    : std_logic_vector(1 downto 0);
+        OffScalarSel: std_logic_vector(1 downto 0);
+        IncDecSel   : std_logic_vector(1 downto 0);
+    end record;
+
+    -- PMAU control signals
+    type pmau_ctrl_t is record
+        PCAddrMode  : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired
+        PRWriteEn   : std_logic;                        -- Enable writing to PR
+        Off8        : std_logic_vector(7 downto 0);     -- 8-bit offset for relative addressing
+        Off12       : std_logic_vector(11 downto 0);    -- 12-bit offset for relative addressing
+        PCIn        : std_logic_vector(31 downto 0);    -- PC input for parallel loading
+        PCWriteCtrl : std_logic_vector(1 downto 0);     -- What to write to the PC register
+
+    end record;
+
+    -- System control signals
+    type sys_ctrl_t is record
+        RegCtrl     : std_logic_vector(1 downto 0);
+        RegSel      : std_logic_vector(2 downto 0);
+        RegSrc      : std_logic_vector(1 downto 0);
+    end record;
+
 end package SH2ControlConstants;
 
 
@@ -338,78 +405,26 @@ use work.Utils.all;
 entity  SH2Control  is
 
     port (
-        MemDataIn   : in  std_logic_vector(31 downto 0);    -- data read from memory
-        TFlagIn     : in  std_logic;                        -- T Flag input from top level CPU.
-        clock       : in  std_logic;                        -- system clock
-        reset       : in  std_logic;                        -- system reset (active low, async)
+        -- Input signals
+        MemDataIn           : in  std_logic_vector(31 downto 0);    -- data read from memory
+        TFlagIn             : in  std_logic;                        -- T Flag input from top level CPU
+        clock               : in  std_logic;                        -- system clock
+        reset               : in  std_logic;                        -- system reset (active low, async)
 
-        -- control signals to control memory interface
-        MemEnable   : out std_logic;                        -- if memory needs to be accessed (read or write)
-        MemAddrSel  : out std_logic;
-        ReadWrite   : out std_logic;                        -- if should do memory read (0) or write (1)
-        MemMode     : out std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
-        MemSel      : out std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
-
-        Immediate   : out std_logic_vector(7 downto 0);     -- 8-bit immediate
-        ImmediateMode   : out std_logic;                    -- Immediate extension mode
-        MemOutSel   : out std_logic_vector(2 downto 0);     -- what should be output to memory
-        TFlagSel    : out std_logic_vector(2 downto 0);     -- source for next value of T flag
-        ExtMode     : out std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
-
-        -- ALU control signals
-        ALUOpBSel   : out std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
-        LoadA       : out std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
-        FCmd        : out std_logic_vector(3 downto 0);     -- F-Block operation
-        CinCmd      : out std_logic_vector(1 downto 0);     -- carry in operation
-        SCmd        : out std_logic_vector(2 downto 0);     -- shift operation
-        ALUCmd      : out std_logic_vector(1 downto 0);     -- ALU result select
-        TCmpSel     : out std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
-
-        -- register array control signals
-        RegDataInSel: out std_logic_vector(3 downto 0);     -- source for register input data
-        RegEnableIn : out std_logic;                        -- if data should be written to an input register
-        RegInSel    : out integer  range 15 downto 0;       -- which register to write data to
-        RegASel     : out integer  range 15 downto 0;       -- which register to read to bus A
-        RegBSel     : out integer  range 15 downto 0;       -- which register to read to bus B
-        RegAxIn     : out std_logic_vector(31 downto 0);    -- data to write to an address register
-        RegAxInSel  : out integer  range 15 downto 0;       -- which address register to write to
-        RegAxStore  : out std_logic;                        -- if data should be written to the address register
-        RegA1Sel    : out integer  range 15 downto 0;       -- which register to read to address bus 1
-        RegA2Sel    : out integer  range 15 downto 0;       -- which register to read to address bus 2
-
-        -- DMAU signals
-        GBRWriteEn      : out std_logic;
-        DMAUOff4        : out std_logic_vector(3 downto 0);
-        DMAUOff8        : out std_logic_vector(7 downto 0);
-        BaseSel         : out std_logic_vector(1 downto 0);
-        IndexSel        : out std_logic_vector(1 downto 0);
-        OffScalarSel    : out std_logic_vector(1 downto 0);
-        IncDecSel       : out std_logic_vector(1 downto 0);
-
-        -- PMAU signals
-        PCAddrMode      : out std_logic_vector(2 downto 0);   -- What PC addressing mode is desired.
-        PRWriteEn       : out std_logic;                      -- Enable writing to PR.
-        PMAUOff8        : out std_logic_vector(7 downto 0);   -- 8-bit offset for relative addressing.
-        PMAUOff12       : out std_logic_vector(11 downto 0);  -- 12-bit offset for relative addressing.
-        PCIn            : out std_logic_vector(31 downto 0);  -- PC input for parallel loading.
-        PCWriteCtrl     : out std_logic_vector(1 downto 0);   -- What to write to the PC register inside
-                                                              -- the PMAU. Can either hold current value,
-                                                              -- write PCIn, or write calculated PC. 
-
-        -- System control signals
-        SysRegCtrl      : out std_logic_vector(1 downto 0);
-        SysRegSel       : out std_logic_vector(2 downto 0);
-        SysRegSrc       : out std_logic_vector(1 downto 0);
-
-        -- Branch control signals:
-        DelayedBranchTaken : out std_logic  -- Whether the delayed branch is taken or not.
+        -- Control signal groups
+        MemCtrl             : out mem_ctrl_t;                       -- memory interface control signals
+        ALUCtrl             : out alu_ctrl_t;                       -- ALU control signals
+        RegCtrl             : out reg_ctrl_t;                       -- register array control signals
+        DMAUCtrl            : out dmau_ctrl_t;                      -- DMAU control signals
+        PMAUCtrl            : out pmau_ctrl_t;                      -- PMAU control signals
+        SysCtrl             : out sys_ctrl_t;                       -- system control signals
+        DelayedBranchTaken  : out std_logic                         -- whether the delayed branch is taken
 );
     
 end  SH2Control;
 
 architecture dataflow of sh2control is
     
-    -- TODO: Comment FSM and timing.
     type state_t is (
         fetch,
         execute,
@@ -531,6 +546,62 @@ architecture dataflow of sh2control is
   -- and the next PC will be calculated using the saved signals below.
   signal Instruction_DelayedBranchTaken : std_logic;
 
+        -- control signals to control memory interface
+    signal MemEnable   : std_logic;                        -- if memory needs to be accessed (read or write)
+    signal MemAddrSel  : std_logic;
+    signal ReadWrite   : std_logic;                        -- if should do memory read (0) or write (1)
+    signal MemMode     : std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
+    signal MemSel      : std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
+
+    signal Immediate   : std_logic_vector(7 downto 0);     -- 8-bit immediate
+    signal ImmediateMode   : std_logic;                    -- Immediate extension mode
+    signal MemOutSel   : std_logic_vector(2 downto 0);     -- what should be output to memory
+    signal TFlagSel    : std_logic_vector(2 downto 0);     -- source for next value of T flag
+    signal ExtMode     : std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
+
+        -- ALU control signals
+    signal ALUOpBSel   : std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
+    signal LoadA       : std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
+    signal FCmd        : std_logic_vector(3 downto 0);     -- F-Block operation
+    signal CinCmd      : std_logic_vector(1 downto 0);     -- carry in operation
+    signal SCmd        : std_logic_vector(2 downto 0);     -- shift operation
+    signal ALUCmd      : std_logic_vector(1 downto 0);     -- ALU result select
+    signal TCmpSel     : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
+
+        -- register array control signals
+    signal RegDataInSel: std_logic_vector(3 downto 0);     -- source for register input data
+    signal RegEnableIn : std_logic;                        -- if data should be written to an input register
+    signal RegInSel    : integer  range 15 downto 0;       -- which register to write data to
+    signal RegASel     : integer  range 15 downto 0;       -- which register to read to bus A
+    signal RegBSel     : integer  range 15 downto 0;       -- which register to read to bus B
+    signal RegAxInSel  : integer  range 15 downto 0;       -- which address register to write to
+    signal RegAxStore  : std_logic;                        -- if data should be written to the address register
+    signal RegA1Sel    : integer  range 15 downto 0;       -- which register to read to address bus 1
+    signal RegA2Sel    : integer  range 15 downto 0;       -- which register to read to address bus 2
+
+        -- DMAU signals
+    signal GBRWriteEn      : std_logic;
+    signal DMAUOff4        : std_logic_vector(3 downto 0);
+    signal DMAUOff8        : std_logic_vector(7 downto 0);
+    signal BaseSel         : std_logic_vector(1 downto 0);
+    signal IndexSel        : std_logic_vector(1 downto 0);
+    signal OffScalarSel    : std_logic_vector(1 downto 0);
+    signal IncDecSel       : std_logic_vector(1 downto 0);
+
+        -- PMAU signals
+    signal PCAddrMode      : std_logic_vector(2 downto 0);   -- What PC addressing mode is desired.
+    signal PRWriteEn       : std_logic;                      -- Enable writing to PR.
+    signal PMAUOff8        : std_logic_vector(7 downto 0);   -- 8-bit offset for relative addressing.
+    signal PMAUOff12       : std_logic_vector(11 downto 0);  -- 12-bit offset for relative addressing.
+    signal PCIn            : std_logic_vector(31 downto 0);  -- PC input for parallel loading.
+    signal PCWriteCtrl     : std_logic_vector(1 downto 0);   -- What to write to the PC register inside
+                                                              -- the PMAU. Can either hold current value,
+                                                              -- write PCIn, or write calculated PC. 
+
+        -- System control signals
+    signal SysRegCtrl      : std_logic_vector(1 downto 0);
+    signal SysRegSel       : std_logic_vector(2 downto 0);
+    signal SysRegSrc       : std_logic_vector(1 downto 0);
 begin
 
     -- Is this valid ??? 
@@ -586,11 +657,71 @@ begin
     -- Only update system register after execute clock (on writeback)
     SysRegCtrl <= Instruction_SysRegCtrl when state = execute else SysRegCtrl_NONE;
 
+    MemCtrl <= (
+        Enable => MemEnable,
+        AddrSel => MemAddrSel,
+        ReadWrite => ReadWrite,
+        Mode => MemMode,
+        OutSel => MemOutSel,
+        Sel => Memsel
+    );
+
+    ALUCtrl <= (
+        OpBSel => ALUOpBSel,
+        LoadA => LoadA,
+        FCmd => FCmd,
+        CinCmd => CinCmd,
+        SCmd => SCmd,
+        ALUCmd => ALUCmd,
+        TCmpSel => TCmpSel,
+        Immediate => Immediate,
+        ImmediateMode => ImmediateMode,
+        ExtMode => ExtMode,
+        TFlagSel => TFlagSel
+    );
+
+    RegCtrl <= (
+        DataInSel => RegDataInSel,
+        EnableIn => RegEnableIn,
+        InSel => RegInSel,
+        ASel => RegASel,
+        BSel => RegBSel,
+        AxInSel => RegAxInSel,
+        AxStore => RegAxStore,
+        A1Sel => RegA1Sel,
+        A2Sel => RegA2Sel
+    );
+
+    DMAUCtrl <= (
+        GBRWriteEn => GBRWriteEn,
+        Off4 => DMAUOff4,
+        Off8 => DMAUOff8,
+        BaseSel => BaseSel,
+        IndexSel => IndexSel,
+        OffScalarSel => OffScalarSel,
+        IncDecSel => IncDecSel
+    );
+
+    PMAUCtrl <= (
+        PCAddrMode => PCAddrMode,
+        PRWriteEn => PRWriteEn,
+        Off8 => PMAUOff8,
+        Off12 => PMAUOff12,
+        PCIn => PCIn,
+        PCWriteCtrl => PCWriteCtrl
+    );
+
+    SysCtrl <= (
+        RegCtrl => SysRegCtrl,
+        RegSel => SysRegSel,
+        RegSrc => SysRegSrc
+    );
+
+
     decode_proc: process (state)
       variable l : line;
     begin
-
-        if (state = execute) then
+        if state = execute then
 
         -- Default flag values are set here (these shouldn't change CPU state).
         -- This is so that not every control signal has to be set in every single
