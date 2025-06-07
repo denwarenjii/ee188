@@ -227,13 +227,13 @@ architecture dataflow of sh2control is
     signal RegA2Sel         : integer  range 15 downto 0;       -- which register to read to address bus 2
 
         -- DMAU signals
-    signal GBRWriteEn       : std_logic;
-    signal DMAUOff4         : std_logic_vector(3 downto 0);
-    signal DMAUOff8         : std_logic_vector(7 downto 0);
-    signal BaseSel          : std_logic_vector(1 downto 0);
-    signal IndexSel         : std_logic_vector(1 downto 0);
-    signal OffScalarSel     : std_logic_vector(1 downto 0);
-    signal IncDecSel        : std_logic_vector(1 downto 0);
+    signal GBRWriteEn       : std_logic;                        -- GBR write enable, active high
+    signal DMAUOff4         : std_logic_vector(3 downto 0);     -- 4-bit offset
+    signal DMAUOff8         : std_logic_vector(7 downto 0);     -- 8-bit offset
+    signal BaseSel          : std_logic_vector(1 downto 0);     -- which base register source to select
+    signal IndexSel         : std_logic_vector(1 downto 0);     -- which index source to select
+    signal OffScalarSel     : std_logic_vector(1 downto 0);     -- what to scale the offset by (1, 2, 4)
+    signal IncDecSel        : std_logic_vector(1 downto 0);     -- post-increment or pre-decrement the base
 
         -- PMAU signals
     signal PCAddrMode       : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired.
@@ -246,9 +246,9 @@ architecture dataflow of sh2control is
                                                                 -- write PCIn, or write calculated PC. 
 
         -- System control signals
-    signal SysRegCtrl       : std_logic_vector(1 downto 0);
-    signal SysRegSel        : std_logic_vector(2 downto 0);
-    signal SysRegSrc        : std_logic_vector(1 downto 0);
+    signal SysRegCtrl       : std_logic_vector(1 downto 0);     -- how to update system registers 
+    signal SysRegSel        : std_logic_vector(2 downto 0);     -- system register select 
+    signal SysRegSrc        : std_logic_vector(1 downto 0);     -- source for data to input into a system register
 begin
 
     -- Is this valid ??? 
