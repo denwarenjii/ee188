@@ -1,3 +1,16 @@
+----------------------------------------------------------------------------------------------------
+-- 
+--  SH-2 Instructions
+--
+--  This package defines the bits defining each type of instruction in the SH-2
+--  instruction set. The encodings are placed here for the purpose of
+--  organization.
+--
+--  Revision History
+--      07 Jun 25   Zack Huang      Copied over from control unit
+--
+----------------------------------------------------------------------------------------------------
+
 library ieee;
 library std;
 

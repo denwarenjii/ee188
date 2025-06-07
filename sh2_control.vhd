@@ -15,7 +15,7 @@
 --                                                                                                 -
 --     29 May 25  Chris M.          Add PCWriteCtrl and DelayedBranchTaken signals to control unit -
 --                                  output.                                                        -
---     07 Jun 25  Zack Huang        Move all control signals into record types for organization    -
+--     07 Jun 25  Zack Huang        Re-organized control signals and constants                     -
 --                                                                                                 -
 -- Notes:                                                                                          -
 --  - When reading/writing to registers, RegB is always Rm and RegA is always Rn                   -
@@ -403,7 +403,7 @@ begin
 
         Instruction_SysRegCtrl <= SysRegCtrl_NONE;      -- system register not selected
         ImmediateMode          <= ImmediateMode_SIGN;   -- sign-extend immediates by defualt
-        ExtMode                <= Ext_Sign_B_RegA;
+        ExtMode                <= Ext_SignB_RegA;
 
         PCWriteCtrl <= PCWriteCtrl_WRITE_CALC;  -- Write the calculated PC by default.
 
@@ -1227,8 +1227,8 @@ begin
             RegInSel     <= slv_to_uint(nm_format_n);
 
             -- Bit decode if whether byte or word mode
-            RegDataInSel <= RegDataIn_RegA_SWAP_B when IR(0) = '0' else
-                            RegDataIn_RegA_SWAP_W;
+            RegDataInSel <= RegDataIn_RegA_SwapB when IR(0) = '0' else
+                            RegDataIn_RegA_SwapW;
 
             Instruction_RegEnableIn <= '1';
 

@@ -1,8 +1,91 @@
+----------------------------------------------------------------------------------------------------
+-- 
+--  SH-2 Control signals
+--
+--  This package defines the control signals and constants that are used
+--  internally within the SH-2 CPU to implement instructions.
+--
+--  Revision History
+--      07 Jun 25   Zack Huang      Copied over from control unit
+--      07 Jun 25   Zack Huang      Reorganized types, renamed signals for consistency
+--
+----------------------------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 package SH2ControlSignals is
+
+    -- We define record types for the control signals going to each component of the CPU.
+
+    -- Memory interface control signals
+    type mem_ctrl_t is record
+        Enable      : std_logic;                        -- if memory needs to be accessed (read or write)
+        AddrSel     : std_logic;
+        ReadWrite   : std_logic;                        -- if should do memory read (0) or write (1)
+        Mode        : std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
+        Sel         : std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
+        OutSel      : std_logic_vector(2 downto 0);     -- what should be output to memory
+    end record;
+
+    -- ALU control signals
+    type alu_ctrl_t is record
+        OpBSel      : std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
+        LoadA       : std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
+        FCmd        : std_logic_vector(3 downto 0);     -- F-Block operation
+        CinCmd      : std_logic_vector(1 downto 0);     -- carry in operation
+        SCmd        : std_logic_vector(2 downto 0);     -- shift operation
+        ALUCmd      : std_logic_vector(1 downto 0);     -- ALU result select
+        TCmpSel     : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
+        Immediate   : std_logic_vector(7 downto 0);     -- 8-bit immediate
+        ImmediateMode : std_logic;                        -- Immediate extension mode
+        ExtMode     : std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
+        TFlagSel    : std_logic_vector(2 downto 0);     -- source for next value of T flag
+    end record;
+
+    -- Register array control signals
+    type reg_ctrl_t is record
+        DataInSel   : std_logic_vector(3 downto 0);     -- source for register input data
+        EnableIn    : std_logic;                        -- if data should be written to an input register
+        InSel       : integer range 15 downto 0;        -- which register to write data to
+        ASel        : integer range 15 downto 0;        -- which register to read to bus A
+        BSel        : integer range 15 downto 0;        -- which register to read to bus B
+        AxInSel     : integer range 15 downto 0;        -- which address register to write to
+        AxStore     : std_logic;                        -- if data should be written to the address register
+        A1Sel       : integer range 15 downto 0;        -- which register to read to address bus 1
+        A2Sel       : integer range 15 downto 0;        -- which register to read to address bus 2
+    end record;
+
+    -- DMAU control signals
+    type dmau_ctrl_t is record
+        GBRWriteEn  : std_logic;
+        Off4        : std_logic_vector(3 downto 0);
+        Off8        : std_logic_vector(7 downto 0);
+        BaseSel     : std_logic_vector(1 downto 0);
+        IndexSel    : std_logic_vector(1 downto 0);
+        OffScalarSel: std_logic_vector(1 downto 0);
+        IncDecSel   : std_logic_vector(1 downto 0);
+    end record;
+
+    -- PMAU control signals
+    type pmau_ctrl_t is record
+        PCAddrMode  : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired
+        PRWriteEn   : std_logic;                        -- Enable writing to PR
+        Off8        : std_logic_vector(7 downto 0);     -- 8-bit offset for relative addressing
+        Off12       : std_logic_vector(11 downto 0);    -- 12-bit offset for relative addressing
+        PCIn        : std_logic_vector(31 downto 0);    -- PC input for parallel loading
+        PCWriteCtrl : std_logic_vector(1 downto 0);     -- What to write to the PC register
+
+    end record;
+
+    -- System control signals
+    type sys_ctrl_t is record
+        RegCtrl     : std_logic_vector(1 downto 0);
+        RegSel      : std_logic_vector(2 downto 0);
+        RegSrc      : std_logic_vector(1 downto 0);
+    end record;
+
 
     -- Internal control signals for controlling muxes within the CPU
 
@@ -100,72 +183,5 @@ package SH2ControlSignals is
     -- constant DelayedBR_NONE   : std_logic_vector(1 downto 0);
     -- constant DelayedBR_SLOT   : std_logic_vector(1 downto 0);
     -- constant DelayedBR_TARGET : std_logic_vector(1 downto 0);
-
-    -- Memory interface control signals
-    type mem_ctrl_t is record
-        Enable      : std_logic;                        -- if memory needs to be accessed (read or write)
-        AddrSel     : std_logic;
-        ReadWrite   : std_logic;                        -- if should do memory read (0) or write (1)
-        Mode        : std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
-        Sel         : std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
-        OutSel      : std_logic_vector(2 downto 0);     -- what should be output to memory
-    end record;
-
-    -- ALU control signals
-    type alu_ctrl_t is record
-        OpBSel      : std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
-        LoadA       : std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
-        FCmd        : std_logic_vector(3 downto 0);     -- F-Block operation
-        CinCmd      : std_logic_vector(1 downto 0);     -- carry in operation
-        SCmd        : std_logic_vector(2 downto 0);     -- shift operation
-        ALUCmd      : std_logic_vector(1 downto 0);     -- ALU result select
-        TCmpSel     : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
-        Immediate   : std_logic_vector(7 downto 0);     -- 8-bit immediate
-        ImmediateMode : std_logic;                        -- Immediate extension mode
-        ExtMode     : std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
-        TFlagSel    : std_logic_vector(2 downto 0);     -- source for next value of T flag
-    end record;
-
-    -- Register array control signals
-    type reg_ctrl_t is record
-        DataInSel   : std_logic_vector(3 downto 0);     -- source for register input data
-        EnableIn    : std_logic;                        -- if data should be written to an input register
-        InSel       : integer range 15 downto 0;        -- which register to write data to
-        ASel        : integer range 15 downto 0;        -- which register to read to bus A
-        BSel        : integer range 15 downto 0;        -- which register to read to bus B
-        AxInSel     : integer range 15 downto 0;        -- which address register to write to
-        AxStore     : std_logic;                        -- if data should be written to the address register
-        A1Sel       : integer range 15 downto 0;        -- which register to read to address bus 1
-        A2Sel       : integer range 15 downto 0;        -- which register to read to address bus 2
-    end record;
-
-    -- DMAU control signals
-    type dmau_ctrl_t is record
-        GBRWriteEn  : std_logic;
-        Off4        : std_logic_vector(3 downto 0);
-        Off8        : std_logic_vector(7 downto 0);
-        BaseSel     : std_logic_vector(1 downto 0);
-        IndexSel    : std_logic_vector(1 downto 0);
-        OffScalarSel: std_logic_vector(1 downto 0);
-        IncDecSel   : std_logic_vector(1 downto 0);
-    end record;
-
-    -- PMAU control signals
-    type pmau_ctrl_t is record
-        PCAddrMode  : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired
-        PRWriteEn   : std_logic;                        -- Enable writing to PR
-        Off8        : std_logic_vector(7 downto 0);     -- 8-bit offset for relative addressing
-        Off12       : std_logic_vector(11 downto 0);    -- 12-bit offset for relative addressing
-        PCIn        : std_logic_vector(31 downto 0);    -- PC input for parallel loading
-        PCWriteCtrl : std_logic_vector(1 downto 0);     -- What to write to the PC register
-
-    end record;
-
-    -- System control signals
-    type sys_ctrl_t is record
-        RegCtrl     : std_logic_vector(1 downto 0);
-        RegSel      : std_logic_vector(2 downto 0);
-        RegSrc      : std_logic_vector(1 downto 0);
-    end record;
 
 end package SH2ControlSignals;

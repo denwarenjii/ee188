@@ -292,10 +292,10 @@ begin
     
     -- the zero/sign-extended version of register B
     with AluCtrl.ExtMode select
-        ExtendedReg <= SignExtend(LowByte(RegB))  when  Ext_Sign_B_RegA,
-                       SignExtend(LowWord(RegB))  when  Ext_Sign_W_RegA,
-                       ZeroExtend(LowByte(RegB))  when  Ext_Zero_B_RegA,
-                       ZeroExtend(LowWord(RegB))  when  Ext_Zero_W_RegA,
+        ExtendedReg <= SignExtend(LowByte(RegB))  when  Ext_SignB_RegA,
+                       SignExtend(LowWord(RegB))  when  Ext_SignW_RegA,
+                       ZeroExtend(LowByte(RegB))  when  Ext_ZeroB_RegA,
+                       ZeroExtend(LowWord(RegB))  when  Ext_ZeroW_RegA,
                        (others => 'X') when others;
 
     -- Choose which system register to select
@@ -315,8 +315,8 @@ begin
                      RegA                       when  RegDataIn_RegA,
                      RegB                       when  RegDataIn_RegB,
                      SysReg                     when  RegDataIn_SysReg,
-                     RegASwapB                  when  RegDataIn_RegA_SWAP_B,
-                     RegASwapW                  when  RegDataIn_RegA_SWAP_W,
+                     RegASwapB                  when  RegDataIn_RegA_SwapB,
+                     RegASwapW                  when  RegDataIn_RegA_SwapW,
                      RegB_RegA_Center           when  RegDataIn_REGB_REGA_CENTER,
                      ExtendedReg                when  RegDataIn_Ext,
                      MemDataIn                  when  RegDataIn_DB,
@@ -464,7 +464,7 @@ begin
         RegIn       => RegIn,
         PRIn        => PRIn,
         PRWriteEn   => PMAUCtrl.PRWriteEn,
-        PCIn        => (others => '0'),
+        PCIn        => (others => '0'),         -- default PC is all 0s
         PCWriteCtrl => PMAUCtrl.PCWriteCtrl,
         Off8        => PMAUCtrl.Off8,
         Off12       => PMAUCtrl.Off12,
