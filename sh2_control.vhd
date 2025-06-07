@@ -84,171 +84,171 @@ architecture dataflow of sh2control is
     signal state : state_t;
 
 
-  -- The instruction register.
-  signal IR : std_logic_vector(15 downto 0);
+    -- The instruction register.
+    signal IR : std_logic_vector(15 downto 0);
 
-  -- Aliases for instruction arguments. 
-  -- There are 13 instruction formats, shown below:
-  --
-  -- Key:
-  --  xxxx: instruction code
-  --  mmmm: Source register
-  --  nnnn: Destination register
-  --  iiii: immediate data
-  --  dddd: displacment
+    -- Aliases for instruction arguments. 
+    -- There are 13 instruction formats, shown below:
+    --
+    -- Key:
+    --  xxxx: instruction code
+    --  mmmm: Source register
+    --  nnnn: Destination register
+    --  iiii: immediate data
+    --  dddd: displacment
 
-  -- 0 format:   xxxx xxxx xxxx xxxx
-  -- n format:   xxxx nnnn xxxx xxxx
-  -- m format:   xxxx mmmm xxxx xxxx
-  -- nm format:  xxxx nnnn mmmm xxxx
-  -- md format:  xxxx xxxx mmmm dddd
-  -- nd4 format: xxxx xxxx nnnn dddd
-  -- nmd format: xxxx nnnn mmmm dddd
-  -- d format:   xxxx xxxx dddd dddd
-  -- d12 format: xxxx dddd dddd dddd
-  -- nd8 format: xxxx nnnn dddd dddd
-  -- i format:   xxxx xxxx iiii iiii
-  -- ni format:  xxxx nnnn iiii iiii
+    -- 0 format:   xxxx xxxx xxxx xxxx
+    -- n format:   xxxx nnnn xxxx xxxx
+    -- m format:   xxxx mmmm xxxx xxxx
+    -- nm format:  xxxx nnnn mmmm xxxx
+    -- md format:  xxxx xxxx mmmm dddd
+    -- nd4 format: xxxx xxxx nnnn dddd
+    -- nmd format: xxxx nnnn mmmm dddd
+    -- d format:   xxxx xxxx dddd dddd
+    -- d12 format: xxxx dddd dddd dddd
+    -- nd8 format: xxxx nnnn dddd dddd
+    -- i format:   xxxx xxxx iiii iiii
+    -- ni format:  xxxx nnnn iiii iiii
 
-  -- n format
-  alias n_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
+    -- n format
+    alias n_format_n    : std_logic_vector(3 downto 0) is IR(11 downto 8);
 
-  -- m format
-  alias m_format_m : std_logic_vector(3 downto 0) is IR(11 downto 8);
+    -- m format
+    alias m_format_m    : std_logic_vector(3 downto 0) is IR(11 downto 8);
 
-  -- nm format
-  alias nm_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
-  alias nm_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
+    -- nm format
+    alias nm_format_n   : std_logic_vector(3 downto 0) is IR(11 downto 8);
+    alias nm_format_m   : std_logic_vector(3 downto 0) is IR(7 downto 4);
 
-  -- md format
-  alias md_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
-  alias md_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
+    -- md format
+    alias md_format_m   : std_logic_vector(3 downto 0) is IR(7 downto 4);
+    alias md_format_d   : std_logic_vector(3 downto 0) is IR(3 downto 0);
 
-  -- nd4 format
-  alias nd4_format_n : std_logic_vector(3 downto 0) is IR(7 downto 4);
-  alias nd4_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
+    -- nd4 format
+    alias nd4_format_n  : std_logic_vector(3 downto 0) is IR(7 downto 4);
+    alias nd4_format_d  : std_logic_vector(3 downto 0) is IR(3 downto 0);
 
-  -- nmd format
-  alias nmd_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
-  alias nmd_format_m : std_logic_vector(3 downto 0) is IR(7 downto 4);
-  alias nmd_format_d : std_logic_vector(3 downto 0) is IR(3 downto 0);
+    -- nmd format
+    alias nmd_format_n  : std_logic_vector(3 downto 0) is IR(11 downto 8);
+    alias nmd_format_m  : std_logic_vector(3 downto 0) is IR(7 downto 4);
+    alias nmd_format_d  : std_logic_vector(3 downto 0) is IR(3 downto 0);
 
-  -- d format
-  alias d_format_d : std_logic_vector(7 downto 0) is IR(7 downto 0);
+    -- d format
+    alias d_format_d    : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
-  -- d12 format
-  alias d12_format_d : std_logic_vector(11 downto 0) is IR(11 downto 0);
+    -- d12 format
+    alias d12_format_d  : std_logic_vector(11 downto 0) is IR(11 downto 0);
 
-  -- nd8 format
-  alias nd8_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
-  alias nd8_format_d : std_logic_vector(7 downto 0) is IR(7 downto 0);
+    -- nd8 format
+    alias nd8_format_n  : std_logic_vector(3 downto 0) is IR(11 downto 8);
+    alias nd8_format_d  : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
-  -- i format
-  alias i_format_i : std_logic_vector(7 downto 0) is IR(7 downto 0);
+    -- i format
+    alias i_format_i    : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
-  -- ni format
-  alias ni_format_n : std_logic_vector(3 downto 0) is IR(11 downto 8);
-  alias ni_format_i : std_logic_vector(7 downto 0) is IR(7 downto 0);
+    -- ni format
+    alias ni_format_n   : std_logic_vector(3 downto 0) is IR(11 downto 8);
+    alias ni_format_i   : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
-  -- Internal signals computed combinatorially to memory signals can
-  -- be output on the correct clock.
-  signal Instruction_MemEnable   : std_logic;
-  signal Instruction_ReadWrite   : std_logic;
-  signal Instruction_MemSel      : std_logic;
-  signal Instruction_MemAddrSel  : std_logic;
+    -- Internal signals computed combinatorially to memory signals can
+    -- be output on the correct clock.
+    signal Instruction_MemEnable    : std_logic;
+    signal Instruction_ReadWrite    : std_logic;
+    signal Instruction_MemSel       : std_logic;
+    signal Instruction_MemAddrSel   : std_logic;
 
-  -- The memory mode for a given instruction. The same as the constants in the
-  -- MemoryInterfaceConstants package.
-  signal Instruction_WordMode : std_logic_vector(1 downto 0);
+    -- The memory mode for a given instruction. The same as the constants in the
+    -- MemoryInterfaceConstants package.
+    signal Instruction_WordMode     : std_logic_vector(1 downto 0);
 
-  -- Register write enable for the current instruction. Output to RegisterArray 
-  -- during the execute state so that it is high when the rising clock of the writeback state occurs.
-  signal Instruction_RegEnableIn  : std_logic;   
+    -- Register write enable for the current instruction. Output to RegisterArray 
+    -- during the execute state so that it is high when the rising clock of the writeback state occurs.
+    signal Instruction_RegEnableIn  : std_logic;   
 
-  -- Address register write enable for the current instruction. Output to RegisterArray 
-  -- during the execute state so that it is high when the rising clock of the writeback state occurs.
-  signal Instruction_RegAxStore : std_logic;
+    -- Address register write enable for the current instruction. Output to RegisterArray 
+    -- during the execute state so that it is high when the rising clock of the writeback state occurs.
+    signal Instruction_RegAxStore   : std_logic;
 
-  -- Program addressing mode for the current instruction. Output during the
-  -- writeback state so that it is ready by the following fetch state.
-  signal Instruction_PCAddrMode : std_logic_vector(2 downto 0);
+    -- Program addressing mode for the current instruction. Output during the
+    -- writeback state so that it is ready by the following fetch state.
+    signal Instruction_PCAddrMode   : std_logic_vector(2 downto 0);
 
-  -- What to write to the TFlag for the current instruction. Output during
-  -- the execute state so that it is high when the rising clock of the writeback state occurs.
-  signal Instruction_TFlagSel    : std_logic_vector(2 downto 0);
+    -- What to write to the TFlag for the current instruction. Output during
+    -- the execute state so that it is high when the rising clock of the writeback state occurs.
+    signal Instruction_TFlagSel     : std_logic_vector(2 downto 0);
 
-  -- If the system register should be loaded or not
-  signal Instruction_SysRegCtrl  : std_logic_vector(1 downto 0);
-  
-  -- If the GBR register should be updated or not. Output during execute state so it is
-  -- high for the rising clock edge of writeback.
-  signal Instruction_GBRWriteEn  : std_logic;
+    -- If the system register should be loaded or not
+    signal Instruction_SysRegCtrl   : std_logic_vector(1 downto 0);
+    
+    -- If the GBR register should be updated or not. Output during execute state so it is
+    -- high for the rising clock edge of writeback.
+    signal Instruction_GBRWriteEn   : std_logic;
 
-  -- If the PR register should be updated or not. Output during execute state so it is
-  -- high for the rising clock edge of writeback.
-  signal Instruction_PRWriteEn  : std_logic;
+    -- If the PR register should be updated or not. Output during execute state so it is
+    -- high for the rising clock edge of writeback.
+    signal Instruction_PRWriteEn    : std_logic;
 
-  -- If a delayed branch will be taken or not. If this is true ('1'), then
-  -- we are currently executing branch slot instruction of a delayed branch,
-  -- and the next PC will be calculated using the saved signals below.
-  signal Instruction_DelayedBranchTaken : std_logic;
+    -- If a delayed branch will be taken or not. If this is true ('1'), then
+    -- we are currently executing branch slot instruction of a delayed branch,
+    -- and the next PC will be calculated using the saved signals below.
+    signal Instruction_DelayedBranchTaken : std_logic;
 
         -- control signals to control memory interface
-    signal MemEnable   : std_logic;                        -- if memory needs to be accessed (read or write)
-    signal MemAddrSel  : std_logic;
-    signal ReadWrite   : std_logic;                        -- if should do memory read (0) or write (1)
-    signal MemMode     : std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
-    signal MemSel      : std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
+    signal MemEnable        : std_logic;                        -- if memory needs to be accessed (read or write)
+    signal MemAddrSel       : std_logic;
+    signal ReadWrite        : std_logic;                        -- if should do memory read (0) or write (1)
+    signal MemMode          : std_logic_vector(1 downto 0);     -- if memory access should be by byte, word, or longword
+    signal MemSel           : std_logic;                        -- select memory address source, from DMAU output (0) or PMAU output (1)
 
-    signal Immediate   : std_logic_vector(7 downto 0);     -- 8-bit immediate
-    signal ImmediateMode   : std_logic;                    -- Immediate extension mode
-    signal MemOutSel   : std_logic_vector(2 downto 0);     -- what should be output to memory
-    signal TFlagSel    : std_logic_vector(2 downto 0);     -- source for next value of T flag
-    signal ExtMode     : std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
+    signal Immediate        : std_logic_vector(7 downto 0);     -- 8-bit immediate
+    signal ImmediateMode    : std_logic;                        -- Immediate extension mode
+    signal MemOutSel        : std_logic_vector(2 downto 0);     -- what should be output to memory
+    signal TFlagSel         : std_logic_vector(2 downto 0);     -- source for next value of T flag
+    signal ExtMode          : std_logic_vector(1 downto 0);     -- mode for extending register value (zero or signed)
 
         -- ALU control signals
-    signal ALUOpBSel   : std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
-    signal LoadA       : std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
-    signal FCmd        : std_logic_vector(3 downto 0);     -- F-Block operation
-    signal CinCmd      : std_logic_vector(1 downto 0);     -- carry in operation
-    signal SCmd        : std_logic_vector(2 downto 0);     -- shift operation
-    signal ALUCmd      : std_logic_vector(1 downto 0);     -- ALU result select
-    signal TCmpSel     : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
+    signal ALUOpBSel        : std_logic;                        -- input mux to Operand B, either RegB (0) or Immediate (1)
+    signal LoadA            : std_logic;                        -- determine if OperandA is loaded ('1') or zeroed ('0')
+    signal FCmd             : std_logic_vector(3 downto 0);     -- F-Block operation
+    signal CinCmd           : std_logic_vector(1 downto 0);     -- carry in operation
+    signal SCmd             : std_logic_vector(2 downto 0);     -- shift operation
+    signal ALUCmd           : std_logic_vector(1 downto 0);     -- ALU result select
+    signal TCmpSel          : std_logic_vector(2 downto 0);     -- how to compute T from ALU status flags
 
         -- register array control signals
-    signal RegDataInSel: std_logic_vector(3 downto 0);     -- source for register input data
-    signal RegEnableIn : std_logic;                        -- if data should be written to an input register
-    signal RegInSel    : integer  range 15 downto 0;       -- which register to write data to
-    signal RegASel     : integer  range 15 downto 0;       -- which register to read to bus A
-    signal RegBSel     : integer  range 15 downto 0;       -- which register to read to bus B
-    signal RegAxInSel  : integer  range 15 downto 0;       -- which address register to write to
-    signal RegAxStore  : std_logic;                        -- if data should be written to the address register
-    signal RegA1Sel    : integer  range 15 downto 0;       -- which register to read to address bus 1
-    signal RegA2Sel    : integer  range 15 downto 0;       -- which register to read to address bus 2
+    signal RegDataInSel     : std_logic_vector(3 downto 0);     -- source for register input data
+    signal RegEnableIn      : std_logic;                        -- if data should be written to an input register
+    signal RegInSel         : integer  range 15 downto 0;       -- which register to write data to
+    signal RegASel          : integer  range 15 downto 0;       -- which register to read to bus A
+    signal RegBSel          : integer  range 15 downto 0;       -- which register to read to bus B
+    signal RegAxInSel       : integer  range 15 downto 0;       -- which address register to write to
+    signal RegAxStore       : std_logic;                        -- if data should be written to the address register
+    signal RegA1Sel         : integer  range 15 downto 0;       -- which register to read to address bus 1
+    signal RegA2Sel         : integer  range 15 downto 0;       -- which register to read to address bus 2
 
         -- DMAU signals
-    signal GBRWriteEn      : std_logic;
-    signal DMAUOff4        : std_logic_vector(3 downto 0);
-    signal DMAUOff8        : std_logic_vector(7 downto 0);
-    signal BaseSel         : std_logic_vector(1 downto 0);
-    signal IndexSel        : std_logic_vector(1 downto 0);
-    signal OffScalarSel    : std_logic_vector(1 downto 0);
-    signal IncDecSel       : std_logic_vector(1 downto 0);
+    signal GBRWriteEn       : std_logic;
+    signal DMAUOff4         : std_logic_vector(3 downto 0);
+    signal DMAUOff8         : std_logic_vector(7 downto 0);
+    signal BaseSel          : std_logic_vector(1 downto 0);
+    signal IndexSel         : std_logic_vector(1 downto 0);
+    signal OffScalarSel     : std_logic_vector(1 downto 0);
+    signal IncDecSel        : std_logic_vector(1 downto 0);
 
         -- PMAU signals
-    signal PCAddrMode      : std_logic_vector(2 downto 0);   -- What PC addressing mode is desired.
-    signal PRWriteEn       : std_logic;                      -- Enable writing to PR.
-    signal PMAUOff8        : std_logic_vector(7 downto 0);   -- 8-bit offset for relative addressing.
-    signal PMAUOff12       : std_logic_vector(11 downto 0);  -- 12-bit offset for relative addressing.
-    signal PCIn            : std_logic_vector(31 downto 0);  -- PC input for parallel loading.
-    signal PCWriteCtrl     : std_logic_vector(1 downto 0);   -- What to write to the PC register inside
-                                                              -- the PMAU. Can either hold current value,
-                                                              -- write PCIn, or write calculated PC. 
+    signal PCAddrMode       : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired.
+    signal PRWriteEn        : std_logic;                        -- Enable writing to PR.
+    signal PMAUOff8         : std_logic_vector(7 downto 0);     -- 8-bit offset for relative addressing.
+    signal PMAUOff12        : std_logic_vector(11 downto 0);    -- 12-bit offset for relative addressing.
+    signal PCIn             : std_logic_vector(31 downto 0);    -- PC input for parallel loading.
+    signal PCWriteCtrl      : std_logic_vector(1 downto 0);     -- What to write to the PC register inside
+                                                                -- the PMAU. Can either hold current value,
+                                                                -- write PCIn, or write calculated PC. 
 
         -- System control signals
-    signal SysRegCtrl      : std_logic_vector(1 downto 0);
-    signal SysRegSel       : std_logic_vector(2 downto 0);
-    signal SysRegSrc       : std_logic_vector(1 downto 0);
+    signal SysRegCtrl       : std_logic_vector(1 downto 0);
+    signal SysRegSel        : std_logic_vector(2 downto 0);
+    signal SysRegSrc        : std_logic_vector(1 downto 0);
 begin
 
     -- Is this valid ??? 
@@ -303,6 +303,10 @@ begin
 
     -- Only update system register after execute clock (on writeback)
     SysRegCtrl <= Instruction_SysRegCtrl when state = execute else SysRegCtrl_NONE;
+
+    --
+    -- Group all control signals by category
+    --
 
     MemCtrl <= (
         Enable => MemEnable,
@@ -365,8 +369,9 @@ begin
     );
 
 
+    -- Decode the current instruction combinatorially
     decode_proc: process (state)
-      variable l : line;
+        variable l : line;
     begin
         if state = execute then
 
@@ -759,54 +764,54 @@ begin
         -- NOTE: Testing this assumes MOV into memory works.
         --
         elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
-          LogWithTime(l, 
+            LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(nd8_format_d) &
             ", PC), R" & to_string(slv_to_uint(nd8_format_n)), LogFile);
 
 
-          RegInSel             <= to_integer(unsigned(nd8_format_n));   -- Writing to register n 
-          RegDataInSel         <= RegDataIn_DB;                         -- Writing output of data bus to register. 
-          Instruction_RegEnableIn <= '1';                                  -- Writes to register. 
+            RegInSel             <= to_integer(unsigned(nd8_format_n));   -- Writing to register n 
+            RegDataInSel         <= RegDataIn_DB;                         -- Writing output of data bus to register. 
+            Instruction_RegEnableIn <= '1';                                  -- Writes to register. 
 
-          RegASel <= to_integer(unsigned(nd8_format_n));
+            RegASel <= to_integer(unsigned(nd8_format_n));
 
-          -- Instruction reads word from program memory (ROM).
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_READ; 
-          Instruction_WordMode  <= WordMode;
-          Instruction_MemSel    <= MemSel_ROM;
+            -- Instruction reads word from program memory (ROM).
+            Instruction_MemEnable <= '1';
+            Instruction_ReadWrite <= ReadWrite_READ; 
+            Instruction_WordMode  <= WordMode;
+            Instruction_MemSel    <= MemSel_ROM;
 
-          -- DMAU signals for PC Relative addressing with displacement (word mode)
-          BaseSel      <= BaseSel_PC;
-          IndexSel     <= IndexSel_OFF8;
-          OffScalarSel <= OffScalarSel_TWO;
-          IncDecSel    <= IncDecSel_NONE;
-          DMAUOff8     <= nd8_format_d;
+            -- DMAU signals for PC Relative addressing with displacement (word mode)
+            BaseSel      <= BaseSel_PC;
+            IndexSel     <= IndexSel_OFF8;
+            OffScalarSel <= OffScalarSel_TWO;
+            IncDecSel    <= IncDecSel_NONE;
+            DMAUOff8     <= nd8_format_d;
 
 
         -- MOV.L @(disp, PC), Rn
         -- nd8 format
         elsif std_match(IR, MOV_L_AT_DISP_PC_RN) then
-          LogWithTime(l, 
+            LogWithTime(l, 
             "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nd8_format_d) &
             ", PC), R" & to_string(slv_to_uint(nd8_format_n)), LogFile);
 
-          RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
-          RegDataInSel         <= RegDataIn_DB;                        -- Writing output of data bus to register. 
-          Instruction_RegEnableIn <= '1';                                 -- Writes to register. 
+            RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
+            RegDataInSel         <= RegDataIn_DB;                        -- Writing output of data bus to register. 
+            Instruction_RegEnableIn <= '1';                                 -- Writes to register. 
 
-          -- Instruction reads from longword memory.
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_READ; 
-          Instruction_WordMode  <= LongwordMode;
-          Instruction_MemSel    <= MemSel_ROM;
+            -- Instruction reads from longword memory.
+            Instruction_MemEnable <= '1';
+            Instruction_ReadWrite <= ReadWrite_READ; 
+            Instruction_WordMode  <= LongwordMode;
+            Instruction_MemSel    <= MemSel_ROM;
 
-          -- DMAU signals for PC Relative addressing with displacement (longword mode)
-          BaseSel      <= BaseSel_PC;
-          IndexSel     <= IndexSel_OFF8;
-          OffScalarSel <= OffScalarSel_FOUR;
-          IncDecSel    <= IncDecSel_NONE;
-          DMAUOff8     <= nd8_format_d;
+            -- DMAU signals for PC Relative addressing with displacement (longword mode)
+            BaseSel      <= BaseSel_PC;
+            IndexSel     <= IndexSel_OFF8;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_NONE;
+            DMAUOff8     <= nd8_format_d;
 
 
         -- MOV Rm, Rn
@@ -850,27 +855,27 @@ begin
         -- nm format
         -- Note: for bit decoding, this must be done after MOV_RM_RN
         elsif std_match(IR, MOV_AT_RM_RN) then
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.X @R" & to_string(slv_to_uint(nm_format_m)) &
-            ", R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.X @R" & to_string(slv_to_uint(nm_format_m)) &
+              ", R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
-          -- Instruction reads byte from memory.
-          Instruction_MemEnable <= '1';            -- Instr does memory access.
-          Instruction_ReadWrite <= ReadWrite_READ; -- Instr reads from memory.
-          Instruction_WordMode  <= IR(1 downto 0); -- bit decode memory mode
+            -- Instruction reads byte from memory.
+            Instruction_MemEnable <= '1';            -- Instr does memory access.
+            Instruction_ReadWrite <= ReadWrite_READ; -- Instr reads from memory.
+            Instruction_WordMode  <= IR(1 downto 0); -- bit decode memory mode
 
-          -- DMAU signals for Indirect Register addressing.
-          BaseSel      <= BaseSel_REG;
-          IndexSel     <= IndexSel_NONE;
-          OffScalarSel <= OffScalarSel_ONE;
-          IncDecSel    <= IncDecSel_NONE;
+            -- DMAU signals for Indirect Register addressing.
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= OffScalarSel_ONE;
+            IncDecSel    <= IncDecSel_NONE;
 
-          -- Output @(Rm) to RegA2. 
-          RegA2Sel <= to_integer(unsigned(nm_format_m));
+            -- Output @(Rm) to RegA2. 
+            RegA2Sel <= to_integer(unsigned(nm_format_m));
 
-          RegInSel             <= to_integer(unsigned(nm_format_n));
-          RegDataInSel         <= RegDataIn_DB;
-          Instruction_RegEnableIn <= '1';
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_DB;
+            Instruction_RegEnableIn <= '1';
 
 
         -- MOV.B Rm, @-Rn
@@ -901,36 +906,36 @@ begin
         -- MOV.B @Rm+, Rn
         -- nm format
         elsif std_match(IR, MOV_AT_RM_PLUS_RN) then
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.{B,W,L} @R" & to_string(slv_to_uint(nm_format_m)) &
-            "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.{B,W,L} @R" & to_string(slv_to_uint(nm_format_m)) &
+              "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
-          -- MOV with post-increment. This Instruction reads a byte, word,
-          -- or longword from an address in Rm, into Rn. The address is
-          -- incremented and stored in Rm after the value is retrieved.
-          
-          -- Reads a byte from memory.
-          Instruction_MemEnable <= '1';             -- Uses memory.
-          Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-          Instruction_WordMode  <= IR(1 downto 0);  -- bit-decode memory word mode
+            -- MOV with post-increment. This Instruction reads a byte, word,
+            -- or longword from an address in Rm, into Rn. The address is
+            -- incremented and stored in Rm after the value is retrieved.
+            
+            -- Reads a byte from memory.
+            Instruction_MemEnable <= '1';             -- Uses memory.
+            Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
+            Instruction_WordMode  <= IR(1 downto 0);  -- bit-decode memory word mode
 
-          -- Output @Rm from RegA2
-          RegA2Sel <= to_integer(unsigned(nm_format_m));
+            -- Output @Rm from RegA2
+            RegA2Sel <= to_integer(unsigned(nm_format_m));
 
-          -- Write output of Data Bus to Rn
-          RegInSel             <= to_integer(unsigned(nm_format_n));
-          RegDataInSel         <= RegDataIn_DB;
-          Instruction_RegEnableIn <= '1';  -- Enable writing to registers.
+            -- Write output of Data Bus to Rn
+            RegInSel             <= to_integer(unsigned(nm_format_n));
+            RegDataInSel         <= RegDataIn_DB;
+            Instruction_RegEnableIn <= '1';  -- Enable writing to registers.
 
-          -- Write the incremented address to Rm
-          RegAxInSel             <= to_integer(unsigned(nm_format_m));
-          Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
-          
-          -- DMAU signals for post-increment indirect register addressing
-          BaseSel      <= BaseSel_REG;
-          IndexSel     <= IndexSel_NONE;
-          OffScalarSel <= IR(1 downto 0);       -- bit-decode offset scalar select
-          IncDecSel    <= IncDecSel_POST_INC;
+            -- Write the incremented address to Rm
+            RegAxInSel             <= to_integer(unsigned(nm_format_m));
+            Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
+            
+            -- DMAU signals for post-increment indirect register addressing
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_NONE;
+            OffScalarSel <= IR(1 downto 0);       -- bit-decode offset scalar select
+            IncDecSel    <= IncDecSel_POST_INC;
 
 
         -- MOV.{B,W} RO, @(disp,Rn)
@@ -940,69 +945,69 @@ begin
         -- words, etc. This is done to maximize it's range.
         elsif std_match(IR, MOV_R0_AT_DISP_RN) then
 
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.{B,W} R0, @(0x" & to_hstring(nd4_format_d) &
-            ", " & to_string(slv_to_uint(nd4_format_n)) & ")", LogFile);
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.{B,W} R0, @(0x" & to_hstring(nd4_format_d) &
+              ", " & to_string(slv_to_uint(nd4_format_n)) & ")", LogFile);
 
-          -- Instruction writes a byte to data memory.
-          Instruction_MemEnable   <= '1';
-          Instruction_ReadWrite   <= ReadWrite_WRITE;
+            -- Instruction writes a byte to data memory.
+            Instruction_MemEnable   <= '1';
+            Instruction_ReadWrite   <= ReadWrite_WRITE;
 
-          Instruction_WordMode    <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
-                                     WordMode;
-          
-          -- Output RegB (R0) to memory data bus
-          MemOutSel <= MemOut_RegB;
+            Instruction_WordMode    <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
+                                       WordMode;
+            
+            -- Output RegB (R0) to memory data bus
+            MemOutSel <= MemOut_RegB;
 
-          -- Output R0 to RegB
-          RegBSel <= 0;
-          
-          -- Output Rn to RegA1. The DMAU will use this to calculate the address
-          -- to write to.
-          RegA1Sel <= to_integer(unsigned(nd4_format_n));
+            -- Output R0 to RegB
+            RegBSel <= 0;
+            
+            -- Output Rn to RegA1. The DMAU will use this to calculate the address
+            -- to write to.
+            RegA1Sel <= to_integer(unsigned(nd4_format_n));
 
-          -- DMAU signals for Indirect register addressing with displacement
-          BaseSel       <=  BaseSel_REG;
-          IndexSel      <=  IndexSel_OFF4;
-          OffScalarSel  <=  OffScalarSel_ONE when IR(8) = '0' else      -- bit-decode byte/word
-                            OffScalarSel_TWO;
-          IncDecSel     <=  IncDecSel_NONE;
-          DMAUOff4      <=  nd4_format_d;
+            -- DMAU signals for Indirect register addressing with displacement
+            BaseSel       <=  BaseSel_REG;
+            IndexSel      <=  IndexSel_OFF4;
+            OffScalarSel  <=  OffScalarSel_ONE when IR(8) = '0' else      -- bit-decode byte/word
+                              OffScalarSel_TWO;
+            IncDecSel     <=  IncDecSel_NONE;
+            DMAUOff4      <=  nd4_format_d;
 
 
         -- MOV.L Rm, @(disp, Rn)
         -- nmd format
         elsif std_match(IR, MOV_L_RM_AT_DISP_RN) then
 
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_uint(nmd_format_m)) &
-            ", @(0x" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_uint(nmd_format_n)) & ")", LogFile);
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_uint(nmd_format_m)) &
+              ", @(0x" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_uint(nmd_format_n)) & ")", LogFile);
 
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= LongwordMode;
+            Instruction_MemEnable <= '1';
+            Instruction_ReadWrite <= ReadWrite_WRITE;
+            Instruction_WordMode  <= LongwordMode;
 
-          -- Output Rm to RegB.
-          RegBSel <= to_integer(unsigned(nmd_format_m));
+            -- Output Rm to RegB.
+            RegBSel <= to_integer(unsigned(nmd_format_m));
 
-          -- Output Rn to RegA1. The DMAU will use this to calculate the address
-          -- to write to.
-          RegA1Sel <= to_integer(unsigned(nmd_format_n));
+            -- Output Rn to RegA1. The DMAU will use this to calculate the address
+            -- to write to.
+            RegA1Sel <= to_integer(unsigned(nmd_format_n));
 
-          -- Output RegB (Rm) to memory data bus. This will be written to memory.
-          MemOutSel <= MemOut_RegB;
+            -- Output RegB (Rm) to memory data bus. This will be written to memory.
+            MemOutSel <= MemOut_RegB;
 
-          -- DMAU signals for Indirect register addressing with displacement (longword mode)
-          BaseSel      <= BaseSel_REG;
-          IndexSel     <= IndexSel_OFF4;
-          OffScalarSel <= OffScalarSel_FOUR;
-          IncDecSel    <= IncDecSel_NONE;
-          DMAUOff4     <= nmd_format_d;
+            -- DMAU signals for Indirect register addressing with displacement (longword mode)
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_OFF4;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_NONE;
+            DMAUOff4     <= nmd_format_d;
 
 
-        -- MOV.{B,W} @(disp, Rm), R0
-        -- md format
-        -- Note that these instructions are very similar to MOV @(disp, PC), Rn
+      -- MOV.{B,W} @(disp, Rm), R0
+      -- md format
+      -- Note that these instructions are very similar to MOV @(disp, PC), Rn
       elsif std_match(IR, MOV_AT_DISP_RM_R0) then
 
           LogWithTime(l, 
@@ -1036,64 +1041,64 @@ begin
         -- nmd
         elsif std_match(IR, MOV_L_AT_DISP_RM_RN) then
 
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nmd_format_d) &
-            ", R" & to_string(slv_to_uint(nmd_format_m)) & "), R" & to_string(slv_to_uint(nmd_format_n))
-            , LogFile);
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nmd_format_d) &
+              ", R" & to_string(slv_to_uint(nmd_format_m)) & "), R" & to_string(slv_to_uint(nmd_format_n))
+              , LogFile);
 
-          -- Writing longword from data bus to Rn.
-          RegInSel             <= to_integer(unsigned(nmd_format_n));   -- Select Rn to write to.
-          RegDataInSel         <= RegDataIn_DB;                         -- Write DataBus to reg.
-          Instruction_RegEnableIn <= '1';                                  -- Enable Reg writing for this instruction.
+            -- Writing longword from data bus to Rn.
+            RegInSel             <= to_integer(unsigned(nmd_format_n));   -- Select Rn to write to.
+            RegDataInSel         <= RegDataIn_DB;                         -- Write DataBus to reg.
+            Instruction_RegEnableIn <= '1';                                  -- Enable Reg writing for this instruction.
 
-           -- Output @Rm from RegA2
-           RegA2Sel <= to_integer(unsigned(nmd_format_m));
+             -- Output @Rm from RegA2
+             RegA2Sel <= to_integer(unsigned(nmd_format_m));
 
-          Instruction_MemEnable  <=  '1';               -- Instr uses memory.
-          Instruction_ReadWrite  <=  ReadWrite_READ;    -- Reads.
-          Instruction_WordMode   <=  LongwordMode;      -- Reads longword.
-          Instruction_MemSel     <=  MemSel_RAM;        -- Reads from RAM
+            Instruction_MemEnable  <=  '1';               -- Instr uses memory.
+            Instruction_ReadWrite  <=  ReadWrite_READ;    -- Reads.
+            Instruction_WordMode   <=  LongwordMode;      -- Reads longword.
+            Instruction_MemSel     <=  MemSel_RAM;        -- Reads from RAM
 
 
-          -- DMAU signals for Indirect register addressing with displacement (longword mode)
-          BaseSel      <= BaseSel_REG;
-          IndexSel     <= IndexSel_OFF4;
-          OffScalarSel <= OffScalarSel_FOUR;
-          IncDecSel    <= IncDecSel_NONE;
-          DMAUOff4     <= nmd_format_d;
+            -- DMAU signals for Indirect register addressing with displacement (longword mode)
+            BaseSel      <= BaseSel_REG;
+            IndexSel     <= IndexSel_OFF4;
+            OffScalarSel <= OffScalarSel_FOUR;
+            IncDecSel    <= IncDecSel_NONE;
+            DMAUOff4     <= nmd_format_d;
 
 
         -- MOV.{B,W,L} Rm, @(R0, Rn)
         -- nm format
         elsif std_match(IR, MOV_RM_AT_R0_RN) then
 
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_uint(nm_format_m)) &
-            ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
+            LogWithTime(l, 
+              "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_uint(nm_format_m)) &
+              ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
 
-          -- Instr writes a byte to memory.
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= IR(1 downto 0);      -- bit-decode memory mode
+            -- Instr writes a byte to memory.
+            Instruction_MemEnable <= '1';
+            Instruction_ReadWrite <= ReadWrite_WRITE;
+            Instruction_WordMode  <= IR(1 downto 0);      -- bit-decode memory mode
 
-          -- Output Rm to RegB.
-          RegBSel <= to_integer(unsigned(nm_format_m));
+            -- Output Rm to RegB.
+            RegBSel <= to_integer(unsigned(nm_format_m));
 
-          -- Output Rn to RegA1. The DMAU will use this to calculate the address
-          -- to write to.
-          RegA1Sel <= to_integer(unsigned(nm_format_n));
+            -- Output Rn to RegA1. The DMAU will use this to calculate the address
+            -- to write to.
+            RegA1Sel <= to_integer(unsigned(nm_format_n));
 
-          -- Output R0 to RegA2.
-          RegA2Sel <= 0;
+            -- Output R0 to RegA2.
+            RegA2Sel <= 0;
 
-          -- Output RegB (Rm) to memory data bus. This will be written to memory.
-          MemOutSel <= MemOut_RegB;
+            -- Output RegB (Rm) to memory data bus. This will be written to memory.
+            MemOutSel <= MemOut_RegB;
 
-          -- DMAU Signals for Indirect Register Addressing
-          BaseSel       <= BaseSel_REG;
-          IndexSel      <= IndexSel_R0;
-          OffScalarSel  <= OffScalarSel_ONE;
-          IncDecSel     <= IncDecSel_NONE;
+            -- DMAU Signals for Indirect Register Addressing
+            BaseSel       <= BaseSel_REG;
+            IndexSel      <= IndexSel_R0;
+            OffScalarSel  <= OffScalarSel_ONE;
+            IncDecSel     <= IncDecSel_NONE;
         
 
         -- MOV.{B,W,L} @(R0, Rm), Rn
@@ -1131,27 +1136,27 @@ begin
         -- d format
         elsif std_match(IR, MOV_R0_AT_DISP_GBR) then
 
-          LogWithTime(l,
-            "sh2_control.vhd: Decoded MOV.X R0, @(0x" & to_hstring(d_format_d) &
-            ", GBR)", LogFile);
+            LogWithTime(l,
+              "sh2_control.vhd: Decoded MOV.X R0, @(0x" & to_hstring(d_format_d) &
+              ", GBR)", LogFile);
 
-          -- Writing to memory
-          Instruction_MemEnable <= '1';
-          Instruction_ReadWrite <= ReadWrite_WRITE;
-          Instruction_WordMode  <= IR(9 downto 8);      -- bit-decode memory mode
+            -- Writing to memory
+            Instruction_MemEnable <= '1';
+            Instruction_ReadWrite <= ReadWrite_WRITE;
+            Instruction_WordMode  <= IR(9 downto 8);      -- bit-decode memory mode
 
-          -- Output R0 to RegB.
-          RegBSel <= 0;
+            -- Output R0 to RegB.
+            RegBSel <= 0;
 
-          -- Output RegB (Rm) to memory data bus. This will be written to memory.
-          MemOutSel <= MemOut_RegB;
+            -- Output RegB (Rm) to memory data bus. This will be written to memory.
+            MemOutSel <= MemOut_RegB;
 
-          -- DMAU signals for Indirect GBR addressing with displacement
-          BaseSel       <=  BaseSel_GBR;
-          IndexSel      <=  IndexSel_OFF8;
-          OffScalarSel  <=  IR(9 downto 8);     -- bit decode offset scalar select
-          IncDecSel     <=  IncDecSel_NONE;
-          DMAUOff8      <=  d_format_d;
+            -- DMAU signals for Indirect GBR addressing with displacement
+            BaseSel       <=  BaseSel_GBR;
+            IndexSel      <=  IndexSel_OFF8;
+            OffScalarSel  <=  IR(9 downto 8);     -- bit decode offset scalar select
+            IncDecSel     <=  IncDecSel_NONE;
+            DMAUOff8      <=  d_format_d;
 
         -- MOVA @(disp, PC), R0
         -- d format
@@ -1194,12 +1199,12 @@ begin
            Instruction_ReadWrite <= ReadWrite_READ;
            Instruction_WordMode  <= IR(9 downto 8); -- bit decode memory mode
 
-          -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
-          BaseSel      <=  BaseSel_GBR;
-          IndexSel     <=  IndexSel_OFF8;
-          OffScalarSel <=  IR(9 downto 8);          -- bit decode offset scalar select
-          IncDecSel    <=  IncDecSel_NONE;
-          DMAUOff8     <=  d_format_d;
+            -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
+            BaseSel      <=  BaseSel_GBR;
+            IndexSel     <=  IndexSel_OFF8;
+            OffScalarSel <=  IR(9 downto 8);          -- bit decode offset scalar select
+            IncDecSel    <=  IncDecSel_NONE;
+            DMAUOff8     <=  d_format_d;
 
         -- MOVT Rn
         -- n format.
@@ -1371,18 +1376,17 @@ begin
          elsif std_match(IR, BRAF) then
 
              -- Delayed branch, Rm + PC -> PC
-
              -- Note that the PMAU's register input is always RegB.
 
-            RegBSel <= slv_to_uint(m_format_m);
+              RegBSel <= slv_to_uint(m_format_m);
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile); 
+              LogWithTime(l,
+                  "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile); 
  
-            Instruction_DelayedBranchTaken <= '1';
-            PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
+              Instruction_DelayedBranchTaken <= '1';
+              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
-            Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
+              Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
 
 
          -- BSR <label> (where label is disp*2)
