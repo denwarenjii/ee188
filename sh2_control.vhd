@@ -159,7 +159,7 @@ architecture dataflow of sh2control is
 
     -- The memory mode for a given instruction. The same as the constants in the
     -- MemoryInterfaceConstants package.
-    signal Instruction_WordMode     : std_logic_vector(1 downto 0);
+    signal Instruction_MemMode      : std_logic_vector(1 downto 0);
 
     -- Register write enable for the current instruction. Output to RegisterArray 
     -- during the execute state so that it is high when the rising clock of the writeback state occurs.
@@ -270,7 +270,7 @@ begin
                      'X'                   when writeback;     -- no memory access during writeback
 
     with state select 
-        MemMode <= Instruction_WordMode when execute,       -- instruction memory mode
+        MemMode <= Instruction_MemMode  when execute,       -- instruction memory mode
                    WordMode             when fetch,         -- fetch instruction word
                    (others => 'X')      when others;        -- no memory access during writeback
 
@@ -384,7 +384,7 @@ begin
         -- Not accessing memory
         Instruction_MemEnable  <= '0';
         Instruction_ReadWrite  <= 'X';
-        Instruction_WordMode   <= "XX";
+        Instruction_MemMode    <= "XX";
         MemOutSel              <= "XXX";
         Instruction_MemSel     <= MemSel_RAM;       -- access data memory by default.
         Instruction_MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default.
@@ -778,7 +778,7 @@ begin
             -- Instruction reads word from program memory (ROM).
             Instruction_MemEnable <= '1';
             Instruction_ReadWrite <= ReadWrite_READ; 
-            Instruction_WordMode  <= WordMode;
+            Instruction_MemMode   <= WordMode;
             Instruction_MemSel    <= MemSel_ROM;
 
             -- DMAU signals for PC Relative addressing with displacement (word mode)
@@ -803,7 +803,7 @@ begin
             -- Instruction reads from longword memory.
             Instruction_MemEnable <= '1';
             Instruction_ReadWrite <= ReadWrite_READ; 
-            Instruction_WordMode  <= LongwordMode;
+            Instruction_MemMode   <= LongwordMode;
             Instruction_MemSel    <= MemSel_ROM;
 
             -- DMAU signals for PC Relative addressing with displacement (longword mode)
@@ -838,7 +838,7 @@ begin
             -- Writes a byte to memory to memory
             Instruction_MemEnable <= '1';             -- Uses memory.
             Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
-            Instruction_WordMode  <= IR(1 downto 0);  -- bit decode memory mode
+            Instruction_MemMode   <= IR(1 downto 0);  -- bit decode memory mode
 
             MemOutSel <= MemOut_RegB; -- Output RegB (Rm) to memory data bus.
 
@@ -862,7 +862,7 @@ begin
             -- Instruction reads byte from memory.
             Instruction_MemEnable <= '1';            -- Instr does memory access.
             Instruction_ReadWrite <= ReadWrite_READ; -- Instr reads from memory.
-            Instruction_WordMode  <= IR(1 downto 0); -- bit decode memory mode
+            Instruction_MemMode   <= IR(1 downto 0); -- bit decode memory mode
 
             -- DMAU signals for Indirect Register addressing.
             BaseSel      <= BaseSel_REG;
@@ -888,7 +888,7 @@ begin
             -- Writes a byte to memory
             Instruction_MemEnable <= '1';             -- Uses memory.
             Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
-            Instruction_WordMode  <= IR(1 downto 0);  -- bit decode memory mode
+            Instruction_MemMode   <= IR(1 downto 0);  -- bit decode memory mode
 
             MemOutSel <= MemOut_RegB; -- Output RegB (Rm) to memory data bus.
 
@@ -917,7 +917,7 @@ begin
             -- Reads a byte from memory.
             Instruction_MemEnable <= '1';             -- Uses memory.
             Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-            Instruction_WordMode  <= IR(1 downto 0);  -- bit-decode memory word mode
+            Instruction_MemMode   <= IR(1 downto 0);  -- bit-decode memory word mode
 
             -- Output @Rm from RegA2
             RegA2Sel <= to_integer(unsigned(nm_format_m));
@@ -953,7 +953,7 @@ begin
             Instruction_MemEnable   <= '1';
             Instruction_ReadWrite   <= ReadWrite_WRITE;
 
-            Instruction_WordMode    <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
+            Instruction_MemMode     <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
                                        WordMode;
             
             -- Output RegB (R0) to memory data bus
@@ -985,7 +985,7 @@ begin
 
             Instruction_MemEnable <= '1';
             Instruction_ReadWrite <= ReadWrite_WRITE;
-            Instruction_WordMode  <= LongwordMode;
+            Instruction_MemMode   <= LongwordMode;
 
             -- Output Rm to RegB.
             RegBSel <= to_integer(unsigned(nmd_format_m));
@@ -1024,7 +1024,7 @@ begin
 
             Instruction_MemEnable  <=  '1';            -- Instr uses memory.
             Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
-            Instruction_WordMode   <=  ByteMode when IR(8) = '0' else       -- bit-decode word mode
+            Instruction_MemMode    <=  ByteMode when IR(8) = '0' else       -- bit-decode word mode
                                        WordMode;
             Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
@@ -1056,7 +1056,7 @@ begin
 
             Instruction_MemEnable  <=  '1';               -- Instr uses memory.
             Instruction_ReadWrite  <=  ReadWrite_READ;    -- Reads.
-            Instruction_WordMode   <=  LongwordMode;      -- Reads longword.
+            Instruction_MemMode    <=  LongwordMode;      -- Reads longword.
             Instruction_MemSel     <=  MemSel_RAM;        -- Reads from RAM
 
 
@@ -1079,7 +1079,7 @@ begin
             -- Instr writes a byte to memory.
             Instruction_MemEnable <= '1';
             Instruction_ReadWrite <= ReadWrite_WRITE;
-            Instruction_WordMode  <= IR(1 downto 0);      -- bit-decode memory mode
+            Instruction_MemMode   <= IR(1 downto 0);      -- bit-decode memory mode
 
             -- Output Rm to RegB.
             RegBSel <= to_integer(unsigned(nm_format_m));
@@ -1122,7 +1122,7 @@ begin
 
             Instruction_MemEnable  <=  '1';             -- Instr uses memory.
             Instruction_ReadWrite  <=  ReadWrite_READ;  -- Reads.
-            Instruction_WordMode   <=  IR(1 downto 0);  -- bit decode memory mode
+            Instruction_MemMode    <=  IR(1 downto 0);  -- bit decode memory mode
             Instruction_MemSel     <=  MemSel_RAM;      -- Reads from RAM
 
             -- DMAU Signals for Indirect indexed Register Addressing
@@ -1143,7 +1143,7 @@ begin
             -- Writing to memory
             Instruction_MemEnable <= '1';
             Instruction_ReadWrite <= ReadWrite_WRITE;
-            Instruction_WordMode  <= IR(9 downto 8);      -- bit-decode memory mode
+            Instruction_MemMode   <= IR(9 downto 8);      -- bit-decode memory mode
 
             -- Output R0 to RegB.
             RegBSel <= 0;
@@ -1197,7 +1197,7 @@ begin
            
            Instruction_MemEnable <= '1';    
            Instruction_ReadWrite <= ReadWrite_READ;
-           Instruction_WordMode  <= IR(9 downto 8); -- bit decode memory mode
+           Instruction_MemMode   <= IR(9 downto 8); -- bit decode memory mode
 
             -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
             BaseSel      <=  BaseSel_GBR;
@@ -1536,7 +1536,7 @@ begin
             -- Writes a byte to memory
             Instruction_MemEnable <= '1';               -- Uses memory.
             Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
-            Instruction_WordMode  <= LongwordMode;      -- bit decode memory mode
+            Instruction_MemMode   <= LongwordMode;      -- bit decode memory mode
 
             -- selects data source to store to a register through bit decoding
             SysRegSel <= "0" & IR(5 downto 4);
@@ -1561,7 +1561,7 @@ begin
             -- Writes a byte to memory
             Instruction_MemEnable <= '1';               -- Uses memory.
             Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
-            Instruction_WordMode  <= LongwordMode;      -- bit decode memory mode
+            Instruction_MemMode   <= LongwordMode;      -- bit decode memory mode
 
             -- selects data source to store to a register through bit decoding
             SysRegSel <= "1" & IR(5 downto 4);
@@ -1610,7 +1610,7 @@ begin
             -- Reads a longword from memory
             Instruction_MemEnable <= '1';             -- Uses memory.
             Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-            Instruction_WordMode  <= LongwordMode;    -- bit decode memory mode
+            Instruction_MemMode   <= LongwordMode;    -- bit decode memory mode
 
             -- Load into a system register
             Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
@@ -1657,7 +1657,7 @@ begin
             -- Reads a longword from memory
             Instruction_MemEnable <= '1';             -- Uses memory.
             Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-            Instruction_WordMode  <= LongwordMode;    -- bit decode memory mode
+            Instruction_MemMode   <= LongwordMode;    -- bit decode memory mode
 
             -- Load into a system register
             Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
