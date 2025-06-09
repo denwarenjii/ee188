@@ -1708,7 +1708,7 @@ begin
 
             LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
 
-        elsif not is_x(IR) then
+        else
             report "Unrecognized instruction: " & to_hstring(IR);
         end if;
 

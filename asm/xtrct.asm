@@ -30,10 +30,14 @@ Start:
     ; 00000000 456789AB
 
 End:
-  ; The test bench interprets a read of 0xFFFFFFFC (-4)
-  ;as system exit.
-  MOV #-4, R0;
-  MOV.B R0, @R0;
+    ; The test bench interprets a read of 0xFFFFFFFC (-4)
+    ;as system exit.
+    MOV #-4, R0;
+    MOV.B R0, @R0;
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
 
 

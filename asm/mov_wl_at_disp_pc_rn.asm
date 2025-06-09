@@ -46,10 +46,14 @@ ProgramStart:
   MOV.L R3, @R0 ;
 
 Done:
-  ; The test bench interprets a read of 0xFFFFFFFC (-4) 
-  ;as system exit.
-  MOV   #-4, R0;
-  MOV.B R0, @R0;
+    ; The test bench interprets a read of 0xFFFFFFFC (-4) 
+    ;as system exit.
+    MOV   #-4, R0;
+    MOV.B R0, @R0;
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
     align 4
     LTORG
