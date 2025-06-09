@@ -292,7 +292,6 @@ architecture dataflow of sh2control is
 
     signal pipeline         : signal_array;                 -- pipeline the decoded control signals (DFFs)
     signal pipeline_en      : std_logic_vector(0 to 3);     -- if each stage in the pipeline should be enabled
-    signal InstructionReady : std_logic;                    -- If the next instruction should be latched in from the data bus
 
     -- We need to insert a bubble if instruction fetch (IF) contention with
     -- memory access (MA). In this case, MA takes precedence, and IF is delayed
@@ -376,7 +375,7 @@ begin
             -- Perform memory access, ignoring IF this clock
             MemCtrl <= pipeline(STAGE_MA).MemCtrl;
         else
-            -- Load IR
+            -- fetch instruction like usual
             MemCtrl <= (
                 Enable => '1',
                 AddrSel => MemAddrSel_PMAU,
@@ -1715,7 +1714,8 @@ begin
             if reset = '0' then
                 pipeline(i) <= DEFAULT_CTRL;
             elsif rising_edge(clock) then
-                if pipeline_en(i) = '1' and not (BubbleIF = '1' and i <= STAGE_MA) then
+                -- TODO: should comparing stages be < or <= ??
+                if pipeline_en(i) = '1' and not (BubbleIF = '1' and i < STAGE_MA) then
                     -- If pipeline is enabled, then move on to the next task
                     if i = 0 then
                         -- First item in pipeline comes from decoded signals
