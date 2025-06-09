@@ -22,8 +22,8 @@ Start:
     ; 00000012: 3344  3D  Var
 
 
-    MOVA Var, R0    ; PC = 0x00. Since Var starts at ROM address 0x10, we expect
-                    ; 0x10 in R0
+    MOVA Var, R0    ; PC = 0x00. Since Var starts at ROM address 0x14, we expect
+                    ; 0x14 in R0
 
     MOV   #00,  R1  ; PC = 0x02
     MOV   R0,   @R1 ; PC = 0x04
@@ -32,10 +32,14 @@ Start:
     ; 00000000 00000010
 
 End:
-  ; The test bench interprets a read of 0xFFFFFFFC (-4)
-  ;as system exit.
-  MOV #-4, R0;      ; PC = 0x06
-  MOV.B R0, @R0;    ; PC = 0x08
+    ; The test bench interprets a read of 0xFFFFFFFC (-4)
+    ;as system exit.
+    MOV #-4, R0;      ; PC = 0x06
+    MOV.B R0, @R0;    ; PC = 0x08
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
 
     ; long-word align program memory.

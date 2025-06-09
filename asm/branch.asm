@@ -58,6 +58,10 @@ End_T0:
     ; as system exit.
     MOV     #-4,  R0
     MOV.B   R0,  @R0
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
 
 TRGET_F0:
@@ -136,6 +140,10 @@ TRGET_F3:
     ; as system exit.
     MOV     #-4,  R0;   ; PC = 0x1A
     MOV.B   R0,  @R0;   ; PC = 0x1C
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
 TRGET_T3:
 
@@ -163,6 +171,10 @@ TRGET_T3:
     ; as system exit.
     MOV     #-4,  R0;   ; PC = 0x1A
     MOV.B   R0,  @R0;   ; PC = 0x1C
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
 
 TRGET_BRA:
@@ -196,6 +208,10 @@ TRGET_BRA:
     ; as system exit.
     MOV     #-4,  R0
     MOV.B   R0,  @R0
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
 
 TRGET_BRAF:
@@ -259,6 +275,10 @@ TRGET_BRAF:
 
     MOV     #-4,  R0    ; If the JMP is not taken, the system exits.
     MOV.B   R0,  @R0
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
 
 TRGET_BSR:
@@ -318,6 +338,10 @@ End:
     ; as system exit.
     MOV     #-4,  R0
     MOV.B   R0,  @R0
+    ; Extra NOPs to clear pipeline
+    NOP
+    NOP
+    NOP
 
 
 

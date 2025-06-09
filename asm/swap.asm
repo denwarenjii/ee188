@@ -34,6 +34,10 @@ End:
   ;as system exit.
   MOV #-4, R0;
   MOV.B R0, @R0;
+  ; Extra NOPs to clear pipeline
+  NOP
+  NOP
+  NOP
 
 
 
