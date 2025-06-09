@@ -255,7 +255,8 @@ begin
     PCNext <= std_logic_vector(unsigned(PrevPCReg) + to_unsigned(2, 32));
 
     -- Decide which value of PC should be used
-    PCUsed <= PCNext when (DelayedBranchTaken = '1') else PCCalcOut;
+    -- PCUsed <= PCNext when (DelayedBranchTaken = '1') else PCCalcOut;
+    PCUsed <= PCRegOut;
 
     -- Decide which memory address to output
     with MemCtrl.AddrSel select 
@@ -520,10 +521,7 @@ begin
         RegCtrl => RegCtrl,
         DMAUCtrl => DMAUCtrl,
         PMAUCtrl => PMAUCtrl,
-        SysCtrl => SysCtrl,
-
-        -- Branch control signals.
-        DelayedBranchTaken => DelayedBranchTaken
+        SysCtrl => SysCtrl
     );
 
     -- Mux system register input values based on SysRegSrc. Note that individual

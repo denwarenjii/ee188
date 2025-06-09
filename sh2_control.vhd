@@ -24,8 +24,6 @@
 --                                                                                                 -
 -- TODO:                                                                                           -
 --  - Remove redundant assignment of default signals.                                              -
---  - Better names for:                                                                            -
---      Instruction_RegEnableIn, RegEnableIn                                                       -
 --                                                                                                 -
 --  - Generate DMAU signals with vectors.                                                          -
 --  - Document register output conventions.                                                        -
@@ -67,21 +65,91 @@ entity  SH2Control  is
         RegCtrl             : out reg_ctrl_t;                       -- register array control signals
         DMAUCtrl            : out dmau_ctrl_t;                      -- DMAU control signals
         PMAUCtrl            : out pmau_ctrl_t;                      -- PMAU control signals
-        SysCtrl             : out sys_ctrl_t;                       -- system control signals
-        DelayedBranchTaken  : out std_logic                         -- whether the delayed branch is taken
+        SysCtrl             : out sys_ctrl_t                        -- system control signals
 );
     
 end  SH2Control;
 
 architecture dataflow of sh2control is
-    
-    type state_t is (
-        fetch,
-        execute,
-        writeback
+    -- 
+    -- Default control signals - shouldn't touch registers, but does fetch an
+    -- instruction and increment PC
+
+    -- Default control signals for Memory Interface
+    -- Performs an instruction fetch
+    constant DEFAULT_MEM_CTRL : mem_ctrl_t := (
+        Enable      => '0',                         -- do nothing
+        AddrSel     => MemAddrSel_PMAU,             -- unused
+        ReadWrite   => ReadWrite_Read,              -- unused
+        Mode        => WordMode,                    -- unused
+        Sel         => MemAddrSel_PMAU,             -- unused
+        OutSel      => (others => 'X')              -- unused
     );
 
-    signal state : state_t;
+    -- Default control signals for ALU
+    constant DEFAULT_ALU_CTRL : alu_ctrl_t := (
+        TFlagSel    => TFlagSel_T,                  -- T flag retains its value
+        OpBSel      => ALUOpB_RegB,                 -- unused (assuming result of ALU not stored to a register)
+        LoadA       => '0',                         -- unused
+        FCmd        => (others => 'X'),             -- unused
+        CinCmd      => (others => 'X'),             -- unused
+        SCmd        => (others => 'X'),             -- unused
+        ALUCmd      => (others => 'X'),             -- unused
+        TCmpSel     => TCmp_EQ,                     -- unused
+        Immediate   => (others => '0'),             -- unused
+        ImmediateMode => ImmediateMode_Sign,        -- unused
+        ExtMode     => Ext_ZeroB_RegA               -- unused
+    );
+
+    -- Default control signals for Register Array
+    constant DEFAULT_REG_CTRL : reg_ctrl_t := (
+        EnableIn    => '0',                             -- Do not write to any general-purpose register
+        AxStore     => '0',                             -- Do not write to address register
+        DataInSel   => RegDataIn_ALUResult,             -- unused
+        InSel       => 0, ASel        => 0,             -- unused
+        BSel        => 0, AxInSel     => 0,             -- unused
+        A1Sel       => 0, A2Sel       => 0              -- unused
+    );
+
+    -- Default control signals for DMAU (Data Memory Access Unit)
+    constant DEFAULT_DMAU_CTRL : dmau_ctrl_t := (
+        GBRWriteEn  => '0',                             -- Do not write to GBR
+        Off4        => (others => '0'),                 -- unused
+        Off8        => (others => '0'),                 -- unused
+        BaseSel     => (others => '0'),                 -- unused
+        IndexSel    => (others => '0'),                 -- unused
+        OffScalarSel=> (others => '0'),                 -- unused
+        IncDecSel   => (others => '0')                  -- unused
+    );
+
+    -- Default control signals for PMAU (Program Memory Access Unit)
+    -- These defaults ensure the PC is incremented for the next instruction fetch.
+    constant DEFAULT_PMAU_CTRL : pmau_ctrl_t := (
+        -- Increment PC
+        PCAddrMode  => PCAddrMode_INC,
+        PCWriteCtrl => PCWriteCtrl_WRITE_CALC,
+        PRWriteEn   => '0',                             -- Do not write to PR (Procedure Register)
+        Off8        => (others => '0'),                 -- unused
+        Off12       => (others => '0'),                 -- unused
+        PCIn        => (others => '0'),                 -- unused
+        DelayedBranchTaken  => '0'                      -- No delayed branch taken by default
+    );
+
+    -- Default control signals for System Control
+    constant DEFAULT_SYS_CTRL : sys_ctrl_t := (
+        RegCtrl     => SysRegCtrl_None,                 -- Do nothing with system registers
+        RegSel      => SysRegSel_SR,                    -- unused
+        RegSrc      => SysRegSrc_RegB                   -- unused
+    );
+
+    constant DEFAULT_CTRL : ctrl_t := (
+        ALUCtrl    => DEFAULT_ALU_CTRL,
+        REGCtrl    => DEFAULT_REG_CTRL,
+        PMAUCtrl   => DEFAULT_PMAU_CTRL,
+        DMAUCtrl   => DEFAULT_DMAU_CTRL,
+        SysCtrl    => DEFAULT_SYS_CTRL,
+        MemCtrl    => DEFAULT_MEM_CTRL
+    );
 
 
     -- The instruction register.
@@ -150,50 +218,8 @@ architecture dataflow of sh2control is
     alias ni_format_n   : std_logic_vector(3 downto 0) is IR(11 downto 8);
     alias ni_format_i   : std_logic_vector(7 downto 0) is IR(7 downto 0);
 
-    -- Internal signals computed combinatorially to memory signals can
-    -- be output on the correct clock.
-    signal Instruction_MemEnable    : std_logic;
-    signal Instruction_ReadWrite    : std_logic;
-    signal Instruction_MemSel       : std_logic;
-    signal Instruction_MemAddrSel   : std_logic;
 
-    -- The memory mode for a given instruction. The same as the constants in the
-    -- MemoryInterfaceConstants package.
-    signal Instruction_MemMode      : std_logic_vector(1 downto 0);
-
-    -- Register write enable for the current instruction. Output to RegisterArray 
-    -- during the execute state so that it is high when the rising clock of the writeback state occurs.
-    signal Instruction_RegEnableIn  : std_logic;   
-
-    -- Address register write enable for the current instruction. Output to RegisterArray 
-    -- during the execute state so that it is high when the rising clock of the writeback state occurs.
-    signal Instruction_RegAxStore   : std_logic;
-
-    -- Program addressing mode for the current instruction. Output during the
-    -- writeback state so that it is ready by the following fetch state.
-    signal Instruction_PCAddrMode   : std_logic_vector(2 downto 0);
-
-    -- What to write to the TFlag for the current instruction. Output during
-    -- the execute state so that it is high when the rising clock of the writeback state occurs.
-    signal Instruction_TFlagSel     : std_logic_vector(2 downto 0);
-
-    -- If the system register should be loaded or not
-    signal Instruction_SysRegCtrl   : std_logic_vector(1 downto 0);
-    
-    -- If the GBR register should be updated or not. Output during execute state so it is
-    -- high for the rising clock edge of writeback.
-    signal Instruction_GBRWriteEn   : std_logic;
-
-    -- If the PR register should be updated or not. Output during execute state so it is
-    -- high for the rising clock edge of writeback.
-    signal Instruction_PRWriteEn    : std_logic;
-
-    -- If a delayed branch will be taken or not. If this is true ('1'), then
-    -- we are currently executing branch slot instruction of a delayed branch,
-    -- and the next PC will be calculated using the saved signals below.
-    signal Instruction_DelayedBranchTaken : std_logic;
-
-        -- control signals to control memory interface
+    -- control signals to control memory interface
     signal MemEnable        : std_logic;                        -- if memory needs to be accessed (read or write)
     signal MemAddrSel       : std_logic;
     signal ReadWrite        : std_logic;                        -- if should do memory read (0) or write (1)
@@ -234,6 +260,7 @@ architecture dataflow of sh2control is
     signal IndexSel         : std_logic_vector(1 downto 0);     -- which index source to select
     signal OffScalarSel     : std_logic_vector(1 downto 0);     -- what to scale the offset by (1, 2, 4)
     signal IncDecSel        : std_logic_vector(1 downto 0);     -- post-increment or pre-decrement the base
+    signal DelayedBranchTaken  : std_logic;                     -- whether the delayed branch is taken
 
         -- PMAU signals
     signal PCAddrMode       : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired.
@@ -249,125 +276,124 @@ architecture dataflow of sh2control is
     signal SysRegCtrl       : std_logic_vector(1 downto 0);     -- how to update system registers 
     signal SysRegSel        : std_logic_vector(2 downto 0);     -- system register select 
     signal SysRegSrc        : std_logic_vector(1 downto 0);     -- source for data to input into a system register
+
+    -- Pipelining signals
+    type signal_array is array (0 to 3) of ctrl_t;
+
+    -- Define which set of signals is associated with each stage in the 5-stage pipeline
+    -- We don't include instruction fetch (IF) because it doesn't involve any
+    -- control signals - latching in IR data takes a clock on its own, so it's
+    -- implicitly a stage in the pipeline.
+    constant STAGE_ID   : integer := 0;     -- instruction decode
+    constant STAGE_X    : integer := 1;     -- execute instruction
+    constant STAGE_MA   : integer := 2;     -- memory access
+    constant STAGE_WR   : integer := 3;     -- writeback
+
+    signal decoded_signals  : ctrl_t;       -- signals combinatorially decoded from the IR
+
+    signal pipeline         : signal_array;                 -- pipeline the decoded control signals (DFFs)
+    signal pipeline_en      : std_logic_vector(0 to 3);     -- if each stage in the pipeline should be enabled
+    signal InstructionReady : std_logic;                    -- If the next instruction should be latched in from the data bus
+
+    -- We need to insert a bubble if instruction fetch (IF) contention with
+    -- memory access (MA). In this case, MA takes precedence, and IF is delayed
+    -- by a clock. This is implemented by 1) not shifting forward stages IF, ID,
+    -- and X, 2) holding the PC constant, and 3) ignoring the current value on
+    -- the data bus
+    signal BubbleIF         : std_logic;
+
 begin
 
-    -- Is this valid ??? 
-    DelayedBranchTaken <= Instruction_DelayedBranchTaken;
+    pipeline_en <= (others => '1');
 
-    -- Outputs that change based on the CPU state
-    with state select 
-        PCAddrMode <= Instruction_PCAddrMode when writeback,  -- increment PC during writeback state
-                      PCAddrMode_HOLD        when others;     -- otherwise, hold PC
+    decoded_signals <= (
+        ALUCtrl => (
+            OpBSel => ALUOpBSel,
+            LoadA => LoadA,
+            FCmd => FCmd,
+            CinCmd => CinCmd,
+            SCmd => SCmd,
+            ALUCmd => ALUCmd,
+            TCmpSel => TCmpSel,
+            Immediate => Immediate,
+            ImmediateMode => ImmediateMode,
+            ExtMode => ExtMode,
+            TFlagSel => TFlagSel
+        ),
 
-    with state select 
-        MemEnable <= Instruction_MemEnable when execute,        -- if instruction requires memory access
-                     MemEnable_ON            when fetch,        -- enable to fetch instruction
-                     MemEnable_OFF           when writeback;    -- no memory access during writeback
+        RegCtrl => (
+            DataInSel => RegDataInSel,
+            EnableIn => RegEnableIn,
+            InSel => RegInSel,
+            ASel => RegASel,
+            BSel => RegBSel,
+            AxInSel => RegAxInSel,
+            AxStore => RegAxStore,
+            A1Sel => RegA1Sel,
+            A2Sel => RegA2Sel
+        ),
 
-    with state select 
-        ReadWrite <= Instruction_ReadWrite when execute,        -- if instruction does read/write
-                     Mem_READ              when fetch,         -- read instruction during fetch
-                     'X'                   when writeback;     -- no memory access during writeback
+        DMAUCtrl => (
+            GBRWriteEn => GBRWriteEn,
+            Off4 => DMAUOff4,
+            Off8 => DMAUOff8,
+            BaseSel => BaseSel,
+            IndexSel => IndexSel,
+            OffScalarSel => OffScalarSel,
+            IncDecSel => IncDecSel
+        ),
 
-    with state select 
-        MemMode <= Instruction_MemMode  when execute,       -- instruction memory mode
-                   WordMode             when fetch,         -- fetch instruction word
-                   (others => 'X')      when others;        -- no memory access during writeback
-
-    with state select
-        MemSel <= Instruction_MemSel when execute,      -- if instruction access RAM or ROM
-                  MemSel_ROM         when fetch,        -- access ROM to fetch instruction
-                  'X'                when others;       -- no memory access during writeback
-
-    with state select
-        MemAddrSel <= Instruction_MemAddrSel when execute,  -- if instruction accesses PMAU or DMAU address
-                      MemAddrSel_PMAU        when fetch,    -- access program memory during fetch
-                      'X'                    when others;   -- no memory access during writeback
-
-    with state select 
-        GBRWriteEn <= Instruction_GBRWriteEn when execute,      -- if instruction updates GBR
-                      '0'                    when others;       -- don't change GBR
-
-    with state select 
-        PRWriteEn  <= Instruction_PRWriteEn  when execute,      -- if instruction updates GBR
-                      '0'                    when others;       -- don't change GBR
-
-    -- Only modify registers after execute clock
-    RegEnableIn <= Instruction_RegEnableIn when state = execute else '0';
-
-    -- Only modify address registers after execute clock
-    RegAxStore <= Instruction_RegAxStore when state = execute else '0';
-
-    -- Only modify T flag bit after execute clock
-    TFlagSel <= Instruction_TFlagSel when state = execute else TFlagSel_T;
-
-    -- Only update system register after execute clock (on writeback)
-    SysRegCtrl <= Instruction_SysRegCtrl when state = execute else SysRegCtrl_NONE;
-
-    --
-    -- Group all control signals by category
-    --
-
-    MemCtrl <= (
-        Enable => MemEnable,
-        AddrSel => MemAddrSel,
-        ReadWrite => ReadWrite,
-        Mode => MemMode,
-        OutSel => MemOutSel,
-        Sel => Memsel
+        PMAUCtrl => (
+            PCAddrMode => PCAddrMode_INC,           -- TODO: change for branch instructions
+            PRWriteEn => PRWriteEn,
+            Off8 => PMAUOff8,
+            Off12 => PMAUOff12,
+            PCIn => PCIn,
+            PCWriteCtrl => PCWriteCtrl,
+            DelayedBranchTaken => DelayedBranchTaken
+        ),
+        SysCtrl => (
+            RegCtrl => SysRegCtrl,
+            RegSel => SysRegSel,
+            RegSrc => SysRegSrc
+        ),
+        MemCtrl =>  (
+            Enable => MemEnable,
+            AddrSel => MemAddrSel,
+            ReadWrite => ReadWrite,
+            Mode => MemMode,
+            OutSel => MemOutSel,
+            Sel => MemSel
+        )
     );
 
-    ALUCtrl <= (
-        OpBSel => ALUOpBSel,
-        LoadA => LoadA,
-        FCmd => FCmd,
-        CinCmd => CinCmd,
-        SCmd => SCmd,
-        ALUCmd => ALUCmd,
-        TCmpSel => TCmpSel,
-        Immediate => Immediate,
-        ImmediateMode => ImmediateMode,
-        ExtMode => ExtMode,
-        TFlagSel => TFlagSel
-    );
+    -- Currently, IF occurs every clock, so if the instruction currently in the
+    -- MA stage requires memory access, a bubble needs to be inserted.
+    BubbleIF <= pipeline(STAGE_MA).MemCtrl.Enable;
 
-    RegCtrl <= (
-        DataInSel => RegDataInSel,
-        EnableIn => RegEnableIn,
-        InSel => RegInSel,
-        ASel => RegASel,
-        BSel => RegBSel,
-        AxInSel => RegAxInSel,
-        AxStore => RegAxStore,
-        A1Sel => RegA1Sel,
-        A2Sel => RegA2Sel
-    );
+    mem_access: process(all)
+    begin
+        if BubbleIF = '1' then
+            -- Perform memory access, ignoring IF this clock
+            MemCtrl <= pipeline(STAGE_MA).MemCtrl;
+        else
+            -- Load IR
+            MemCtrl <= (
+                Enable => '1',
+                AddrSel => MemAddrSel_PMAU,
+                ReadWrite => ReadWrite_READ,
+                Mode => WordMode,
+                OutSel => MemOutSel,
+                Sel => MemSel_ROM
+            );
+        end if ;
+    end process mem_access;
 
-    DMAUCtrl <= (
-        GBRWriteEn => GBRWriteEn,
-        Off4 => DMAUOff4,
-        Off8 => DMAUOff8,
-        BaseSel => BaseSel,
-        IndexSel => IndexSel,
-        OffScalarSel => OffScalarSel,
-        IncDecSel => IncDecSel
-    );
-
-    PMAUCtrl <= (
-        PCAddrMode => PCAddrMode,
-        PRWriteEn => PRWriteEn,
-        Off8 => PMAUOff8,
-        Off12 => PMAUOff12,
-        PCIn => PCIn,
-        PCWriteCtrl => PCWriteCtrl
-    );
-
-    SysCtrl <= (
-        RegCtrl => SysRegCtrl,
-        RegSel => SysRegSel,
-        RegSrc => SysRegSrc
-    );
-
+    ALUCtrl <= pipeline(STAGE_X).ALUCtrl;
+    RegCtrl <= pipeline(STAGE_X).RegCtrl;
+    DMAUCtrl <= pipeline(STAGE_MA).DMAUCtrl;
+    PMAUCtrl <= pipeline(STAGE_X).PMAUCtrl;
+    SysCtrl <= pipeline(STAGE_X).SysCtrl;
 
     -- Decode the current instruction combinatorially
     decode_proc: process (IR)
@@ -381,37 +407,37 @@ begin
         -- writes on the clocks following an instruction.
 
         -- Not accessing memory
-        Instruction_MemEnable  <= '0';
-        Instruction_ReadWrite  <= 'X';
-        Instruction_MemMode    <= "XX";
+        MemEnable  <= '0';
+        ReadWrite  <= 'X';
+        MemMode    <= "XX";
         MemOutSel              <= "XXX";
-        Instruction_MemSel     <= MemSel_RAM;       -- access data memory by default.
-        Instruction_MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default.
+        MemSel     <= MemSel_RAM;       -- access data memory by default.
+        MemAddrSel <= MemAddrSel_DMAU;  -- access data memory by default.
 
         -- Register enables
-        Instruction_RegEnableIn <= '0';             -- Disable register write
-        Instruction_RegAxStore  <= '0';             -- Disable writing to address register.
-        Instruction_TFlagSel    <= TFlagSel_T;      -- Keep T flag the same
-        Instruction_GBRWriteEn  <= '0';             -- Don't write to GBR.
-        Instruction_PRWriteEn   <= '0';             -- Don't write to PR.
+        RegEnableIn <= '0';             -- Disable register write
+        RegAxStore  <= '0';             -- Disable writing to address register.
+        TFlagSel    <= TFlagSel_T;      -- Keep T flag the same
+        GBRWriteEn  <= '0';             -- Don't write to GBR.
+        PRWriteEn   <= '0';             -- Don't write to PR.
 
         -- If a delayed branch was taken previously, then don't change the PC since the target
         -- address was calculated when the delayed branch decoded.
         if (DelayedBranchTaken = '1') then
-            Instruction_PCAddrMode <= PCAddrMode_HOLD;
+            PCAddrMode <= PCAddrMode_HOLD;
         else
             -- Increment the PC.
-            Instruction_PCAddrMode <= PCAddrMode_INC;
+            PCAddrMode <= PCAddrMode_INC;
             -- LogWithTime("Changing PC to PCAddrMode_INC");
         end if;
 
-        Instruction_SysRegCtrl <= SysRegCtrl_NONE;      -- system register not selected
+        SysRegCtrl <= SysRegCtrl_NONE;      -- system register not selected
         ImmediateMode          <= ImmediateMode_SIGN;   -- sign-extend immediates by defualt
         ExtMode                <= Ext_SignB_RegA;
 
         PCWriteCtrl <= PCWriteCtrl_WRITE_CALC;  -- Write the calculated PC by default.
 
-        Instruction_DelayedBranchTaken <= '0'; -- The delayed branch taken flag is set to not 
+        DelayedBranchTaken <= '0'; -- The delayed branch taken flag is set to not 
                                                -- taken by default.
 
         if std_match(IR, ADD_RM_RN) then
@@ -426,10 +452,10 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
-            Instruction_TFlagSel <= '0' & IR(1 downto 0);
+            TFlagSel <= '0' & IR(1 downto 0);
 
             -- ALU signals for addition
             ALUOpBSel <= ALUOpB_RegB;
@@ -453,10 +479,10 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
-            Instruction_TFlagSel <= '0' & IR(1 downto 0);
+            TFlagSel <= '0' & IR(1 downto 0);
 
             -- ALU signals for subtraction
             ALUOpBSel <= ALUOpB_RegB;
@@ -479,10 +505,10 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
             -- Bit-decoding T flag select (None, Carry, Overflow)
-            Instruction_TFlagSel <= TFlagSel_Zero;
+            TFlagSel <= TFlagSel_Zero;
 
             -- ALU signals to subtract 1 from Rn
             ALUOpBSel <= ALUOpB_Imm;
@@ -501,10 +527,10 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
             -- Bit-decoding T flag select
-            Instruction_TFlagSel <= TFlagSel_Carry when IR(0) = '0' else    -- NEGC
+            TFlagSel <= TFlagSel_Carry when IR(0) = '0' else    -- NEGC
                                     TFlagSel_T;                             -- NEG
 
             -- ALU signals for negation
@@ -529,7 +555,7 @@ begin
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_Ext;
             ExtMode              <= IR(1 downto 0);     -- bit-decode extension mode
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
         elsif std_match(IR, ADD_IMM_RN) then
             -- ADD #imm, Rn
@@ -539,7 +565,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
             Immediate            <= ni_format_i;
 
             -- ALU signals for addition
@@ -559,10 +585,10 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= IR(1) or IR(0);   -- exclude TST
+            RegEnableIn <= IR(1) or IR(0);   -- exclude TST
 
             -- Enable TFlagSel for TST
-            Instruction_TFlagSel <= TFlagSel_Zero when IR(1 downto 0) = "00"    -- TST
+            TFlagSel <= TFlagSel_Zero when IR(1 downto 0) = "00"    -- TST
                                     else TFlagSel_T;                            -- AND, OR, XOR
 
             -- ALU signals for logic instructions using the FBlock
@@ -586,12 +612,12 @@ begin
 
             RegInSel             <= 0;
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= IR(9) or IR(8);   -- exclude TST
+            RegEnableIn <= IR(9) or IR(8);   -- exclude TST
             Immediate            <= i_format_i;
             ImmediateMode        <= ImmediateMode_ZERO;
 
             -- Enable TFlagSel for TST
-            Instruction_TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00"    -- TST
+            TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00"    -- TST
                                     else TFlagSel_T;                            -- AND, OR, XOR
 
             -- ALU signals for logic instructions using the FBlock
@@ -616,7 +642,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
             -- ALU signals for logical negation
             ALUOpBSel <= ALUOpB_RegB;
@@ -636,7 +662,7 @@ begin
             ImmediateMode        <= ImmediateMode_ZERO;
 
             -- Compute T flag based on ALU flags
-            Instruction_TFlagSel <= TFlagSel_CMP;
+            TFlagSel <= TFlagSel_CMP;
             TCMPSel <= TCmp_EQ;
 
             -- ALU Instructions that perform a subtraction (Rn - immediate) so that
@@ -656,7 +682,7 @@ begin
             RegBSel <= to_integer(unsigned(nm_format_m));
 
             -- Compute T flag based on ALU flags
-            Instruction_TFlagSel <= TFlagSel_CMP;
+            TFlagSel <= TFlagSel_CMP;
             TCMPSel <= IR(2 downto 0);              -- bit decode T flag CMP condition
 
             -- ALU Instructions that perform a subtraction (Rn - Rm) so that
@@ -676,7 +702,7 @@ begin
             RegBSel <= to_integer(unsigned(nm_format_m));
 
             -- Compute T flag based on ALU flags
-            Instruction_TFlagSel <= TFlagSel_CMP;
+            TFlagSel <= TFlagSel_CMP;
             TCMPSel <= TCMP_STR;
 
         elsif std_match(IR, CMP_RN) then
@@ -689,7 +715,7 @@ begin
             Immediate <= (others => '0');
 
             -- Compute T flag based on ALU flags
-            Instruction_TFlagSel <= TFlagSel_CMP;
+            TFlagSel <= TFlagSel_CMP;
             TCMPSel <= IR(2) & "11";                -- bit decode CMP mode (either GT or GE)
 
             -- ALU Instructions that perform a subtraction (Rn - 0) so that
@@ -710,9 +736,9 @@ begin
             RegASel              <= to_integer(unsigned(n_format_n));
             RegInSel             <= to_integer(unsigned(n_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
-            Instruction_TFlagSel <= TFlagSel_Carry;
+            TFlagSel <= TFlagSel_Carry;
 
             -- ALU signals
             ALUOpBSel <= ALUOpB_RegB;
@@ -735,9 +761,9 @@ begin
             RegASel              <= to_integer(unsigned(n_format_n));
             RegInSel             <= to_integer(unsigned(n_format_n));
             RegDataInSel         <= RegDataIn_ALUResult;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
-            Instruction_TFlagSel <= TFlagSel_T;
+            TFlagSel <= TFlagSel_T;
 
             -- ALU signals
             LoadA     <= '1';
@@ -755,7 +781,7 @@ begin
           
             RegInSel             <= to_integer(unsigned(ni_format_n));
             RegDataInSel         <= RegDataIn_Immediate;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
             Immediate            <= ni_format_i;
 
         -- MOV.W @(disp, PC), Rn
@@ -770,15 +796,15 @@ begin
 
             RegInSel             <= to_integer(unsigned(nd8_format_n));   -- Writing to register n 
             RegDataInSel         <= RegDataIn_DB;                         -- Writing output of data bus to register. 
-            Instruction_RegEnableIn <= '1';                                  -- Writes to register. 
+            RegEnableIn <= '1';                                  -- Writes to register. 
 
             RegASel <= to_integer(unsigned(nd8_format_n));
 
             -- Instruction reads word from program memory (ROM).
-            Instruction_MemEnable <= '1';
-            Instruction_ReadWrite <= ReadWrite_READ; 
-            Instruction_MemMode   <= WordMode;
-            Instruction_MemSel    <= MemSel_ROM;
+            MemEnable <= '1';
+            ReadWrite <= ReadWrite_READ; 
+            MemMode   <= WordMode;
+            MemSel    <= MemSel_ROM;
 
             -- DMAU signals for PC Relative addressing with displacement (word mode)
             BaseSel      <= BaseSel_PC;
@@ -797,13 +823,13 @@ begin
 
             RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
             RegDataInSel         <= RegDataIn_DB;                        -- Writing output of data bus to register. 
-            Instruction_RegEnableIn <= '1';                                 -- Writes to register. 
+            RegEnableIn <= '1';                                 -- Writes to register. 
 
             -- Instruction reads from longword memory.
-            Instruction_MemEnable <= '1';
-            Instruction_ReadWrite <= ReadWrite_READ; 
-            Instruction_MemMode   <= LongwordMode;
-            Instruction_MemSel    <= MemSel_ROM;
+            MemEnable <= '1';
+            ReadWrite <= ReadWrite_READ; 
+            MemMode   <= LongwordMode;
+            MemSel    <= MemSel_ROM;
 
             -- DMAU signals for PC Relative addressing with displacement (longword mode)
             BaseSel      <= BaseSel_PC;
@@ -825,7 +851,7 @@ begin
             RegBSel              <= to_integer(unsigned(nm_format_m));
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_RegB;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
         -- MOV.X Rm, @Rn
         -- nm format
@@ -835,9 +861,9 @@ begin
               ", @R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- Writes a byte to memory to memory
-            Instruction_MemEnable <= '1';             -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
-            Instruction_MemMode   <= IR(1 downto 0);  -- bit decode memory mode
+            MemEnable <= '1';             -- Uses memory.
+            ReadWrite <= ReadWrite_WRITE; -- Writes.
+            MemMode   <= IR(1 downto 0);  -- bit decode memory mode
 
             MemOutSel <= MemOut_RegB; -- Output RegB (Rm) to memory data bus.
 
@@ -859,9 +885,9 @@ begin
               ", R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- Instruction reads byte from memory.
-            Instruction_MemEnable <= '1';            -- Instr does memory access.
-            Instruction_ReadWrite <= ReadWrite_READ; -- Instr reads from memory.
-            Instruction_MemMode   <= IR(1 downto 0); -- bit decode memory mode
+            MemEnable <= '1';            -- Instr does memory access.
+            ReadWrite <= ReadWrite_READ; -- Instr reads from memory.
+            MemMode   <= IR(1 downto 0); -- bit decode memory mode
 
             -- DMAU signals for Indirect Register addressing.
             BaseSel      <= BaseSel_REG;
@@ -874,7 +900,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_DB;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
 
         -- MOV.B Rm, @-Rn
@@ -885,16 +911,16 @@ begin
               ", @-R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- Writes a byte to memory
-            Instruction_MemEnable <= '1';             -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_WRITE; -- Writes.
-            Instruction_MemMode   <= IR(1 downto 0);  -- bit decode memory mode
+            MemEnable <= '1';             -- Uses memory.
+            ReadWrite <= ReadWrite_WRITE; -- Writes.
+            MemMode   <= IR(1 downto 0);  -- bit decode memory mode
 
             MemOutSel <= MemOut_RegB; -- Output RegB (Rm) to memory data bus.
 
             RegBSel                <= to_integer(unsigned(nm_format_m));  -- Output Rm from RegB output.
             RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
             RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
-            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+            RegAxStore <= '1';                                -- Enable writes to address registers.
 
             -- DMAU signals (for Pre-decrement indirect register addressing)
             BaseSel      <= BaseSel_REG;
@@ -914,9 +940,9 @@ begin
             -- incremented and stored in Rm after the value is retrieved.
             
             -- Reads a byte from memory.
-            Instruction_MemEnable <= '1';             -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-            Instruction_MemMode   <= IR(1 downto 0);  -- bit-decode memory word mode
+            MemEnable <= '1';             -- Uses memory.
+            ReadWrite <= ReadWrite_READ;  -- Reads.
+            MemMode   <= IR(1 downto 0);  -- bit-decode memory word mode
 
             -- Output @Rm from RegA2
             RegA2Sel <= to_integer(unsigned(nm_format_m));
@@ -924,11 +950,11 @@ begin
             -- Write output of Data Bus to Rn
             RegInSel             <= to_integer(unsigned(nm_format_n));
             RegDataInSel         <= RegDataIn_DB;
-            Instruction_RegEnableIn <= '1';  -- Enable writing to registers.
+            RegEnableIn <= '1';  -- Enable writing to registers.
 
             -- Write the incremented address to Rm
             RegAxInSel             <= to_integer(unsigned(nm_format_m));
-            Instruction_RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
+            RegAxStore <= '1'; -- Enable writing to address register in the writeback state.
             
             -- DMAU signals for post-increment indirect register addressing
             BaseSel      <= BaseSel_REG;
@@ -949,10 +975,10 @@ begin
               ", " & to_string(slv_to_uint(nd4_format_n)) & ")", LogFile);
 
             -- Instruction writes a byte to data memory.
-            Instruction_MemEnable   <= '1';
-            Instruction_ReadWrite   <= ReadWrite_WRITE;
+            MemEnable   <= '1';
+            ReadWrite   <= ReadWrite_WRITE;
 
-            Instruction_MemMode     <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
+            MemMode     <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
                                        WordMode;
             
             -- Output RegB (R0) to memory data bus
@@ -982,9 +1008,9 @@ begin
               "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_uint(nmd_format_m)) &
               ", @(0x" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_uint(nmd_format_n)) & ")", LogFile);
 
-            Instruction_MemEnable <= '1';
-            Instruction_ReadWrite <= ReadWrite_WRITE;
-            Instruction_MemMode   <= LongwordMode;
+            MemEnable <= '1';
+            ReadWrite <= ReadWrite_WRITE;
+            MemMode   <= LongwordMode;
 
             -- Output Rm to RegB.
             RegBSel <= to_integer(unsigned(nmd_format_m));
@@ -1016,16 +1042,16 @@ begin
             -- Writing sign-extended byte from data bus to R0.
             RegInSel             <= 0;             -- Select R0 to write to.
             RegDataInSel         <= RegDataIn_DB;  -- Write DataBus to reg.
-            Instruction_RegEnableIn <= '1';           -- Enable Reg writing for this instruction.
+            RegEnableIn <= '1';           -- Enable Reg writing for this instruction.
 
             -- Output @Rm from RegA2
             RegA2Sel <= to_integer(unsigned(md_format_m));
 
-            Instruction_MemEnable  <=  '1';            -- Instr uses memory.
-            Instruction_ReadWrite  <=  ReadWrite_READ; -- Reads.
-            Instruction_MemMode    <=  ByteMode when IR(8) = '0' else       -- bit-decode word mode
+            MemEnable  <=  '1';            -- Instr uses memory.
+            ReadWrite  <=  ReadWrite_READ; -- Reads.
+            MemMode    <=  ByteMode when IR(8) = '0' else       -- bit-decode word mode
                                        WordMode;
-            Instruction_MemSel     <=  MemSel_RAM;     -- Reads from RAM
+            MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
             -- DMAU signals for Indirect register addressing with displacement (byte mode)
             BaseSel      <= BaseSel_REG;
@@ -1048,15 +1074,15 @@ begin
             -- Writing longword from data bus to Rn.
             RegInSel             <= to_integer(unsigned(nmd_format_n));   -- Select Rn to write to.
             RegDataInSel         <= RegDataIn_DB;                         -- Write DataBus to reg.
-            Instruction_RegEnableIn <= '1';                                  -- Enable Reg writing for this instruction.
+            RegEnableIn <= '1';                                  -- Enable Reg writing for this instruction.
 
              -- Output @Rm from RegA2
              RegA2Sel <= to_integer(unsigned(nmd_format_m));
 
-            Instruction_MemEnable  <=  '1';               -- Instr uses memory.
-            Instruction_ReadWrite  <=  ReadWrite_READ;    -- Reads.
-            Instruction_MemMode    <=  LongwordMode;      -- Reads longword.
-            Instruction_MemSel     <=  MemSel_RAM;        -- Reads from RAM
+            MemEnable  <=  '1';               -- Instr uses memory.
+            ReadWrite  <=  ReadWrite_READ;    -- Reads.
+            MemMode    <=  LongwordMode;      -- Reads longword.
+            MemSel     <=  MemSel_RAM;        -- Reads from RAM
 
 
             -- DMAU signals for Indirect register addressing with displacement (longword mode)
@@ -1076,9 +1102,9 @@ begin
               ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
 
             -- Instr writes a byte to memory.
-            Instruction_MemEnable <= '1';
-            Instruction_ReadWrite <= ReadWrite_WRITE;
-            Instruction_MemMode   <= IR(1 downto 0);      -- bit-decode memory mode
+            MemEnable <= '1';
+            ReadWrite <= ReadWrite_WRITE;
+            MemMode   <= IR(1 downto 0);      -- bit-decode memory mode
 
             -- Output Rm to RegB.
             RegBSel <= to_integer(unsigned(nm_format_m));
@@ -1111,7 +1137,7 @@ begin
             -- Writing sign-extended byte from data bus to Rn.
             RegInSel             <= slv_to_uint(nm_format_n);     -- Select Rn to write to.
             RegDataInSel         <= RegDataIn_DB;                 -- Write DataBus to reg.
-            Instruction_RegEnableIn <= '1';                          -- Enable Reg writing for this instruction.
+            RegEnableIn <= '1';                          -- Enable Reg writing for this instruction.
 
             -- Output @Rm from RegA2
             RegA2Sel <= slv_to_uint(nm_format_m);
@@ -1119,10 +1145,10 @@ begin
             -- Output @R0 from RegA1
             RegA1Sel <= 0;
 
-            Instruction_MemEnable  <=  '1';             -- Instr uses memory.
-            Instruction_ReadWrite  <=  ReadWrite_READ;  -- Reads.
-            Instruction_MemMode    <=  IR(1 downto 0);  -- bit decode memory mode
-            Instruction_MemSel     <=  MemSel_RAM;      -- Reads from RAM
+            MemEnable  <=  '1';             -- Instr uses memory.
+            ReadWrite  <=  ReadWrite_READ;  -- Reads.
+            MemMode    <=  IR(1 downto 0);  -- bit decode memory mode
+            MemSel     <=  MemSel_RAM;      -- Reads from RAM
 
             -- DMAU Signals for Indirect indexed Register Addressing
             BaseSel       <= BaseSel_REG;
@@ -1140,9 +1166,9 @@ begin
               ", GBR)", LogFile);
 
             -- Writing to memory
-            Instruction_MemEnable <= '1';
-            Instruction_ReadWrite <= ReadWrite_WRITE;
-            Instruction_MemMode   <= IR(9 downto 8);      -- bit-decode memory mode
+            MemEnable <= '1';
+            ReadWrite <= ReadWrite_WRITE;
+            MemMode   <= IR(9 downto 8);      -- bit-decode memory mode
 
             -- Output R0 to RegB.
             RegBSel <= 0;
@@ -1172,7 +1198,7 @@ begin
             -- this address.
 
             RegAxInSel             <=  0;   -- Write address to R0
-            Instruction_RegAxStore <= '1';  -- Enable writing to address register in writeback state.
+            RegAxStore <= '1';  -- Enable writing to address register in writeback state.
 
             -- DMAU signals for PC Relative addressing with displacement (longword mode)
             BaseSel      <= BaseSel_PC;
@@ -1192,11 +1218,11 @@ begin
 
            RegInSel             <= 0;               -- Write to R0
            RegDataInSel         <= RegDataIn_DB;    -- Write Data bus to R0
-           Instruction_RegEnableIn <= '1';             -- Enable register writing for this instruction.
+           RegEnableIn <= '1';             -- Enable register writing for this instruction.
            
-           Instruction_MemEnable <= '1';    
-           Instruction_ReadWrite <= ReadWrite_READ;
-           Instruction_MemMode   <= IR(9 downto 8); -- bit decode memory mode
+           MemEnable <= '1';    
+           ReadWrite <= ReadWrite_READ;
+           MemMode   <= IR(9 downto 8); -- bit decode memory mode
 
             -- DMAU signals for Indirect GBR addressing with displacement (byte mode)
             BaseSel      <=  BaseSel_GBR;
@@ -1215,7 +1241,7 @@ begin
 
             RegInSel             <= to_integer(unsigned(n_format_n));
             RegDataInSel         <= RegDataIn_SR_TBit;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
 
         -- SWAP.B Rm, Rn
@@ -1234,7 +1260,7 @@ begin
             RegDataInSel <= RegDataIn_RegA_SwapB when IR(0) = '0' else
                             RegDataIn_RegA_SwapW;
 
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
 
         -- XTRCT Rm, Rn
@@ -1253,7 +1279,7 @@ begin
 
             RegDataInSel <= RegDataIn_REGB_REGA_CENTER;
 
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
             
 
 
@@ -1271,13 +1297,13 @@ begin
 
              if (TFlagIn = '0') then
 
-                 Instruction_PCAddrMode  <= PCAddrMode_RELATIVE_8;
+                 PCAddrMode  <= PCAddrMode_RELATIVE_8;
                  PMAUOff8                <= d_format_d;
 
              else
 
                  -- Go to the next instruction.
-                 Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+                 PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
 
              end if;
  
@@ -1295,15 +1321,15 @@ begin
                  -- Take the branch
 
                  --  The delay will be taken.
-                 Instruction_DelayedBranchTaken  <= '1';
+                 DelayedBranchTaken  <= '1';
                  PCWriteCtrl                     <= PCWriteCtrl_WRITE_CALC;
 
-                 Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
+                 PCAddrMode <= PCAddrMode_RELATIVE_8;
                  PMAUOff8               <= d_format_d;
 
              else
                  -- Go to the next instruction.
-                 Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+                 PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
              end if;
  
  
@@ -1321,12 +1347,12 @@ begin
 
              if (TFlagIn = '1') then
 
-                Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
+                PCAddrMode <= PCAddrMode_RELATIVE_8;
                 PMAUOff8                <= d_format_d;
 
              else
                  -- Go to the next instruction.
-                 Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+                 PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
              end if;
  
  
@@ -1343,15 +1369,15 @@ begin
              if (TFlagIn = '1') then
 
                  --  The delay will be taken.
-                 Instruction_DelayedBranchTaken  <= '1';
+                 DelayedBranchTaken  <= '1';
                  PCWriteCtrl                     <= PCWriteCtrl_WRITE_CALC;
 
-                 Instruction_PCAddrMode <= PCAddrMode_RELATIVE_8;
+                 PCAddrMode <= PCAddrMode_RELATIVE_8;
                  PMAUOff8               <= d_format_d;
 
              else
                  -- Go to the next instruction.
-                 Instruction_PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
+                 PCAddrMode  <= PCAddrMode_INC;  -- Increment PC
              end if;
  
  
@@ -1363,10 +1389,10 @@ begin
                  "sh2_control.vhd: Decoded BRA (label=" & to_hstring(d12_format_d) &
                  "*2 + PC)", LogFile);
 
-            Instruction_DelayedBranchTaken <= '1';
+            DelayedBranchTaken <= '1';
             PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
-            Instruction_PCAddrMode <= PCAddrMode_RELATIVE_12;
+            PCAddrMode <= PCAddrMode_RELATIVE_12;
             PMAUOff12              <= d12_format_d;
  
 
@@ -1382,10 +1408,10 @@ begin
               LogWithTime(l,
                   "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile); 
  
-              Instruction_DelayedBranchTaken <= '1';
+              DelayedBranchTaken <= '1';
               PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
-              Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
+              PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
 
 
          -- BSR <label> (where label is disp*2)
@@ -1396,17 +1422,17 @@ begin
                  "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
                  "*2 + PC)", LogFile);
  
-             Instruction_DelayedBranchTaken <= '1';
+             DelayedBranchTaken <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
-             Instruction_PCAddrMode <= PCAddrMode_RELATIVE_12;
+             PCAddrMode <= PCAddrMode_RELATIVE_12;
              PMAUOff12  <= d12_format_d;
 
-             Instruction_PRWriteEn <= '1';
+             PRWriteEn <= '1';
 
              -- Control signals to write PC to PR.
              SysRegSrc              <= SysRegSrc_PC;
-             Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+             SysRegCtrl <= SysRegCtrl_LOAD;
  
 
          -- BSRF Rm
@@ -1420,16 +1446,16 @@ begin
                  "sh2_control.vhd: Decoded BSRF R" & to_string(slv_to_uint(m_format_m)), LogFile);
 
             -- Basically BSR, but with a different target.
-             Instruction_DelayedBranchTaken <= '1';
+             DelayedBranchTaken <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
-             Instruction_PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
+             PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
 
-             Instruction_PRWriteEn <= '1';
+             PRWriteEn <= '1';
 
              -- Control signals to write PC to PR.
              SysRegSrc              <= SysRegSrc_PC;
-             Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+             SysRegCtrl <= SysRegCtrl_LOAD;
  
  
          -- JMP @Rm
@@ -1443,9 +1469,9 @@ begin
              -- PMAU Register input is RegB.
              RegBSel <= slv_to_uint(m_format_m);
 
-             Instruction_DelayedBranchTaken <= '1';
+             DelayedBranchTaken <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
-             Instruction_PCAddrMode         <= PCAddrMode_REG_DIRECT;
+             PCAddrMode         <= PCAddrMode_REG_DIRECT;
  
  
          -- JSR @Rm
@@ -1458,22 +1484,22 @@ begin
 
              RegBSel <= slv_to_uint(m_format_m);
 
-             Instruction_DelayedBranchTaken <= '1';
+             DelayedBranchTaken <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
-             Instruction_PCAddrMode         <= PCAddrMode_REG_DIRECT;
+             PCAddrMode         <= PCAddrMode_REG_DIRECT;
 
-             Instruction_PRWriteEn <= '1';
+             PRWriteEn <= '1';
 
              SysRegSrc <= SysRegSrc_PC;
-             Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+             SysRegCtrl <= SysRegCtrl_LOAD;
  
          elsif std_match(IR, RTS) then
 
              LogWithTime(l,
                  "sh2_control.vhd: Decoded RTS", LogFile);
  
-             Instruction_PCAddrMode         <= PCAddrMode_PR_DIRECT;
-             Instruction_DelayedBranchTaken <= '1';
+             PCAddrMode         <= PCAddrMode_PR_DIRECT;
+             DelayedBranchTaken <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
 
@@ -1483,20 +1509,20 @@ begin
 
             LogWithTime(l, "sh2_control.vhd: Decoded CLRT", LogFile);
 
-            Instruction_TFlagSel <= TFlagSel_CLEAR;     -- clear the T flag
+            TFlagSel <= TFlagSel_CLEAR;     -- clear the T flag
 
         elsif std_match(IR, CLRMAC) then
 
             LogWithTime(l, "sh2_control.vhd: Decoded CLRMAC", LogFile);
 
-            Instruction_SysRegCtrl <= SysRegCtrl_CLEAR;
+            SysRegCtrl <= SysRegCtrl_CLEAR;
             SysRegSel <= SysRegSel_MACL;
 
         elsif std_match(IR, SETT) then
 
             LogWithTime(l, "sh2_control.vhd: Decoded SETT", LogFile);
 
-            Instruction_TFlagSel <= TFlagSel_SET;       -- set the T flag
+            TFlagSel <= TFlagSel_SET;       -- set the T flag
 
         elsif std_match(IR, STC_SYS_RN) then
 
@@ -1510,7 +1536,7 @@ begin
             -- selects data source to store to a register through bit decoding
             SysRegSel <= "0" & IR(5 downto 4);
             RegDataInSel <= RegDataIn_SysReg;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
         elsif std_match(IR, STS_SYS_RN) then
 
@@ -1524,7 +1550,7 @@ begin
             -- selects data source to store to a register through bit decoding
             SysRegSel <= "1" & IR(5 downto 4);
             RegDataInSel <= RegDataIn_SysReg;
-            Instruction_RegEnableIn <= '1';
+            RegEnableIn <= '1';
 
         elsif std_match(IR, STC_L_SYS_RN) then
 
@@ -1533,9 +1559,9 @@ begin
             LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
 
             -- Writes a byte to memory
-            Instruction_MemEnable <= '1';               -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
-            Instruction_MemMode   <= LongwordMode;      -- bit decode memory mode
+            MemEnable <= '1';               -- Uses memory.
+            ReadWrite <= ReadWrite_WRITE;   -- Writes.
+            MemMode   <= LongwordMode;      -- bit decode memory mode
 
             -- selects data source to store to a register through bit decoding
             SysRegSel <= "0" & IR(5 downto 4);
@@ -1543,7 +1569,7 @@ begin
 
             RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
             RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
-            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+            RegAxStore <= '1';                                -- Enable writes to address registers.
 
             -- DMAU signals (for Pre-decrement indirect register addressing)
             BaseSel      <= BaseSel_REG;
@@ -1558,9 +1584,9 @@ begin
             LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
 
             -- Writes a byte to memory
-            Instruction_MemEnable <= '1';               -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_WRITE;   -- Writes.
-            Instruction_MemMode   <= LongwordMode;      -- bit decode memory mode
+            MemEnable <= '1';               -- Uses memory.
+            ReadWrite <= ReadWrite_WRITE;   -- Writes.
+            MemMode   <= LongwordMode;      -- bit decode memory mode
 
             -- selects data source to store to a register through bit decoding
             SysRegSel <= "1" & IR(5 downto 4);
@@ -1568,7 +1594,7 @@ begin
 
             RegA1Sel               <= to_integer(unsigned(nm_format_n));  -- Output @(Rn) from RegA1 output.
             RegAxInSel             <= to_integer(unsigned(nm_format_n));  -- Store calculated address into Rn
-            Instruction_RegAxStore <= '1';                                -- Enable writes to address registers.
+            RegAxStore <= '1';                                -- Enable writes to address registers.
 
             -- DMAU signals (for Pre-decrement indirect register addressing)
             BaseSel      <= BaseSel_REG;
@@ -1583,7 +1609,7 @@ begin
             -- to work. Must modify other system control register loads to load to their actual
             -- locations as well.
             if (std_match(IR, LDC_RM_GBR)) then
-                Instruction_GBRWriteEn <= '1'; 
+                GBRWriteEn <= '1'; 
             end if;
 
             -- LDC Rm, {SR, GBR, VBR}
@@ -1592,7 +1618,7 @@ begin
             LogWithTime(l, "sh2_control.vhd: Decoded LDC Rm, X", LogFile);
 
             RegBSel <= to_integer(unsigned(m_format_m));
-            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= "0" & IR(5 downto 4);      -- bit decode register to select
             SysRegSrc <= SysRegSrc_RegB;
 
@@ -1601,25 +1627,25 @@ begin
             -- Uses bit decoding to choose the system register to load
 
             if (std_match(IR, LDC_L_AT_RM_PLUS_GBR)) then
-                Instruction_GBRWriteEn <= '1';
+                GBRWriteEn <= '1';
             end if;
 
             LogWithTime(l, "sh2_control.vhd: Decoded LDC.L @Rm+, X", LogFile);
 
             -- Reads a longword from memory
-            Instruction_MemEnable <= '1';             -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-            Instruction_MemMode   <= LongwordMode;    -- bit decode memory mode
+            MemEnable <= '1';             -- Uses memory.
+            ReadWrite <= ReadWrite_READ;  -- Reads.
+            MemMode   <= LongwordMode;    -- bit decode memory mode
 
             -- Load into a system register
-            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= "0" & IR(5 downto 4);    -- bit decode which system register to write to
             SysRegSrc <= SysRegSrc_DB;      -- load new register value from memory
 
             -- Read from @Rm, and save with post-incremented value
             RegA2Sel   <= to_integer(unsigned(m_format_m));
             RegAxInSel <= to_integer(unsigned(m_format_m));
-            Instruction_RegAxStore <= '1';
+            RegAxStore <= '1';
 
             -- DMAU signals (for post-increment indirect register addressing)
             BaseSel      <= BaseSel_REG;
@@ -1633,13 +1659,13 @@ begin
 
             -- Ensure that PR does actually get written to
             if (std_match(IR, LDS_RM_PR)) then
-                Instruction_PRWriteEn <= '1'; 
+                PRWriteEn <= '1'; 
             end if;
 
             LogWithTime(l, "sh2_control.vhd: Decoded LDS Rm, X", LogFile);
 
             RegBSel <= to_integer(unsigned(m_format_m));
-            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= "1" & IR(5 downto 4);  -- bit decode register to select
             SysRegSrc <= SysRegSrc_RegB;
 
@@ -1648,25 +1674,25 @@ begin
             -- Uses bit decoding to choose the system register to load
 
             if (std_match(IR, LDS_L_AT_RM_PLUS_PR)) then
-                Instruction_PRWriteEn <= '1';
+                PRWriteEn <= '1';
             end if;
 
             LogWithTime(l, "sh2_control.vhd: Decoded LDS.L @Rm+, X", LogFile);
 
             -- Reads a longword from memory
-            Instruction_MemEnable <= '1';             -- Uses memory.
-            Instruction_ReadWrite <= ReadWrite_READ;  -- Reads.
-            Instruction_MemMode   <= LongwordMode;    -- bit decode memory mode
+            MemEnable <= '1';             -- Uses memory.
+            ReadWrite <= ReadWrite_READ;  -- Reads.
+            MemMode   <= LongwordMode;    -- bit decode memory mode
 
             -- Load into a system register
-            Instruction_SysRegCtrl <= SysRegCtrl_LOAD;
+            SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= "1" & IR(5 downto 4);    -- bit decode which system register to write to
             SysRegSrc <= SysRegSrc_DB;      -- load new register value from memory
 
             -- Read from @Rm, and save with post-incremented value
             RegA2Sel   <= to_integer(unsigned(m_format_m));
             RegAxInSel <= to_integer(unsigned(m_format_m));
-            Instruction_RegAxStore <= '1';
+            RegAxStore <= '1';
 
             -- DMAU signals (for post-increment indirect register addressing)
             BaseSel      <= BaseSel_REG;
@@ -1684,26 +1710,40 @@ begin
 
     end process;
 
-    -- Register updates done on clock edges. The state machine logic is also encoded here.
-    -- Currently it is a repeating cycle of:
-    --  - fetch: read the current instruction from ROM at address PC
-    --  - execute: latch the instruction into IR and decode it, performing the necessary
-    --             computations on this clock and also outputting read/write signals for memory access
-    --  - writeback: update registers with computed values (or values read from memory).
-    --               Also increment the PC to advance to the next instruction.
+    pipeline_stages: for i in 0 to 3 generate
+        process (clock, reset)
+        begin
+            if reset = '0' then
+                pipeline(i) <= DEFAULT_CTRL;
+            elsif rising_edge(clock) then
+                if pipeline_en(i) = '1' and not (BubbleIF = '1' and i <= STAGE_MA) then
+                    -- If pipeline is enabled, then move on to the next task
+                    if i = 0 then
+                        -- First item in pipeline comes from decoded signals
+                        pipeline(i) <= decoded_signals;
+                    else
+                        -- Next, simply pipe each set of signals into a new DFF
+                        pipeline(i) <= pipeline(i - 1);
+                    end if;
+                else
+                    -- If pipeline is disabled, don't do anything
+                    pipeline(i) <= pipeline(i);
+                end if;
+            end if;
+        end process;
+    end generate;
+
+    -- Register updates done on clock edges
     state_proc: process (clock, reset)
     begin
         if reset = '0' then
-            state <= fetch;
             IR <= NOP;
         elsif rising_edge(clock) then
-            if state = fetch then
-                state <= execute;
-                IR <= MemDataIn(15 downto 0); -- latch in instruction from memory
-            elsif state = execute then
-                state <= writeback;
-            elsif state = writeback then
-                state <= fetch;
+            if BubbleIF = '0' then
+                -- Latch in instruction from memory if no bubble. Should not
+                -- occur when the IF and MA stages have contention on the
+                -- memory bus (since MA takes precendence).
+                IR <= MemDataIn(15 downto 0);
             end if;
         end if;
     end process state_proc;

@@ -76,7 +76,7 @@ package SH2ControlSignals is
         Off12       : std_logic_vector(11 downto 0);    -- 12-bit offset for relative addressing
         PCIn        : std_logic_vector(31 downto 0);    -- PC input for parallel loading
         PCWriteCtrl : std_logic_vector(1 downto 0);     -- What to write to the PC register
-
+        DelayedBranchTaken  : std_logic;                -- whether the delayed branch is taken
     end record;
 
     -- System control signals
@@ -84,6 +84,15 @@ package SH2ControlSignals is
         RegCtrl     : std_logic_vector(1 downto 0);
         RegSel      : std_logic_vector(2 downto 0);
         RegSrc      : std_logic_vector(1 downto 0);
+    end record;
+
+    type ctrl_t is record
+        MemCtrl    : mem_ctrl_t;
+        ALUCtrl    : alu_ctrl_t;
+        REGCtrl    : reg_ctrl_t;
+        PMAUCtrl   : pmau_ctrl_t;
+        DMAUCtrl   : dmau_ctrl_t;
+        SysCtrl    : sys_ctrl_t;
     end record;
 
 
@@ -179,9 +188,6 @@ package SH2ControlSignals is
     constant ImmediateMode_Sign     : std_logic := '0';
     constant ImmediateMode_Zero     : std_logic := '1';
 
-    -- None -> Slot -> Target -> None
-    -- constant DelayedBR_NONE   : std_logic_vector(1 downto 0);
-    -- constant DelayedBR_SLOT   : std_logic_vector(1 downto 0);
-    -- constant DelayedBR_TARGET : std_logic_vector(1 downto 0);
+
 
 end package SH2ControlSignals;
