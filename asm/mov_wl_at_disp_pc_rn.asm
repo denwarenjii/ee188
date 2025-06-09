@@ -33,14 +33,14 @@ ProgramStart:
   MOV   #$7D, R0   ; PC is 0x14                   (E0 7D)
   MOV.B R1, @R0    ; PC is 0x16                   (20 10)
   
-  MOV.W Var, R2
-
-  MOV Var, R3;
+  MOV.W Var, R2    ; PC is 0x18
+    
+  MOV Var, R3;     ; PC is 0x1A
 
   ; Move R2 and R3 into memory to check for correctness.
    
-  MOV   #0, R0  ; 0x00007F7E expected at 0x00000000
-  MOV.L R2, @R0 ;
+  MOV   #0, R0     ; PC is 0x1C;  0x00007F7E expected at 0x00000000
+  MOV.L R2, @R0    ; PC is 0x1E;
 
   MOV.L #4, R0  ; 0x7F7E7D7C expected at 0x00000004
   MOV.L R3, @R0 ;
