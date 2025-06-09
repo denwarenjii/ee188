@@ -124,9 +124,18 @@ architecture dataflow of sh2control is
     -- Default control signals for PMAU (Program Memory Access Unit)
     -- These defaults ensure the PC is incremented for the next instruction fetch.
     constant DEFAULT_PMAU_CTRL : pmau_ctrl_t := (
-        -- Increment PC
-        PCAddrMode  => PCAddrMode_INC,
-        PCWriteCtrl => PCWriteCtrl_WRITE_CALC,
+        PCAddrMode  => PCAddrMode_INC,                  -- Increment PC
+        PCWriteCtrl => PCWriteCtrl_WRITE_CALC,          -- Write to PC
+        PRWriteEn   => '0',                             -- Do not write to PR (Procedure Register)
+        Off8        => (others => '0'),                 -- unused
+        Off12       => (others => '0'),                 -- unused
+        PCIn        => (others => '0'),                 -- unused
+        DelayedBranchTaken  => '0'                      -- No delayed branch taken by default
+    );
+
+    constant HOLD_PMAU_CTRL : pmau_ctrl_t := (
+        PCAddrMode  => PCAddrMode_HOLD,                 -- Hold PC constant (for bubbles)
+        PCWriteCtrl => PCWriteCtrl_WRITE_CALC,          -- Write to PC
         PRWriteEn   => '0',                             -- Do not write to PR (Procedure Register)
         Off8        => (others => '0'),                 -- unused
         Off12       => (others => '0'),                 -- unused
@@ -390,7 +399,7 @@ begin
     ALUCtrl <= pipeline(STAGE_X).ALUCtrl;
     RegCtrl <= pipeline(STAGE_X).RegCtrl when BubbleIF = '0' else pipeline(STAGE_MA).RegCtrl;
     DMAUCtrl <= pipeline(STAGE_MA).DMAUCtrl;
-    PMAUCtrl <= pipeline(STAGE_X).PMAUCtrl;
+    PMAUCtrl <= pipeline(STAGE_X).PMAUCtrl when BubbleIF = '0' else HOLD_PMAU_CTRL;
     SysCtrl <= pipeline(STAGE_X).SysCtrl;
 
     -- Decode the current instruction combinatorially
