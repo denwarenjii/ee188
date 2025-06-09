@@ -1716,6 +1716,7 @@ begin
                 pipeline(i) <= DEFAULT_CTRL;
             elsif rising_edge(clock) then
                 -- TODO: should comparing stages be < or <= ??
+                -- Advance stages of the pipeline that are enabled and not bubbled.
                 if pipeline_en(i) = '1' and not (BubbleIF = '1' and i < STAGE_MA) then
                     -- If pipeline is enabled, then move on to the next task
                     if i = 0 then
