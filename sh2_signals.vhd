@@ -71,16 +71,15 @@ package SH2ControlSignals is
     -- PMAU control signals
     type pmau_ctrl_t is record
         PCAddrMode  : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired
-        PRWriteEn   : std_logic;                        -- Enable writing to PR
         Off8        : std_logic_vector(7 downto 0);     -- 8-bit offset for relative addressing
         Off12       : std_logic_vector(11 downto 0);    -- 12-bit offset for relative addressing
-        PCIn        : std_logic_vector(31 downto 0);    -- PC input for parallel loading
         PCWriteCtrl : std_logic_vector(1 downto 0);     -- What to write to the PC register
         DelayedBranchTaken  : std_logic;                -- whether the delayed branch is taken
     end record;
 
     -- System control signals
     type sys_ctrl_t is record
+        PRWriteEn   : std_logic;                        -- Enable writing to PR
         RegCtrl     : std_logic_vector(1 downto 0);
         RegSel      : std_logic_vector(2 downto 0);
         RegSrc      : std_logic_vector(1 downto 0);

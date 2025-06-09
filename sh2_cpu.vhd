@@ -464,8 +464,8 @@ begin
         -- Inputs:
         RegIn       => RegIn,
         PRIn        => PRIn,
-        PRWriteEn   => PMAUCtrl.PRWriteEn,
         PCIn        => (others => '0'),         -- default PC is all 0s
+        PRWriteEn   => SysCtrl.PRWriteEn,
         PCWriteCtrl => PMAUCtrl.PCWriteCtrl,
         Off8        => PMAUCtrl.Off8,
         Off12       => PMAUCtrl.Off12,

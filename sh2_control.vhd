@@ -127,25 +127,22 @@ architecture dataflow of sh2control is
     constant DEFAULT_PMAU_CTRL : pmau_ctrl_t := (
         PCAddrMode  => PCAddrMode_INC,                  -- Increment PC
         PCWriteCtrl => PCWriteCtrl_WRITE_CALC,          -- Write to PC
-        PRWriteEn   => '0',                             -- Do not write to PR (Procedure Register)
         Off8        => (others => '0'),                 -- unused
         Off12       => (others => '0'),                 -- unused
-        PCIn        => (others => '0'),                 -- unused
         DelayedBranchTaken  => '0'                      -- No delayed branch taken by default
     );
 
     constant HOLD_PMAU_CTRL : pmau_ctrl_t := (
         PCAddrMode  => PCAddrMode_HOLD,                 -- Hold PC constant (for bubbles)
         PCWriteCtrl => PCWriteCtrl_WRITE_CALC,          -- Write to PC
-        PRWriteEn   => '0',                             -- Do not write to PR (Procedure Register)
         Off8        => (others => '0'),                 -- unused
         Off12       => (others => '0'),                 -- unused
-        PCIn        => (others => '0'),                 -- unused
         DelayedBranchTaken  => '0'                      -- No delayed branch taken by default
     );
 
     -- Default control signals for System Control
     constant DEFAULT_SYS_CTRL : sys_ctrl_t := (
+        PRWriteEn   => '0',                             -- Do not write to PR (Procedure Register)
         RegCtrl     => SysRegCtrl_None,                 -- Do nothing with system registers
         RegSel      => SysRegSel_SR,                    -- unused
         RegSrc      => SysRegSrc_RegB                   -- unused
@@ -276,10 +273,9 @@ architecture dataflow of sh2control is
     signal PRWriteEn        : std_logic;                        -- Enable writing to PR.
     signal PMAUOff8         : std_logic_vector(7 downto 0);     -- 8-bit offset for relative addressing.
     signal PMAUOff12        : std_logic_vector(11 downto 0);    -- 12-bit offset for relative addressing.
-    signal PCIn             : std_logic_vector(31 downto 0);    -- PC input for parallel loading.
     signal PCWriteCtrl      : std_logic_vector(1 downto 0);     -- What to write to the PC register inside
                                                                 -- the PMAU. Can either hold current value,
-                                                                -- write PCIn, or write calculated PC. 
+                                                                -- or write calculated PC. 
 
         -- System control signals
     signal SysRegCtrl       : std_logic_vector(1 downto 0);     -- how to update system registers 
@@ -353,14 +349,13 @@ begin
 
         PMAUCtrl => (
             PCAddrMode => PCAddrMode_INC,           -- TODO: change for branch instructions
-            PRWriteEn => PRWriteEn,
             Off8 => PMAUOff8,
             Off12 => PMAUOff12,
-            PCIn => PCIn,
             PCWriteCtrl => PCWriteCtrl,
             DelayedBranchTaken => DelayedBranchTaken
         ),
         SysCtrl => (
+            PRWriteEn => PRWriteEn,
             RegCtrl => SysRegCtrl,
             RegSel => SysRegSel,
             RegSrc => SysRegSrc
@@ -401,7 +396,8 @@ begin
     RegCtrl <= pipeline(STAGE_X).RegCtrl when BubbleIF = '0' else pipeline(STAGE_MA).RegCtrl;
     DMAUCtrl <= pipeline(STAGE_MA).DMAUCtrl when BubbleIF = '0' else pipeline(STAGE_MA).DMAUCtrl;
     PMAUCtrl <= pipeline(STAGE_X).PMAUCtrl when BubbleIF = '0' else HOLD_PMAU_CTRL;
-    SysCtrl <= pipeline(STAGE_X).SysCtrl when BubbleIF = '0' else pipeline(STAGE_MA).SysCtrl;
+    SysCtrl <= pipeline(STAGE_X).SysCtrl when BubbleIF = '0'
+               else pipeline(STAGE_MA).SysCtrl;
 
     -- Decode the current instruction combinatorially
     decode_proc: process (IR)

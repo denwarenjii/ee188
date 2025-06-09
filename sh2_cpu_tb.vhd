@@ -563,7 +563,7 @@ begin
         RunTest("asm/bshift");                          -- Test barrel shift instructions                 (working)
         RunTest("asm/sr");                              -- Tests status register (SETT, CLRT)             (working)
         RunTest("asm/system");                          -- Tests system register operations (LDC, STC)    (working)
-        RunTest("asm/control");                         -- Tests control register operations (LDS, STS)
+        RunTest("asm/control");                         -- Tests control register operations (LDS, STS)   (working)
 
         RunTest("asm/mov_wl_at_disp_pc_rn");            -- Tests Mov (disp, PC), Rn                           (working)
         RunTest("asm/mov_bwl_at_rm_rn");                -- Tests Mov @Rm, Rn                                  (working)

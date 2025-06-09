@@ -3,10 +3,10 @@
 ; Testing all control register operations
 ;
 ; This file tests the following instructions:
-;   STC     SR, Rn
+;   STC     PR, Rn
 ;   STC     GBR, Rn
 ;   STC     VBR, Rn
-;   STC.L   SR, @-Rn
+;   STC.L   PR, @-Rn
 ;   STC.L   GBR, @-Rn
 ;   STC.L   VBR, @-Rn
 ;   STS     MACH, Rn
@@ -22,7 +22,7 @@
 ProgramStart:
     ; Test LDS
     MOV #$F, R0;
-    LDS R0, PR;     SR  <- 0x0000000F
+    LDS R0, PR;     PR  <- 0x0000000F
 
     ADD #1, R0;
     LDS R0, MACH;    MACH <- 0x00000100
@@ -56,24 +56,24 @@ ProgramStart:
     MOV R2, @R3;    Set memory at 0x78 to be 0x3C
     
     MOV #$70, R2;
-    LDS.L @R2+, PR;     Read SR from memory, increment R2
+    LDS.L @R2+, PR;     Read PR from memory, increment R2
     STS PR, R0;
     MOV #$C, R1;
-    MOV R0, @R1;        Expect R0 = 0x000000AA
+    MOV R0, @R1;        Expect R0 = 0x0000001A
 
     LDS.L @R2+, MACH;    Read MACH from memory, increment R2
     STS MACH, R0;
     MOV #$10, R1;
-    MOV R0, @R1;        Expect R0 = 0x000000BB
+    MOV R0, @R1;        Expect R0 = 0x0000002B
 
     LDS.L @R2+, MACL;    read MACL from memory, increment R2
     STS MACL, R0;
     MOV #$14, R1;
-    MOV R0, @R1;        Expect R0 = 0x000000CC
+    MOV R0, @R1;        Expect R0 = 0x0000003C
 
     ; Test STS.L
     MOV #$4C, R0;
-    LDS R0, PR;     SR  <- 0x0000004C
+    LDS R0, PR;     PR  <- 0x0000004C
 
     ADD #1, R0;
     LDS R0, MACH;    MACH <- 0x0000004D
