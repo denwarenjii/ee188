@@ -355,7 +355,7 @@ begin
         ),
 
         PMAUCtrl => (
-            PCAddrMode => PCAddrMode_INC,           -- TODO: change for branch instructions
+            PCAddrMode => PCAddrMode,           -- TODO: change for branch instructions
             Off8 => PMAUOff8,
             Off12 => PMAUOff12,
             PCWriteCtrl => PCWriteCtrl,
@@ -375,7 +375,8 @@ begin
             OutSel => MemOutSel,
             Sel => MemSel
         ),
-        BranchTaken => BranchTaken,
+
+        BranchTaken  => BranchTaken,
         DBranchTaken => DelayedBranchTaken
     );
 
@@ -438,6 +439,8 @@ begin
         SysRegCtrl    <= SysRegCtrl_NONE;      -- system register not selected
         ImmediateMode <= ImmediateMode_SIGN;   -- sign-extend immediates by defualt
         ExtMode       <= Ext_SignB_RegA;
+
+        PCAddrMode <= PCAddrMode_INC;
 
         PCWriteCtrl <= PCWriteCtrl_WRITE_CALC;  -- Write the calculated PC by default.
 
