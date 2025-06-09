@@ -530,6 +530,7 @@ begin
             while not CheckDone loop
                 Tick;
             end loop;
+            Tick;       -- tick CPU one more time to push instructions through pipeline
         end procedure;
 
         -- Runs a test on the CPU. First loads an assembled program into ROM,
@@ -553,12 +554,12 @@ begin
         -- Run all CPU tests
 
         RunTest("asm/mov_reg");                         -- Tests Mov between registers
-        -- RunTest("asm/reg_indirect");                    -- Tests register indirect addressing
-        -- RunTest("asm/arith");                           -- Tests arithmetic instructions (add, sub, etc)
-        -- RunTest("asm/logic");                           -- Tests logic instructions (and, or, xor, etc)
-        -- RunTest("asm/shift");                           -- Tests shift instructions (shll, shlr, etc)
-        -- RunTest("asm/cmp");                             -- Test CMP operations
-        -- RunTest("asm/ext");                             -- Test zero/sign extension instructions
+        RunTest("asm/reg_indirect");                    -- Tests register indirect addressing
+        RunTest("asm/arith");                           -- Tests arithmetic instructions (add, sub, etc)
+        RunTest("asm/logic");                           -- Tests logic instructions (and, or, xor, etc)
+        RunTest("asm/shift");                           -- Tests shift instructions (shll, shlr, etc)
+        RunTest("asm/cmp");                             -- Test CMP operations
+        RunTest("asm/ext");                             -- Test zero/sign extension instructions
         -- RunTest("asm/bshift");                          -- Test barrel shift instructions
         -- RunTest("asm/sr");                              -- Tests status register (SETT, CLRT)
         -- RunTest("asm/system");                          -- Tests system register operations (LDC, STC)
