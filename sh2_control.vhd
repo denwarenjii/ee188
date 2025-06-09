@@ -76,7 +76,6 @@ architecture dataflow of sh2control is
     -- instruction and increment PC
 
     -- Default control signals for Memory Interface
-    -- Performs an instruction fetch
     constant DEFAULT_MEM_CTRL : mem_ctrl_t := (
         Enable      => '0',                         -- do nothing
         AddrSel     => MemAddrSel_PMAU,             -- unused
