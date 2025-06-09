@@ -183,7 +183,7 @@ architecture structural of sh2cpu is
     signal MemDataIn   : std_logic_vector(31 downto 0);     -- the data read in from memory
 
     -- CPU internal control signals
-    signal DelayedBranchTaken   : std_logic;                    -- Whether the delayed branch is taken or not.
+    -- signal DelayedBranchTaken   : std_logic;                    -- Whether the delayed branch is taken or not.
     
     -- CPU system/control registers
     signal SR               : std_logic_vector(31 downto 0);    -- Status register.
