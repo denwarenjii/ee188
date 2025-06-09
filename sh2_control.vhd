@@ -388,6 +388,7 @@ begin
     end process mem_access;
 
     ALUCtrl <= pipeline(STAGE_X).ALUCtrl;
+    -- RegCtrl <= pipeline(STAGE_X).RegCtrl when BubbleIF = '0' else DEFAULT_REG_CTRL;
     RegCtrl <= pipeline(STAGE_X).RegCtrl;
     DMAUCtrl <= pipeline(STAGE_MA).DMAUCtrl;
     PMAUCtrl <= pipeline(STAGE_X).PMAUCtrl;
