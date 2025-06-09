@@ -86,12 +86,14 @@ package SH2ControlSignals is
     end record;
 
     type ctrl_t is record
-        MemCtrl    : mem_ctrl_t;
-        ALUCtrl    : alu_ctrl_t;
-        REGCtrl    : reg_ctrl_t;
-        PMAUCtrl   : pmau_ctrl_t;
-        DMAUCtrl   : dmau_ctrl_t;
-        SysCtrl    : sys_ctrl_t;
+        MemCtrl      : mem_ctrl_t;
+        ALUCtrl      : alu_ctrl_t;
+        REGCtrl      : reg_ctrl_t;
+        PMAUCtrl     : pmau_ctrl_t;
+        DMAUCtrl     : dmau_ctrl_t;
+        SysCtrl      : sys_ctrl_t;
+        BranchTaken  : std_logic;
+        DBranchTaken : std_logic;
     end record;
 
 

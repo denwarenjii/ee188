@@ -149,12 +149,14 @@ architecture dataflow of sh2control is
     );
 
     constant DEFAULT_CTRL : ctrl_t := (
-        ALUCtrl    => DEFAULT_ALU_CTRL,
-        REGCtrl    => DEFAULT_REG_CTRL,
-        PMAUCtrl   => DEFAULT_PMAU_CTRL,
-        DMAUCtrl   => DEFAULT_DMAU_CTRL,
-        SysCtrl    => DEFAULT_SYS_CTRL,
-        MemCtrl    => DEFAULT_MEM_CTRL
+        ALUCtrl      => DEFAULT_ALU_CTRL,
+        REGCtrl      => DEFAULT_REG_CTRL,
+        PMAUCtrl     => DEFAULT_PMAU_CTRL,
+        DMAUCtrl     => DEFAULT_DMAU_CTRL,
+        SysCtrl      => DEFAULT_SYS_CTRL,
+        MemCtrl      => DEFAULT_MEM_CTRL,
+        BranchTaken  => '0',
+        DBranchTaken => '0' 
     );
 
 
@@ -306,6 +308,11 @@ architecture dataflow of sh2control is
     -- the data bus
     signal BubbleIF         : std_logic;
 
+
+    -- Whether a non-delayed branch is taken or not.
+    signal BranchTaken      : std_logic;
+
+
 begin
 
     pipeline_en <= (others => '1');
@@ -367,7 +374,9 @@ begin
             Mode => MemMode,
             OutSel => MemOutSel,
             Sel => MemSel
-        )
+        ),
+        BranchTaken => BranchTaken,
+        DBranchTaken => DelayedBranchTaken
     );
 
     -- Currently, IF occurs every clock, so if the instruction currently in the
