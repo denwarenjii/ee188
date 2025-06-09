@@ -1725,8 +1725,18 @@ begin
             elsif rising_edge(clock) then
                 -- TODO: should comparing stages be < or <= ??
                 -- Advance stages of the pipeline that are enabled and not bubbled.
-                if pipeline_en(i) = '1' and not (BubbleIF = '1' and i < STAGE_MA) then
-                    -- If pipeline is enabled, then move on to the next task
+                if BubbleIF = '1' then
+                    if i < STAGE_MA then
+                        -- hold previous stages constant
+                        pipeline(i) <= pipeline(i);
+                    elsif i = STAGE_MA then
+                        -- Insert a bubble at MA
+                        pipeline(i) <= DEFAULT_CTRL;
+                    else
+                        -- The rest of the stages can move on
+                        pipeline(i) <= pipeline(i - 1);
+                    end if;
+                else
                     if i = 0 then
                         -- First item in pipeline comes from decoded signals
                         pipeline(i) <= decoded_signals;
@@ -1734,9 +1744,6 @@ begin
                         -- Next, simply pipe each set of signals into a new DFF
                         pipeline(i) <= pipeline(i - 1);
                     end if;
-                else
-                    -- If pipeline is disabled, don't do anything
-                    pipeline(i) <= pipeline(i);
                 end if;
             end if;
         end process;
