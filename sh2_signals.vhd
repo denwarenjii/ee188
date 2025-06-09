@@ -51,10 +51,6 @@ package SH2ControlSignals is
         InSel       : integer range 15 downto 0;        -- which register to write data to
         ASel        : integer range 15 downto 0;        -- which register to read to bus A
         BSel        : integer range 15 downto 0;        -- which register to read to bus B
-        AxInSel     : integer range 15 downto 0;        -- which address register to write to
-        AxStore     : std_logic;                        -- if data should be written to the address register
-        A1Sel       : integer range 15 downto 0;        -- which register to read to address bus 1
-        A2Sel       : integer range 15 downto 0;        -- which register to read to address bus 2
     end record;
 
     -- DMAU control signals
@@ -66,6 +62,10 @@ package SH2ControlSignals is
         IndexSel    : std_logic_vector(1 downto 0);
         OffScalarSel: std_logic_vector(1 downto 0);
         IncDecSel   : std_logic_vector(1 downto 0);
+        AxInSel     : integer range 15 downto 0;        -- which address register to write to
+        AxStore     : std_logic;                        -- if data should be written to the address register
+        A1Sel       : integer range 15 downto 0;        -- which register to read to address bus 1
+        A2Sel       : integer range 15 downto 0;        -- which register to read to address bus 2
     end record;
 
     -- PMAU control signals
@@ -187,7 +187,6 @@ package SH2ControlSignals is
     -- Whether to sign or zero extend the immediate into a 32-bit word.
     constant ImmediateMode_Sign     : std_logic := '0';
     constant ImmediateMode_Zero     : std_logic := '1';
-
 
 
 end package SH2ControlSignals;

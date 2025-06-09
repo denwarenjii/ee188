@@ -103,22 +103,23 @@ architecture dataflow of sh2control is
     -- Default control signals for Register Array
     constant DEFAULT_REG_CTRL : reg_ctrl_t := (
         EnableIn    => '0',                             -- Do not write to any general-purpose register
-        AxStore     => '0',                             -- Do not write to address register
         DataInSel   => RegDataIn_ALUResult,             -- unused
         InSel       => 0, ASel        => 0,             -- unused
-        BSel        => 0, AxInSel     => 0,             -- unused
-        A1Sel       => 0, A2Sel       => 0              -- unused
+        BSel        => 0                                -- unused
     );
 
     -- Default control signals for DMAU (Data Memory Access Unit)
     constant DEFAULT_DMAU_CTRL : dmau_ctrl_t := (
+        AxStore     => '0',                             -- Do not write to address register
         GBRWriteEn  => '0',                             -- Do not write to GBR
         Off4        => (others => '0'),                 -- unused
         Off8        => (others => '0'),                 -- unused
         BaseSel     => (others => '0'),                 -- unused
         IndexSel    => (others => '0'),                 -- unused
         OffScalarSel=> (others => '0'),                 -- unused
-        IncDecSel   => (others => '0')                  -- unused
+        IncDecSel   => (others => '0'),                 -- unused
+        A1Sel       => 0, A2Sel       => 0,             -- unused
+        AxInSel     => 0                                -- unused
     );
 
     -- Default control signals for PMAU (Program Memory Access Unit)
@@ -333,11 +334,7 @@ begin
             EnableIn => RegEnableIn,
             InSel => RegInSel,
             ASel => RegASel,
-            BSel => RegBSel,
-            AxInSel => RegAxInSel,
-            AxStore => RegAxStore,
-            A1Sel => RegA1Sel,
-            A2Sel => RegA2Sel
+            BSel => RegBSel
         ),
 
         DMAUCtrl => (
@@ -347,7 +344,11 @@ begin
             BaseSel => BaseSel,
             IndexSel => IndexSel,
             OffScalarSel => OffScalarSel,
-            IncDecSel => IncDecSel
+            IncDecSel => IncDecSel,
+            AxInSel => RegAxInSel,
+            AxStore => RegAxStore,
+            A1Sel => RegA1Sel,
+            A2Sel => RegA2Sel
         ),
 
         PMAUCtrl => (
@@ -398,9 +399,9 @@ begin
 
     ALUCtrl <= pipeline(STAGE_X).ALUCtrl;
     RegCtrl <= pipeline(STAGE_X).RegCtrl when BubbleIF = '0' else pipeline(STAGE_MA).RegCtrl;
-    DMAUCtrl <= pipeline(STAGE_MA).DMAUCtrl;
+    DMAUCtrl <= pipeline(STAGE_MA).DMAUCtrl when BubbleIF = '0' else pipeline(STAGE_MA).DMAUCtrl;
     PMAUCtrl <= pipeline(STAGE_X).PMAUCtrl when BubbleIF = '0' else HOLD_PMAU_CTRL;
-    SysCtrl <= pipeline(STAGE_X).SysCtrl;
+    SysCtrl <= pipeline(STAGE_X).SysCtrl when BubbleIF = '0' else pipeline(STAGE_MA).SysCtrl;
 
     -- Decode the current instruction combinatorially
     decode_proc: process (IR)

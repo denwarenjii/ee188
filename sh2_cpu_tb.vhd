@@ -560,10 +560,10 @@ begin
         RunTest("asm/shift");                           -- Tests shift instructions (shll, shlr, etc)
         RunTest("asm/cmp");                             -- Test CMP operations
         RunTest("asm/ext");                             -- Test zero/sign extension instructions
-        -- RunTest("asm/bshift");                          -- Test barrel shift instructions
-        -- RunTest("asm/sr");                              -- Tests status register (SETT, CLRT)
-        -- RunTest("asm/system");                          -- Tests system register operations (LDC, STC)
-        -- RunTest("asm/control");                         -- Tests control register operations (LDS, STS)
+        RunTest("asm/bshift");                          -- Test barrel shift instructions
+        RunTest("asm/sr");                              -- Tests status register (SETT, CLRT)
+        RunTest("asm/system");                          -- Tests system register operations (LDC, STC)
+        RunTest("asm/control");                         -- Tests control register operations (LDS, STS)
 
         -- RunTest("asm/mov_wl_at_disp_pc_rn");            -- Tests Mov (disp, PC), Rn
         -- RunTest("asm/mov_bwl_at_rm_rn");                -- Tests Mov @Rm, Rn
