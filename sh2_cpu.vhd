@@ -511,7 +511,7 @@ begin
     port map (
         -- Inputs:
         MemDataIn   => MemDataIn,
-        TFlagIn     => TBit,
+        TFlagIn     => TNext,
         clock       => clock,
         reset       => reset,
 

@@ -581,6 +581,7 @@ begin
         -- RunTest("asm/xtrct");                           -- Test XTRCT Rm, Rn                                  (working)
         -- RunTest("asm/branch");                          -- Test branch instructions.
         RunTest("asm/branch_conditional");                  -- Test conditional branch instructions (BT, BF)
+        RunTest("asm/branch_conditional_delay");                  -- Test conditional branch instructions (BT, BF)
 
         wait;
     end process;

@@ -70,11 +70,13 @@ package SH2ControlSignals is
 
     -- PMAU control signals
     type pmau_ctrl_t is record
-        PCAddrMode  : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired
+        PCAddrMode  : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired (if not branch, just increment)
         Off8        : std_logic_vector(7 downto 0);     -- 8-bit offset for relative addressing
         Off12       : std_logic_vector(11 downto 0);    -- 12-bit offset for relative addressing
         PCWriteCtrl : std_logic_vector(1 downto 0);     -- What to write to the PC register
-        DelayedBranchTaken  : std_logic;                -- whether the delayed branch is taken
+        ConditionalBranch  : std_logic;                 -- if performing a conditional branch (checked during ID stage)
+        Condition   : std_logic;                        -- condition to check for condional branches
+        DelayBranch : std_logic;                        -- if the branch being performed should be delayed
     end record;
 
     -- System control signals
@@ -92,8 +94,6 @@ package SH2ControlSignals is
         PMAUCtrl     : pmau_ctrl_t;
         DMAUCtrl     : dmau_ctrl_t;
         SysCtrl      : sys_ctrl_t;
-        BranchTaken  : std_logic;
-        DBranchTaken : std_logic;
     end record;
 
 

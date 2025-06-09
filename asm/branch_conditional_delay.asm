@@ -1,11 +1,11 @@
-; branch_conditional.asm
+; branch_conditional_delay.asm
 ;
 ; Testing conditional branches (not delayed branch). As per the spec, condition
 ; verification is performed in the ID stage.
 ;
 ; This file tests the following instructions:
-;     BT
-;     BF
+;     BT/S
+;     BF/S
 ;
 ; Revision History:
 ;   11 May 2025     Zack Huang      Initial revision.
@@ -24,9 +24,9 @@ ProgramStart:
 
     MOV #$F, R0
     CMP/EQ #$F, R0
-    BT BranchIfTrue
+    BT/S BranchIfTrue
     ; Test that branch slots are not executed
-    MOV R3, @R1         ; Should not set 0x00 to 0xA
+    MOV R3, @R1         ; Should set 0x00 to 0xA
     MOV R4, @R2         ; Should not set 0x04 to 0xB
     NOP
 
@@ -50,7 +50,8 @@ BranchIfTrue:
 
     MOV #$E, R0
     CMP/EQ #$F, R0
-    BF BranchIfFalseAgain
+    BF/S BranchIfFalseAgain
+    NOP
 
     ; Quit test program (should not happen)
     MOV #-4, R0;
@@ -72,3 +73,4 @@ BranchIfFalseAgain:
     NOP
     NOP
     NOP
+
