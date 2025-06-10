@@ -1,0 +1,668 @@
+#-----------------------------------------------------------
+# Vivado v2024.2 (64-bit)
+# SW Build 5239630 on Fri Nov 08 22:35:27 MST 2024
+# IP Build 5239520 on Sun Nov 10 16:12:51 MST 2024
+# SharedData Build 5239561 on Fri Nov 08 14:39:27 MST 2024
+# Start of session at: Mon Jun  9 21:22:55 2025
+# Process ID         : 1540
+# Current directory  : C:/Users/Zack/sh2cpu/sh2cpu.runs/synth_1
+# Command line       : vivado.exe -log SH2CPU.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source SH2CPU.tcl
+# Log file           : C:/Users/Zack/sh2cpu/sh2cpu.runs/synth_1/SH2CPU.vds
+# Journal file       : C:/Users/Zack/sh2cpu/sh2cpu.runs/synth_1\vivado.jou
+# Running On         : MACMINI
+# Platform           : Windows Server 2016 or Windows 10
+# Operating System   : 22631
+# Processor Detail   : AMD Ryzen 7 5800H with Radeon Graphics         
+# CPU Frequency      : 3194 MHz
+# CPU Physical cores : 8
+# CPU Logical cores  : 16
+# Host memory        : 16561 MB
+# Swap memory        : 1073 MB
+# Total Virtual      : 17635 MB
+# Available Virtual  : 10052 MB
+#-----------------------------------------------------------
+source SH2CPU.tcl -notrace
+Command: read_checkpoint -auto_incremental -incremental C:/Users/Zack/sh2cpu/sh2cpu.srcs/utils_1/imports/synth_1/SH2CPU.dcp
+INFO: [Vivado 12-5825] Read reference checkpoint from C:/Users/Zack/sh2cpu/sh2cpu.srcs/utils_1/imports/synth_1/SH2CPU.dcp for incremental synthesis
+INFO: [Vivado 12-7989] Please ensure there are no constraint changes
+Command: synth_design -top SH2CPU -part xc7s25csga225-2
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7s25'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7s25'
+INFO: [Designutils 20-5440] No compile time benefit to using incremental synthesis; A full resynthesis will be run
+INFO: [Designutils 20-4379] Flow is switching to default flow due to incremental criteria not met. If you would like to alter this behaviour and have the flow terminate instead, please set the following parameter config_implementation {autoIncr.Synth.RejectBehavior Terminate}
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 2 processes.
+INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
+INFO: [Synth 8-7075] Helper process launched with PID 7172
+---------------------------------------------------------------------------------
+Starting Synthesize : Time (s): cpu = 00:00:05 ; elapsed = 00:00:05 . Memory (MB): peak = 850.898 ; gain = 475.945
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'SH2CPU' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:100]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:262]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:280]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:295]
+INFO: [Synth 8-638] synthesizing module 'SH2Regs' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_reg.vhd:42]
+	Parameter regcnt bound to: 16 - type: integer 
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-3491] module 'RegArray' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/reg.vhd:67' bound to instance 'Registers' of component 'RegArray' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_reg.vhd:87]
+INFO: [Synth 8-638] synthesizing module 'RegArray' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/reg.vhd:101]
+	Parameter regcnt bound to: 16 - type: integer 
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'RegArray' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/reg.vhd:101]
+INFO: [Synth 8-256] done synthesizing module 'SH2Regs' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_reg.vhd:42]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:366]
+INFO: [Synth 8-638] synthesizing module 'sh2alu' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_alu.vhd:216]
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-3491] module 'ALU' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:462' bound to instance 'ALUinternal' of component 'ALU' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_alu.vhd:250]
+INFO: [Synth 8-638] synthesizing module 'ALU' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:487]
+	Parameter wordsize bound to: 32 - type: integer 
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-3491] module 'FBlock' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:220' bound to instance 'FB1' of component 'FBlock' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:540]
+INFO: [Synth 8-638] synthesizing module 'FBlock' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:237]
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-638] synthesizing module 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:128]
+INFO: [Synth 8-256] done synthesizing module 'FBlockBit' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:128]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-3491] module 'FBlockBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:116' bound to instance 'FBx' of component 'FBlockBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:252]
+INFO: [Synth 8-256] done synthesizing module 'FBlock' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:237]
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-3491] module 'Adder' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:284' bound to instance 'Add1' of component 'Adder' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:542]
+INFO: [Synth 8-638] synthesizing module 'Adder' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:304]
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-638] synthesizing module 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:172]
+INFO: [Synth 8-256] done synthesizing module 'AdderBit' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:172]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'ABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:329]
+INFO: [Synth 8-256] done synthesizing module 'Adder' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:304]
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-3491] module 'Shifter' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:368' bound to instance 'Sh1' of component 'Shifter' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:545]
+INFO: [Synth 8-638] synthesizing module 'Shifter' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:385]
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'Shifter' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:385]
+INFO: [Synth 8-256] done synthesizing module 'ALU' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:487]
+INFO: [Synth 8-256] done synthesizing module 'sh2alu' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_alu.vhd:216]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:421]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:430]
+INFO: [Synth 8-638] synthesizing module 'SH2Dmau' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_dmau.vhd:198]
+INFO: [Synth 8-638] synthesizing module 'MemUnit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:166]
+	Parameter srcCnt bound to: 3 - type: integer 
+	Parameter offsetCnt bound to: 4 - type: integer 
+	Parameter maxIncDecBit bound to: 2 - type: integer 
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Synth 8-3491] module 'AdderBit' declared at 'C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/alu.vhd:159' bound to instance 'IDABx' of component 'AdderBit' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:242]
+INFO: [Common 17-14] Message 'Synth 8-3491' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+INFO: [Synth 8-256] done synthesizing module 'MemUnit' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:166]
+INFO: [Synth 8-256] done synthesizing module 'SH2Dmau' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_dmau.vhd:198]
+INFO: [Synth 8-638] synthesizing module 'SH2Pmau' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_pmau.vhd:130]
+INFO: [Synth 8-638] synthesizing module 'MemUnit__parameterized0' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:166]
+	Parameter srcCnt bound to: 3 - type: integer 
+	Parameter offsetCnt bound to: 4 - type: integer 
+	Parameter maxIncDecBit bound to: 1 - type: integer 
+	Parameter wordsize bound to: 32 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'MemUnit__parameterized0' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/mau.vhd:166]
+INFO: [Synth 8-256] done synthesizing module 'SH2Pmau' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_pmau.vhd:130]
+INFO: [Synth 8-638] synthesizing module 'MemoryInterfaceTx' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:87]
+WARNING: [Synth 8-5639] ignoring null variable initialization [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-7143] Equality comparison of non constant with static metalogical value is evaluated as 'false'. This may cause simulation-synthesis differences [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-3919] null assignment ignored [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:111]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+WARNING: [Synth 8-5639] ignoring null variable initialization [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:170]
+WARNING: [Synth 8-7143] Equality comparison of non constant with static metalogical value is evaluated as 'false'. This may cause simulation-synthesis differences [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:170]
+WARNING: [Synth 8-3919] null assignment ignored [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:170]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:170]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:170]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:170]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:170]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+WARNING: [Synth 8-5639] ignoring null variable initialization [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+WARNING: [Synth 8-7143] Equality comparison of non constant with static metalogical value is evaluated as 'false'. This may cause simulation-synthesis differences [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+WARNING: [Synth 8-3919] null assignment ignored [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:190]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:175]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+INFO: [Synth 8-256] done synthesizing module 'MemoryInterfaceTx' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:87]
+INFO: [Synth 8-638] synthesizing module 'MemoryInterfaceRx' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:265]
+INFO: [Synth 8-256] done synthesizing module 'MemoryInterfaceRx' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:265]
+INFO: [Synth 8-638] synthesizing module 'SH2Control' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:73]
+WARNING: [Synth 8-5639] ignoring null variable initialization [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1203]
+WARNING: [Synth 8-7143] Equality comparison of non constant with static metalogical value is evaluated as 'false'. This may cause simulation-synthesis differences [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1203]
+WARNING: [Synth 8-3919] null assignment ignored [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1203]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1203]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1203]
+WARNING: [Synth 8-153] case item 4'bzzzz will never be executed [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1203]
+INFO: [Synth 8-226] default block is never used [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1203]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+WARNING: [Synth 8-312] ignoring unsynthesizable construct: non-synthesizable function call [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/logging.vhd:191]
+INFO: [Synth 8-256] done synthesizing module 'SH2Control' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:73]
+INFO: [Synth 8-256] done synthesizing module 'SH2CPU' (0#1) [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:100]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][OpBSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][LoadA] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][FCmd] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][CinCmd] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][SCmd] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][ALUCmd] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][TCmpSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][Immediate] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][ImmediateMode] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][ExtMode] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][ALUCtrl][TFlagSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][PMAUCtrl][PCAddrMode] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][PMAUCtrl][Off8] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][PMAUCtrl][Off12] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][PMAUCtrl][PCWriteCtrl] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][PMAUCtrl][ConditionalBranch] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][PMAUCtrl][Condition] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[2].pipeline_reg[2][PMAUCtrl][DelayBranch] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][MemCtrl][Enable] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][MemCtrl][AddrSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][MemCtrl][ReadWrite] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][MemCtrl][Mode] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][MemCtrl][Sel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][MemCtrl][OutSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][OpBSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][LoadA] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][FCmd] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][CinCmd] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][SCmd] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][ALUCmd] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][TCmpSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][Immediate] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][ImmediateMode] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][ExtMode] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][ALUCtrl][TFlagSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][REGCtrl][DataInSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][REGCtrl][EnableIn] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][REGCtrl][InSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][REGCtrl][ASel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][REGCtrl][BSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][PMAUCtrl][PCAddrMode] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][PMAUCtrl][Off8] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][PMAUCtrl][Off12] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][PMAUCtrl][PCWriteCtrl] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][PMAUCtrl][ConditionalBranch] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][PMAUCtrl][Condition] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][PMAUCtrl][DelayBranch] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][GBRWriteEn] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][Off4] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][Off8] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][BaseSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][IndexSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][OffScalarSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][IncDecSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][AxInSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][AxStore] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][A1Sel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][DMAUCtrl][A2Sel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][SysCtrl][PRWriteEn] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][SysCtrl][RegCtrl] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][SysCtrl][RegSel] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element pipeline_stages[3].pipeline_reg[3][SysCtrl][RegSrc] was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:1672]
+WARNING: [Synth 8-6014] Unused sequential element PrevPCReg_reg was removed.  [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_cpu.vhd:250]
+WARNING: [Synth 8-7129] Port MemDataIn[31] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[30] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[29] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[28] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[27] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[26] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[25] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[24] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[23] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[22] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[21] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[20] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[19] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[18] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[17] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[16] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemEnable in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[31] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[31] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port NMI in module SH2CPU is either unconnected or has no load
+WARNING: [Synth 8-7129] Port INT in module SH2CPU is either unconnected or has no load
+---------------------------------------------------------------------------------
+Finished Synthesize : Time (s): cpu = 00:00:08 ; elapsed = 00:00:08 . Memory (MB): peak = 1037.535 ; gain = 662.582
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 1037.535 ; gain = 662.582
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7s25csga225-2
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 1037.535 ; gain = 662.582
+---------------------------------------------------------------------------------
+INFO: [Device 21-403] Loading part xc7s25csga225-2
+WARNING: [Synth 8-327] inferring latch for variable 'DMAUOffsetSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_dmau.vhd:327]
+WARNING: [Synth 8-327] inferring latch for variable 'DB_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:100]
+WARNING: [Synth 8-327] inferring latch for variable 'MemDataIn_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/memory_interface.vhd:275]
+WARNING: [Synth 8-327] inferring latch for variable 'ALUOpBSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:323]
+WARNING: [Synth 8-327] inferring latch for variable 'LoadA_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:324]
+WARNING: [Synth 8-327] inferring latch for variable 'FCmd_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:325]
+WARNING: [Synth 8-327] inferring latch for variable 'CinCmd_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:326]
+WARNING: [Synth 8-327] inferring latch for variable 'SCmd_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:327]
+WARNING: [Synth 8-327] inferring latch for variable 'ALUCmd_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:328]
+WARNING: [Synth 8-327] inferring latch for variable 'TCmpSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:329]
+WARNING: [Synth 8-327] inferring latch for variable 'Immediate_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:330]
+WARNING: [Synth 8-327] inferring latch for variable 'RegDataInSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:337]
+WARNING: [Synth 8-327] inferring latch for variable 'RegInSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:339]
+WARNING: [Synth 8-327] inferring latch for variable 'RegASel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:340]
+WARNING: [Synth 8-327] inferring latch for variable 'RegBSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:341]
+WARNING: [Synth 8-327] inferring latch for variable 'DMAUOff4_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:346]
+WARNING: [Synth 8-327] inferring latch for variable 'DMAUOff8_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:347]
+WARNING: [Synth 8-327] inferring latch for variable 'BaseSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:348]
+WARNING: [Synth 8-327] inferring latch for variable 'IndexSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:349]
+WARNING: [Synth 8-327] inferring latch for variable 'OffScalarSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:350]
+WARNING: [Synth 8-327] inferring latch for variable 'IncDecSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:351]
+WARNING: [Synth 8-327] inferring latch for variable 'RegAxInSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:352]
+WARNING: [Synth 8-327] inferring latch for variable 'RegA1Sel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:354]
+WARNING: [Synth 8-327] inferring latch for variable 'RegA2Sel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:355]
+WARNING: [Synth 8-327] inferring latch for variable 'PMAUOff8_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:360]
+WARNING: [Synth 8-327] inferring latch for variable 'PMAUOff12_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:361]
+WARNING: [Synth 8-327] inferring latch for variable 'SysRegSel_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:370]
+WARNING: [Synth 8-327] inferring latch for variable 'SysRegSrc_reg' [C:/Users/Zack/sh2cpu/sh2cpu.srcs/sources_1/imports/ee188/sh2_control.vhd:371]
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:11 ; elapsed = 00:00:11 . Memory (MB): peak = 1037.535 ; gain = 662.582
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   2 Input   32 Bit       Adders := 3     
++---XORs : 
+	   3 Input      1 Bit         XORs := 160   
+	   2 Input      1 Bit         XORs := 2     
++---Registers : 
+	               32 Bit    Registers := 23    
+	               16 Bit    Registers := 1     
+	               12 Bit    Registers := 2     
+	                8 Bit    Registers := 7     
+	                4 Bit    Registers := 26    
+	                3 Bit    Registers := 14    
+	                2 Bit    Registers := 29    
+	                1 Bit    Registers := 40    
++---Muxes : 
+	   2 Input   32 Bit        Muxes := 89    
+	   3 Input   32 Bit        Muxes := 4     
+	   4 Input   32 Bit        Muxes := 10    
+	   2 Input   30 Bit        Muxes := 1     
+	   2 Input   24 Bit        Muxes := 1     
+	   2 Input   12 Bit        Muxes := 4     
+	   2 Input    8 Bit        Muxes := 6     
+	   6 Input    8 Bit        Muxes := 1     
+	   4 Input    4 Bit        Muxes := 2     
+	   2 Input    4 Bit        Muxes := 27    
+	   2 Input    3 Bit        Muxes := 12    
+	   4 Input    2 Bit        Muxes := 3     
+	   5 Input    2 Bit        Muxes := 1     
+	   2 Input    2 Bit        Muxes := 25    
+	   7 Input    2 Bit        Muxes := 2     
+	   6 Input    2 Bit        Muxes := 1     
+	   2 Input    1 Bit        Muxes := 317   
+	   4 Input    1 Bit        Muxes := 3     
+	   3 Input    1 Bit        Muxes := 7     
+	   5 Input    1 Bit        Muxes := 6     
+	   6 Input    1 Bit        Muxes := 1     
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 80 (col length:40)
+BRAMs: 90 (col length: RAMB18 40 RAMB36 20)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-7080] Parallel synthesis criteria is not met
+WARNING: [Synth 8-7129] Port MemDataIn[31] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[30] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[29] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[28] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[27] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[26] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[25] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[24] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[23] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[22] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[21] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[20] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[19] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[18] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[17] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemDataIn[16] in module SH2Control is either unconnected or has no load
+WARNING: [Synth 8-7129] Port MemEnable in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[31] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[30] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[29] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[28] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[27] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[26] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[25] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[24] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[23] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[22] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[21] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[20] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[19] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[18] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[17] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[16] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[15] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[14] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[13] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[12] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[11] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[10] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[9] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[8] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[7] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[6] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[5] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[4] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[3] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[2] in module MemoryInterfaceRx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[31] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[30] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[29] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[28] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[27] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[26] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[25] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[24] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[23] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[22] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[21] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[20] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[19] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[18] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[17] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[16] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[15] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[14] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[13] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[12] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[11] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[10] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[9] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[8] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[7] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[6] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[5] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[4] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[3] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port Address[2] in module MemoryInterfaceTx is either unconnected or has no load
+WARNING: [Synth 8-7129] Port NMI in module SH2CPU is either unconnected or has no load
+WARNING: [Synth 8-7129] Port INT in module SH2CPU is either unconnected or has no load
+INFO: [Common 17-14] Message 'Synth 8-7129' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+WARNING: [Synth 8-3332] Sequential element (DMAUOffsetSel_reg[1]) is unused and will be removed from module SH2Dmau.
+WARNING: [Synth 8-3332] Sequential element (DMAUOffsetSel_reg[0]) is unused and will be removed from module SH2Dmau.
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:37 ; elapsed = 00:00:36 . Memory (MB): peak = 1329.160 ; gain = 954.207
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:39 ; elapsed = 00:00:39 . Memory (MB): peak = 1331.559 ; gain = 956.605
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:42 ; elapsed = 00:00:41 . Memory (MB): peak = 1331.559 ; gain = 956.605
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:45 ; elapsed = 00:00:44 . Memory (MB): peak = 1368.602 ; gain = 993.648
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:45 ; elapsed = 00:00:44 . Memory (MB): peak = 1368.602 ; gain = 993.648
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:45 ; elapsed = 00:00:45 . Memory (MB): peak = 1368.602 ; gain = 993.648
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:45 ; elapsed = 00:00:45 . Memory (MB): peak = 1368.602 ; gain = 993.648
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:45 ; elapsed = 00:00:45 . Memory (MB): peak = 1368.602 ; gain = 993.648
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:45 ; elapsed = 00:00:45 . Memory (MB): peak = 1368.602 ; gain = 993.648
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+-------+------+
+|      |Cell   |Count |
++------+-------+------+
+|1     |BUFG   |     2|
+|2     |CARRY4 |    20|
+|3     |LUT1   |    37|
+|4     |LUT2   |   189|
+|5     |LUT3   |   635|
+|6     |LUT4   |   154|
+|7     |LUT5   |   339|
+|8     |LUT6   |  1473|
+|9     |MUXF7  |   257|
+|10    |MUXF8  |   128|
+|11    |FDCE   |  1001|
+|12    |FDPE   |     6|
+|13    |FDRE   |    60|
+|14    |LD     |   143|
+|15    |LDC    |    15|
+|16    |LDCP   |     5|
+|17    |LDP    |     2|
+|18    |IBUF   |     2|
+|19    |IOBUF  |    32|
+|20    |OBUF   |    41|
++------+-------+------+
+
+Report Instance Areas: 
++------+---------------+------------------+------+
+|      |Instance       |Module            |Cells |
++------+---------------+------------------+------+
+|1     |top            |                  |  4541|
+|2     |  control_unit |SH2Control        |  2644|
+|3     |  dmau         |SH2Dmau           |    32|
+|4     |  memory_rx    |MemoryInterfaceRx |    32|
+|5     |  memory_tx    |MemoryInterfaceTx |    33|
+|6     |  pmau         |SH2Pmau           |   112|
+|7     |  registers    |SH2Regs           |  1475|
+|8     |    Registers  |RegArray          |  1474|
++------+---------------+------------------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:45 ; elapsed = 00:00:45 . Memory (MB): peak = 1368.602 ; gain = 993.648
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 232 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:45 ; elapsed = 00:00:45 . Memory (MB): peak = 1368.602 ; gain = 993.648
+Synthesis Optimization Complete : Time (s): cpu = 00:00:45 ; elapsed = 00:00:45 . Memory (MB): peak = 1368.602 ; gain = 993.648
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.053 . Memory (MB): peak = 1383.602 ; gain = 0.000
+INFO: [Netlist 29-17] Analyzing 602 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 1 inverter(s) to 36 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 1489.000 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 197 instances were transformed.
+  IOBUF => IOBUF (IBUF, OBUFT): 32 instances
+  LD => LDCE: 107 instances
+  LD => LDCE (inverted pins: G): 36 instances
+  LDC => LDCE: 15 instances
+  LDCP => LDCP (GND, LDCE, LUT3(x2), VCC): 5 instances
+  LDP => LDPE: 2 instances
+
+Synth Design complete | Checksum: 1f7b5549
+INFO: [Common 17-83] Releasing license: Synthesis
+174 Infos, 232 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:47 ; elapsed = 00:00:48 . Memory (MB): peak = 1489.000 ; gain = 1120.262
+Write ShapeDB Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.007 . Memory (MB): peak = 1489.000 ; gain = 0.000
+INFO: [Common 17-1381] The checkpoint 'C:/Users/Zack/sh2cpu/sh2cpu.runs/synth_1/SH2CPU.dcp' has been generated.
+INFO: [Vivado 12-24828] Executing command : report_utilization -file SH2CPU_utilization_synth.rpt -pb SH2CPU_utilization_synth.pb
+INFO: [Common 17-206] Exiting Vivado at Mon Jun  9 21:23:47 2025...
+
