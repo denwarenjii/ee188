@@ -159,7 +159,7 @@ architecture structural of SH2Pmau is
   constant PMAUAddrSrc_PC : integer := 0;
   constant PMAUAddrSrc_PR : integer := 1;
   constant PMAUAddrSrc_Rm : integer := 2;
-  signal PMAUAddrSrc : std_logic_array(SRCCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
+  signal PMAUAddrSrc : std_logic_array(SRCCNT - 1 downto 0);
   signal PMAUSrcSel  : integer range SRCCNT - 1 downto 0;
 
   constant PMAUAddrOff_NONE   : integer := 0;
@@ -167,7 +167,7 @@ architecture structural of SH2Pmau is
   constant PMAUAddrOff_OFF12  : integer := 2;
   constant PMAUAddrOff_REG    : integer := 3;
 
-  signal PMAUAddrOff : std_logic_array(OFFSETCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
+  signal PMAUAddrOff : std_logic_array(OFFSETCNT - 1 downto 0);
   signal PMAUOffsetSel : integer range OFFSETCNT - 1 downto 0;
 
   

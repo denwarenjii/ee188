@@ -232,7 +232,7 @@ architecture structural of SH2Dmau is
     -- Consists of RegSrc, GBR, and PC. Note that there is a one-to-one mapping
     -- between the BaseSel constants.
     --
-    signal DMAUAddrSrc : std_logic_array(SRCCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
+    signal DMAUAddrSrc : std_logic_array(SRCCNT - 1 downto 0);
 
 
     -- DMAUSrcSel constants.
@@ -249,7 +249,7 @@ architecture structural of SH2Dmau is
     constant DMAUOffsetSel_R0     : integer := 3;
     signal   DMAUOffsetSel        : integer range OFFSETCNT - 1 downto 0;
 
-    signal DMAUAddrOff : std_logic_array(OFFSETCNT - 1 downto 0)(SH2_WORDSIZE - 1 downto 0);
+    signal DMAUAddrOff : std_logic_array(OFFSETCNT - 1 downto 0);
 
 
     constant  DMAU_INC       : std_logic := '0';

@@ -25,8 +25,8 @@ package SH2Constants is
   
   -- Note that these must be hard-coded to avoid overflow in static computation.
   -- This is just (-(2**(SH2_WORDSIZE - 1)))
-  constant SH2_SIGNED_MIN   : integer := -2147483648;
-  constant SH2_SIGNED_MAX   : integer := 2147483647;
+  -- constant SH2_SIGNED_MIN   : integer := -2147483648;
+  -- constant SH2_SIGNED_MAX   : integer := 2147483647;
   constant SH2_UNSIGNED_MIN : integer := 0;
   constant SH2_UNSIGNED_MAX : unsigned(SH2_WORDSIZE - 1 downto 0) := (others => '1');
 

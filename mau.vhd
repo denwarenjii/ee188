@@ -35,7 +35,7 @@ use ieee.std_logic_1164.all;
 package array_type_pkg is
 
 --  a 2D array of std_logic (VHDL-2008)
-   type  std_logic_array  is  array (natural range<>) of std_logic_vector;
+   type  std_logic_array  is  array (natural range<>) of std_logic_vector(31 downto 0);
 
 
 end package;
@@ -149,9 +149,9 @@ entity  MemUnit  is
     );
 
     port(
-        AddrSrc    : in      std_logic_array(srccnt - 1 downto 0)(wordsize - 1 downto 0);
+        AddrSrc    : in      std_logic_array(srccnt - 1 downto 0);
         SrcSel     : in      integer  range srccnt - 1 downto 0;
-        AddrOff    : in      std_logic_array(offsetcnt - 1 downto 0)(wordsize - 1 downto 0);
+        AddrOff    : in      std_logic_array(offsetcnt - 1 downto 0);
         OffsetSel  : in      integer  range offsetcnt - 1 downto 0;
         IncDecSel  : in      std_logic;
         IncDecBit  : in      integer  range maxIncDecBit downto 0;

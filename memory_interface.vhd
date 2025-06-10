@@ -55,7 +55,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.MemoryInterfaceConstants.all;
-use work.Logging.all;
 
 -- MemoryInterfaceTx
 --
@@ -94,7 +93,7 @@ begin
         -- either a read or a write, then output the read-enable and
         -- write-enable signals in order depending on the memory mode to
         -- read/write a byte, word, or longword.
-        if MemEnable = MemEnable_ON and clock = '0' and not is_x(address) then
+        if MemEnable = MemEnable_ON and clock = '0' then
             if ReadWrite = Mem_READ then    -- If performing a read
                 WE(3 downto 0) <= (others => '1');  -- Disable writing
                 DB <= (others => 'Z');              -- set data bus to high impedance so it can be read from
@@ -102,41 +101,66 @@ begin
                 -- Enable specific bytes based on type of read
                 case MemMode is
                     when ByteMode =>
-                        -- Enable only the specific byte being read
-                        RE(0) <= '0' when address mod 4 = 0 else '1';
-                        RE(1) <= '0' when address mod 4 = 1 else '1';
-                        RE(2) <= '0' when address mod 4 = 2 else '1';
-                        RE(3) <= '0' when address mod 4 = 3 else '1';
 
-                        LogWithTime(l, "memory_interface.vhd: Reading byte at address 0x" & to_hstring(address), LogFile);
+                        -- Enable only the specific byte being read
+                        if (address mod 4 = 0) then
+                            RE(0) <= '0';
+                        else
+                            RE(0) <= '1';
+                        end if;
+
+                        if (address mod 4 = 1) then
+                            RE(1) <= '0';
+                        else
+                            RE(1) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            RE(2) <= '0';
+                        else
+                            RE(2) <= '1';
+                        end if;
+
+                        if (address mod 4 = 3) then
+                            RE(3) <= '0';
+                        else
+                            RE(3) <= '1';
+                        end if;
 
                     when WordMode =>
-                        assert (address mod 2 = 0)
-                        report "Memory interface Tx: Cannot read word from non-aligned address: " & to_hstring(address)
-                        severity error;
 
-                        -- Enable only the specific pair of bytes being read (address must be word-aligned)
-                        RE(0) <= '0' when address mod 4 = 0 else '1';
-                        RE(1) <= '0' when address mod 4 = 0 else '1';
-                        RE(2) <= '0' when address mod 4 = 2 else '1';
-                        RE(3) <= '0' when address mod 4 = 2 else '1';
+                        if (address mod 4 = 0) then
+                            RE(0) <= '0';
+                        else
+                            RE(0) <= '1';
+                        end if;
 
-                        LogWithTime(l, "memory_interface.vhd: Reading word at address 0x" & to_hstring(address), LogFile);
+                        if (address mod 4 = 0) then
+                            RE(1) <= '0';
+                        else
+                            RE(1) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            RE(2) <= '0';
+                        else
+                            RE(2) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            RE(3) <= '0';
+                        else
+                            RE(3) <= '1';
+                        end if;
+
 
                     when LongwordMode =>
-                        assert (address mod 4 = 0)
-                        report "Memory interface Tx: Cannot read longword from non-aligned address: " & to_hstring(address)
-                        severity error;
 
                         -- Enable all bytes to read a longword. Address must be longword-aligned.
                         RE(3 downto 0) <= (others => '0');
 
-                        LogWithTime(l, "memory_interface.vhd: Reading longword at address 0x" & to_hstring(address), LogFile);
 
                     when others =>
-                        assert (false)
-                        report "Memory interface Tx: unrecognized read mode" & to_hstring(address)
-                        severity error;
 
                         -- When unrecognized mode, don't read/write anything
                         RE <= (others => '1');
@@ -150,11 +174,38 @@ begin
                 -- Enable specific bytes based on memory mode
                 case MemMode is
                     when ByteMode =>
+
+                        if (address mod 4 = 0) then
+                            WE(0) <= '0';
+                        else
+                            WE(0) <= '1';
+                        end if;
+
+                        if (address mod 4 = 1) then
+                            WE(1) <= '0';
+                        else
+                            WE(1) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            WE(2) <= '0';
+                        else
+                            WE(2) <= '1';
+                        end if;
+
+                        if (address mod 4 = 3) then
+                            WE(3) <= '0';
+                        else
+                            WE(3) <= '1';
+                        end if;
+
+
+
                         -- Enable only the specific byte being written
-                        WE(0) <= '0' when address mod 4 = 0 else '1';
-                        WE(1) <= '0' when address mod 4 = 1 else '1';
-                        WE(2) <= '0' when address mod 4 = 2 else '1';
-                        WE(3) <= '0' when address mod 4 = 3 else '1';
+                        -- WE(0) <= '0' when address mod 4 = 0 else '1';
+                        -- WE(1) <= '0' when address mod 4 = 1 else '1';
+                        -- WE(2) <= '0' when address mod 4 = 2 else '1';
+                        -- WE(3) <= '0' when address mod 4 = 3 else '1';
 
                         -- Set the correct data bus byte to the byte being written
                         if address mod 4 = 0 then 
@@ -167,42 +218,52 @@ begin
                             DB(31 downto 24) <= MemDataOut(7 downto 0);
                         end if;
 
-                        LogWithTime(l, "memory_interface.vhd: Writing byte (0x" & to_hstring(MemDataOut(7 downto 0)) &
-                                       ") at address 0x" & to_hstring(address), LogFile);
-
                     when WordMode =>
-                        assert (address mod 2 = 0)
-                        report "Memory interface Tx: Cannot write word to non-aligned address: " & to_hstring(address)
-                        severity error;
+
+                        if (address mod 4 = 0) then
+                            WE(0) <= '0';
+                        else
+                            WE(0) <= '1';
+                        end if;
+
+                        if (address mod 4 = 0) then
+                            WE(1) <= '0';
+                        else
+                            WE(1) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            WE(2) <= '0';
+                        else
+                            WE(2) <= '1';
+                        end if;
+
+                        if (address mod 4 = 2) then
+                            WE(3) <= '0';
+                        else
+                            WE(3) <= '1';
+                        end if;
+
 
                         -- Enable only the specific pair of bytes being read (address must be word-aligned)
-                        WE(0) <= '0' when address mod 4 = 0 else '1';
-                        WE(1) <= '0' when address mod 4 = 0 else '1';
-                        WE(2) <= '0' when address mod 4 = 2 else '1';
-                        WE(3) <= '0' when address mod 4 = 2 else '1';
+                        -- WE(0) <= '0' when address mod 4 = 0 else '1';
+                        -- WE(1) <= '0' when address mod 4 = 0 else '1';
+                        -- WE(2) <= '0' when address mod 4 = 2 else '1';
+                        -- WE(3) <= '0' when address mod 4 = 2 else '1';
 
                         if address mod 4 = 0 then
                             -- Convert input data from little-endian to big-endian by reversing the bytes,
                             -- the output to the low word of the data bus
                             DB(15 downto 0) <= MemDataOut(7 downto 0) & MemDataOut(15 downto 8);
 
-                            LogWithTime(l, "memory_interface.vhd: Writing word (0x" & 
-                                            to_hstring(MemDataOut(7 downto 0) & MemDataOut(15 downto 8)), LogFile);
                         elsif address mod 2 = 0 then
                             -- Convert input data from little-endian to big-endian by reversing the bytes,
                             -- the output to the high word of the data bus
                             DB(31 downto 16) <= MemDataOut(7 downto 0) & MemDataOut(15 downto 8);
 
-                            LogWithTime(l, "memory_interface.vhd: Writing word (0x" & 
-                                            to_hstring(MemDataOut(7 downto 0) & MemDataOut(15 downto 8)), LogFile);
                         end if;
 
-                        LogWithTime(") at address 0x" & to_hstring(address), LogFile);
-
                     when LongwordMode =>
-                        assert (address mod 4 = 0)
-                        report "Memory interface Tx: Cannot write longword to non-aligned address: " & to_hstring(address)
-                        severity error;
 
                         -- Enable all bytes to read a longword. Address must be longword-aligned.
                         WE(3 downto 0) <= (others => '0');
@@ -212,9 +273,6 @@ begin
                         DB(15 downto 8) <= MemDataOut(23 downto 16);
                         DB(23 downto 16) <= MemDataOut(15 downto 8);
                         DB(31 downto 24) <= MemDataOut(7 downto 0);
-
-                        LogWithTime(l, "memory_interface.vhd: Writing longword (0x" & to_hstring(MemDataOut) &
-                                       ") at address 0x" & to_hstring(address), LogFile);
 
                     when others =>
                         assert (false)

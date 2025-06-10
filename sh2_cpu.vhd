@@ -232,16 +232,16 @@ architecture structural of sh2cpu is
 begin
 
     -- Output read enable signals when clock is low
-    RE0 <= ReadMask(0) when (not clock) else '1';
-    RE1 <= ReadMask(1) when (not clock) else '1';
-    RE2 <= ReadMask(2) when (not clock) else '1';
-    RE3 <= ReadMask(3) when (not clock) else '1';
+    RE0 <= ReadMask(0) when ((not clock) = '1') else '1';
+    RE1 <= ReadMask(1) when ((not clock) = '1') else '1';
+    RE2 <= ReadMask(2) when ((not clock) = '1') else '1';
+    RE3 <= ReadMask(3) when ((not clock) = '1') else '1';
 
     -- Output write enable signals when clock is low
-    WE0 <= WriteMask(0) when (not clock) else '1';
-    WE1 <= WriteMask(1) when (not clock) else '1';
-    WE2 <= WriteMask(2) when (not clock) else '1';
-    WE3 <= WriteMask(3) when (not clock) else '1';
+    WE0 <= WriteMask(0) when ((not clock) = '1') else '1';
+    WE1 <= WriteMask(1) when ((not clock) = '1') else '1';
+    WE2 <= WriteMask(2) when ((not clock) = '1') else '1';
+    WE3 <= WriteMask(3) when ((not clock) = '1') else '1';
 
     StorePCReg : process(clock)
     begin

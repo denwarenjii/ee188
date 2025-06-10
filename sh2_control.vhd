@@ -47,7 +47,6 @@ use work.MemoryInterfaceConstants.all;
 use work.SH2InstructionEncodings.all;
 use work.SH2ControlSignals.all;
 use work.SH2ALUConstants.all;
-use work.Logging.all;
 use work.Utils.all;
 
 entity  SH2Control  is
@@ -398,7 +397,7 @@ begin
     --     end if;
     -- end process detect_bubble;
 
-    mem_access: process(all)
+    mem_access: process(BubbleIF, pipeline_en, pipeline)
     begin
         if BubbleIF = '1' and pipeline_en(STAGE_MA) = '1' then
             -- Perform memory access, ignoring IF this clock
@@ -433,12 +432,12 @@ begin
     --
     ShouldBranch <= '1' when pipeline(STAGE_ID).PMAUCtrl.ConditionalBranch = '1' and pipeline(STAGE_ID).PMAUCtrl.Condition = TFlagIn else '0';
 
-    program_access: process(all)
+    program_access: process(BubbleIF, pipeline_en, ShouldBranch)
     begin
         if BubbleIF = '1' then
             -- Hold PC still for bubble
             PMAUCtrl <= HOLD_PMAU_CTRL;
-        elsif pipeline_en(STAGE_X) then
+        elsif pipeline_en(STAGE_X) = '1' then
             -- Check if should branch
             if pipeline(STAGE_ID).PMAUCtrl.ConditionalBranch = '1' then
                 if ShouldBranch = '1' then
@@ -459,7 +458,7 @@ begin
 
     ALUCtrl <= pipeline(STAGE_X).ALUCtrl;
 
-    register_access: process(all)
+    register_access: process(BubbleIF, pipeline_en)
     begin
         if BubbleIF = '1' then
             RegCtrl <= pipeline(STAGE_MA).RegCtrl;
@@ -470,7 +469,7 @@ begin
         end if;
     end process register_access;
 
-    data_access: process(all)
+    data_access: process(pipeline_en)
     begin
         if pipeline_en(STAGE_MA) = '1' then
             DMAUCtrl <= pipeline(STAGE_MA).DMAUCtrl;
@@ -479,7 +478,7 @@ begin
         end if;
     end process data_access;
 
-    sys_control: process(all)
+    sys_control: process(BubbleIF, pipeline_en)
     begin
         if BubbleIF = '1' then
             SysCtrl <= pipeline(STAGE_MA).SysCtrl;
@@ -535,9 +534,6 @@ begin
         if std_match(IR, ADD_RM_RN) then
             -- ADD{C,V} Rm, Rn
 
-            LogWithTime(l, "sh2_control.vhd: Decoded Add R" & to_string(to_integer(unsigned(nm_format_m))) &
-                           " , R" & to_string(to_integer(unsigned(nm_format_n))), LogFile);
-
             -- Register array signals
             RegASel <= to_integer(unsigned(nm_format_n));
             RegBSel <= to_integer(unsigned(nm_format_m));
@@ -555,8 +551,12 @@ begin
             FCmd      <= FCmd_B;
 
             -- Bit-decode carry in value
-            CinCmd <= CinCmd_CIN when IR(1 downto 0) = "10" else    -- ADDC
-                      CinCmd_ZERO;                                  -- ADD, ADDV
+
+            if (IR(1 downto 0) = "10") then
+                CinCmd <= CinCmd_CIN; -- ADDC
+            else
+                CinCmd <= CinCmd_ZERO;  -- ADD, ADDV
+            end if;
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
@@ -581,9 +581,11 @@ begin
             LoadA     <= '1';
             FCmd      <= FCmd_BNOT;
 
-            -- Bit-decode carry in value
-            CinCmd <= CinCmd_CINBAR when IR(1 downto 0) = "10" else     -- SUBC
-                      CinCmd_ONE;                                       -- SUB, SUBV
+            if (IR(1 downto 0) = "10") then
+                CinCmd <= CinCmd_CINBAR; -- SUBC
+            else
+                CinCmd <= CinCmd_ONE; -- SUB, SUBV
+            end if;
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
@@ -622,8 +624,11 @@ begin
             RegEnableIn <= '1';
 
             -- Bit-decoding T flag select
-            TFlagSel <= TFlagSel_Carry when IR(0) = '0' else    -- NEGC
-                                    TFlagSel_T;                             -- NEG
+            if (IR(0) = '0') then
+                TFlagSel <= TFlagSel_Carry; -- NEGC
+            else
+                TFlagSel <= TFlagSel_T; -- NEG
+            end if;
 
             -- ALU signals for negation
             ALUOpBSel <= ALUOpB_RegB;
@@ -631,8 +636,12 @@ begin
             FCmd      <= FCmd_BNOT;
 
             -- Bit-decode carry in value
-            CinCmd <= CinCmd_CINBAR when IR(0) = '0' else   -- NEGC
-                      CinCmd_ONE;                           -- NEG
+
+            if (IR(0) = '0') then
+                CinCmd <= CinCmd_CINBAR; -- NEGC
+            else
+                CinCmd <= CinCmd_CINBAR; -- NEG
+            end if;
 
             SCmd   <= "XXX";
             ALUCmd <= ALUCmd_ADDER;
@@ -680,17 +689,26 @@ begin
             RegEnableIn <= IR(1) or IR(0);   -- exclude TST
 
             -- Enable TFlagSel for TST
-            TFlagSel <= TFlagSel_Zero when IR(1 downto 0) = "00"    -- TST
-                                    else TFlagSel_T;                            -- AND, OR, XOR
+
+            if (IR(1 downto 0) = "00") then
+                TFlagSel <= TFlagSel_Zero; -- TST
+            else
+                TFlagSel <= TFlagSel_T; -- AND, OR, XOR
+            end if;
 
             -- ALU signals for logic instructions using the FBlock
             ALUOpBSel <= ALUOpB_RegB;
             LoadA     <= '1';
 
             -- Bit-decode f-block operation
-            FCmd <= FCmd_AND when IR(1) = '0'           else    -- AND, TST
-                    FCmd_XOR when IR(1 downto 0) = "10" else    -- XOR
-                    FCmd_OR;                                    -- OR
+
+            if (IR(1) = '0') then
+                FCmd <= FCmd_AND; -- AND, TST
+            elsif (IR(1 downto 0) = "10") then
+                FCmd <= FCmd_XOR; -- XOR
+            else
+                FCmd <= FCmd_OR; -- OR
+            end if;
 
             CinCmd <= CinCmd_ZERO;
             SCmd   <= "XXX";
@@ -709,17 +727,24 @@ begin
             ImmediateMode        <= ImmediateMode_ZERO;
 
             -- Enable TFlagSel for TST
-            TFlagSel <= TFlagSel_Zero when IR(9 downto 8) = "00"    -- TST
-                                    else TFlagSel_T;                            -- AND, OR, XOR
+            if (IR(9 downto 8) = "00") then
+                TFlagSel <= TFlagSel_Zero; -- TST
+            else
+                TFlagSel <= TFlagSel_T; -- AND, OR, XOR
+            end if;
 
             -- ALU signals for logic instructions using the FBlock
             ALUOpBSel <= ALUOpB_Imm;
             LoadA     <= '1';
 
             -- Bit-decode f-block operation
-            FCmd <= FCmd_AND when IR(9) = '0' else              -- AND, TST
-                    FCmd_XOR when IR(9 downto 8) = "10" else    -- XOR
-                    FCmd_OR;                                    -- OR
+            if (IR(9) = '0') then
+                FCmd <= FCmd_AND; -- AND, TST
+            elsif (IR(9 downto 8) = "10") then
+                FCmd <= FCmd_XOR; -- XOR
+            else
+                FCmd <= FCmd_OR; -- OR
+            end if;
 
             CinCmd <= CinCmd_ZERO;
             SCmd   <= "XXX";
@@ -838,8 +863,11 @@ begin
             FCmd      <= "XXXX";
 
             -- Bit-decode carry command
-            CinCmd    <= CinCmd_CIN when (IR(5) and IR(2)) = '1' else   -- ROTCL, ROTCR
-                         CinCmd_ZERO;                                   -- all others   
+            if ((IR(5) and IR(2)) = '1') then
+                CinCmd  <= CinCmd_CIN ; -- ROTCL, ROTCR
+            else
+                CinCmd  <= CinCmd_ZERO ; -- all others
+            end if;
 
             SCmd   <= IR(0) & IR(2) & IR(5);  -- bit-decode shift operation
             ALUCmd <= ALUCmd_SHIFT;
@@ -867,9 +895,6 @@ begin
         -- MOV #imm, Rn
         -- ni format
         elsif std_match(IR, MOV_IMM_RN) then
-
-            LogWithTime(l, "sh2_control.vhd: Decoded MOV H'" & to_hstring(ni_format_i) &
-                          ", R" & to_string(slv_to_uint(ni_format_n)), LogFile);
           
             RegInSel             <= to_integer(unsigned(ni_format_n));
             RegDataInSel         <= RegDataIn_Immediate;
@@ -881,10 +906,6 @@ begin
         -- NOTE: Testing this assumes MOV into memory works.
         --
         elsif std_match(IR, MOV_W_AT_DISP_PC_RN) then
-            LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.W @(0x" & to_hstring(nd8_format_d) &
-            ", PC), R" & to_string(slv_to_uint(nd8_format_n)), LogFile);
-
 
             RegInSel             <= to_integer(unsigned(nd8_format_n));   -- Writing to register n 
             RegDataInSel         <= RegDataIn_DB;                         -- Writing output of data bus to register. 
@@ -909,9 +930,6 @@ begin
         -- MOV.L @(disp, PC), Rn
         -- nd8 format
         elsif std_match(IR, MOV_L_AT_DISP_PC_RN) then
-            LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nd8_format_d) &
-            ", PC), R" & to_string(slv_to_uint(nd8_format_n)), LogFile);
 
             RegInSel             <= to_integer(unsigned(nd8_format_n));  -- Writing to register n 
             RegDataInSel         <= RegDataIn_DB;                        -- Writing output of data bus to register. 
@@ -935,9 +953,6 @@ begin
         -- nm format
         -- Note: for bit decoding, this must be done before MOV_AT_RM_RN
         elsif std_match(IR, MOV_RM_RN) then
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV R" & to_string(slv_to_uint(nm_format_m)) &
-              "R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- report "Instruction: MOV Rm, Rn";
             RegBSel              <= to_integer(unsigned(nm_format_m));
@@ -948,9 +963,6 @@ begin
         -- MOV.X Rm, @Rn
         -- nm format
         elsif std_match(IR, MOV_RM_AT_RN) then
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_uint(nm_format_m)) &
-              ", @R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- Writes a byte to memory to memory
             MemEnable <= '1';             -- Uses memory.
@@ -972,9 +984,6 @@ begin
         -- nm format
         -- Note: for bit decoding, this must be done after MOV_RM_RN
         elsif std_match(IR, MOV_AT_RM_RN) then
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.X @R" & to_string(slv_to_uint(nm_format_m)) &
-              ", R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- Instruction reads byte from memory.
             MemEnable <= '1';            -- Instr does memory access.
@@ -998,9 +1007,6 @@ begin
         -- MOV.B Rm, @-Rn
         -- nm format
         elsif std_match(IR, MOV_RM_AT_MINUS_RN) then
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_uint(nm_format_m)) &
-              ", @-R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- Writes a byte to memory
             MemEnable <= '1';             -- Uses memory.
@@ -1023,9 +1029,6 @@ begin
         -- MOV.B @Rm+, Rn
         -- nm format
         elsif std_match(IR, MOV_AT_RM_PLUS_RN) then
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.{B,W,L} @R" & to_string(slv_to_uint(nm_format_m)) &
-              "+, R" & to_string(slv_to_uint(nm_format_n)) , LogFile);
 
             -- MOV with post-increment. This Instruction reads a byte, word,
             -- or longword from an address in Rm, into Rn. The address is
@@ -1062,16 +1065,15 @@ begin
         -- words, etc. This is done to maximize it's range.
         elsif std_match(IR, MOV_R0_AT_DISP_RN) then
 
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.{B,W} R0, @(0x" & to_hstring(nd4_format_d) &
-              ", " & to_string(slv_to_uint(nd4_format_n)) & ")", LogFile);
-
             -- Instruction writes a byte to data memory.
             MemEnable   <= '1';
             ReadWrite   <= ReadWrite_WRITE;
 
-            MemMode     <= ByteMode when IR(8) = '0' else     -- bit-decode byte/word mode
-                                       WordMode;
+            if (IR(8) = '0') then
+                MemMode <= ByteMode; -- bit-decode byte/word mode
+            else 
+                MemMode <= WordMode;
+            end if;
             
             -- Output RegB (R0) to memory data bus
             MemOutSel <= MemOut_RegB;
@@ -1086,8 +1088,13 @@ begin
             -- DMAU signals for Indirect register addressing with displacement
             BaseSel       <=  BaseSel_REG;
             IndexSel      <=  IndexSel_OFF4;
-            OffScalarSel  <=  OffScalarSel_ONE when IR(8) = '0' else      -- bit-decode byte/word
-                              OffScalarSel_TWO;
+
+            if (IR(8) = '0') then
+                OffScalarSel  <=  OffScalarSel_ONE; -- bit-decode byte/word
+            else
+                OffScalarSel  <=  OffScalarSel_TWO;
+            end if;
+
             IncDecSel     <=  IncDecSel_NONE;
             DMAUOff4      <=  nd4_format_d;
 
@@ -1095,10 +1102,6 @@ begin
         -- MOV.L Rm, @(disp, Rn)
         -- nmd format
         elsif std_match(IR, MOV_L_RM_AT_DISP_RN) then
-
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.L R" & to_string(slv_to_uint(nmd_format_m)) &
-              ", @(0x" & to_hstring(nmd_format_d) & ", R" & to_string(slv_to_uint(nmd_format_n)) & ")", LogFile);
 
             MemEnable <= '1';
             ReadWrite <= ReadWrite_WRITE;
@@ -1127,10 +1130,6 @@ begin
       -- Note that these instructions are very similar to MOV @(disp, PC), Rn
       elsif std_match(IR, MOV_AT_DISP_RM_R0) then
 
-          LogWithTime(l, 
-            "sh2_control.vhd: Decoded MOV.{B,W} @(0x" & to_hstring(md_format_d) &
-            ", R" & to_string(slv_to_uint(md_format_m)) & "), R0", LogFile);
-
             -- Writing sign-extended byte from data bus to R0.
             RegInSel             <= 0;             -- Select R0 to write to.
             RegDataInSel         <= RegDataIn_DB;  -- Write DataBus to reg.
@@ -1141,15 +1140,27 @@ begin
 
             MemEnable  <=  '1';            -- Instr uses memory.
             ReadWrite  <=  ReadWrite_READ; -- Reads.
-            MemMode    <=  ByteMode when IR(8) = '0' else       -- bit-decode word mode
-                                       WordMode;
+
+
+            if (IR(8) = '0') then
+                MemMode <= ByteMode;  -- bit-decode word mode
+            else
+                MemMode <= WordMode;
+            end if;
+
+
             MemSel     <=  MemSel_RAM;     -- Reads from RAM
 
             -- DMAU signals for Indirect register addressing with displacement (byte mode)
             BaseSel      <= BaseSel_REG;
             IndexSel     <= IndexSel_OFF4;
-            OffScalarSel <= OffScalarSel_ONE when IR(8) = '0' else          -- bit-decode offset scale
-                            OffScalarSel_TWO;
+
+            if (IR(8) = '0') then
+                OffScalarSel <= OffScalarSel_ONE;  -- bit-decode offset scale
+            else
+                OffScalarSel <= OffScalarSel_TWO;
+            end if;
+
             IncDecSel    <= IncDecSel_NONE;
             DMAUOff4     <= md_format_d;
 
@@ -1157,11 +1168,6 @@ begin
         -- MOV.L @(disp, Rm), Rn
         -- nmd
         elsif std_match(IR, MOV_L_AT_DISP_RM_RN) then
-
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.L @(0x" & to_hstring(nmd_format_d) &
-              ", R" & to_string(slv_to_uint(nmd_format_m)) & "), R" & to_string(slv_to_uint(nmd_format_n))
-              , LogFile);
 
             -- Writing longword from data bus to Rn.
             RegInSel             <= to_integer(unsigned(nmd_format_n));   -- Select Rn to write to.
@@ -1188,10 +1194,6 @@ begin
         -- MOV.{B,W,L} Rm, @(R0, Rn)
         -- nm format
         elsif std_match(IR, MOV_RM_AT_R0_RN) then
-
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.X R" & to_string(slv_to_uint(nm_format_m)) &
-              ", @(R0, R" & to_string(slv_to_uint(nm_format_n)) & ")", LogFile);
 
             -- Instr writes a byte to memory.
             MemEnable <= '1';
@@ -1222,10 +1224,6 @@ begin
         -- nm format
         elsif std_match(IR, MOV_AT_R0_RM_RN) then
 
-            LogWithTime(l, 
-              "sh2_control.vhd: Decoded MOV.X @(R0, R" & to_string(slv_to_uint(nm_format_m)) &
-              "), R" & to_string(slv_to_uint(nm_format_n)), LogFile);
-
             -- Writing sign-extended byte from data bus to Rn.
             RegInSel             <= slv_to_uint(nm_format_n);     -- Select Rn to write to.
             RegDataInSel         <= RegDataIn_DB;                 -- Write DataBus to reg.
@@ -1253,10 +1251,6 @@ begin
         -- d format
         elsif std_match(IR, MOV_R0_AT_DISP_GBR) then
 
-            LogWithTime(l,
-              "sh2_control.vhd: Decoded MOV.X R0, @(0x" & to_hstring(d_format_d) &
-              ", GBR)", LogFile);
-
             -- Writing to memory
             MemEnable <= '1';
             ReadWrite <= ReadWrite_WRITE;
@@ -1281,10 +1275,6 @@ begin
         -- Note: due to bit decoding, this must come before MOV_AT_DISP_GBR_R0
         elsif std_match(IR, MOVA_AT_DISP_PC_R0) then
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded MOVA @(" & to_hstring(d_format_d) & 
-                ", PC), R0", LogFile);
-
             -- Note that this instruction moves the address, disp*4 + PC
             -- (calculated by the DMAU) into R0. It does NOT move the data at
             -- this address.
@@ -1303,10 +1293,6 @@ begin
         -- d format
         -- Note: due to bit decoding, this must come after MOVA_AT_DISP_PC_R0
         elsif std_match(IR, MOV_AT_DISP_GBR_R0) then
-
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded MOV.X @(0x" & to_hstring(d_format_d) &
-                ", GBR), R0", LogFile);
 
            RegInSel             <= 0;               -- Write to R0
            RegDataInSel         <= RegDataIn_DB;    -- Write Data bus to R0
@@ -1327,10 +1313,6 @@ begin
         -- n format.
         elsif std_match(IR, MOVT_RN) then
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded MOVT R" & to_string(slv_to_uint(n_format_n)), 
-                LogFile);
-
             RegInSel             <= to_integer(unsigned(n_format_n));
             RegDataInSel         <= RegDataIn_SR_TBit;
             RegEnableIn <= '1';
@@ -1341,16 +1323,15 @@ begin
         -- Rm -> Swap upper and lower 2 bytes -> Rn
         elsif std_match(IR, SWAP_RM_RN) then
 
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded SWAP.X R" & to_string(slv_to_uint(nm_format_m))
-                & ", R" & to_string(nm_format_n), LogFile);
-
             RegASel      <= slv_to_uint(nm_format_m);
             RegInSel     <= slv_to_uint(nm_format_n);
 
             -- Bit decode if whether byte or word mode
-            RegDataInSel <= RegDataIn_RegA_SwapB when IR(0) = '0' else
-                            RegDataIn_RegA_SwapW;
+            if (IR(0) = '0') then
+                RegDataInSel <= RegDataIn_RegA_SwapB;
+            else
+                RegDataInSel <= RegDataIn_RegA_SwapW;
+            end if;
 
             RegEnableIn <= '1';
 
@@ -1359,10 +1340,6 @@ begin
         -- nm format
         -- Center 32 bits of Rm and Rn -> Rn
         elsif std_match(IR, XTRCT_RM_RN) then
-        
-            LogWithTime(l,
-                "sh2_control.vhd: Decoded XTRCT R" & to_string(slv_to_uint(nm_format_m))
-                & ", R" & to_string(nm_format_n), LogFile);
 
             RegASel <= slv_to_uint(nm_format_n);
             RegBSel <= slv_to_uint(nm_format_m);
@@ -1380,10 +1357,6 @@ begin
         -- BF <label> (where label is disp*2 + PC)
         -- d format
          elsif std_match(IR, BF) then
- 
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded BF (label=" & to_hstring(d_format_d) &
-                 "*2 + PC)", LogFile);
 
              -- If T=0, disp*2 + PC -> PC; if T=1, nop (where label is disp*2 + PC)
 
@@ -1399,10 +1372,6 @@ begin
          -- d format
          elsif std_match(IR, BF_S) then
  
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded BF/S (label=" & to_hstring(d_format_d) &
-                 "*2 + PC)", LogFile);
- 
              -- Should not check T flag here because it may not have been updated
              -- yet - need to delay until the ID stage.
              PCAddrMode   <= PCAddrMode_RELATIVE_8;
@@ -1417,10 +1386,6 @@ begin
          elsif std_match(IR, BT) then
  
              -- Branch true without delay slot.
-
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded BT (label=" & to_hstring(d_format_d) &
-                 "*2 + PC)", LogFile);
             
              -- If T=1, disp*2 + PC -> PC; if T=0, nop (where label is disp*2 + PC)
 
@@ -1435,11 +1400,6 @@ begin
          -- BT/S <label> (where label is disp*2 + PC)
          -- d format
          elsif std_match(IR, BT_S) then
- 
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded BT/S (label=" & to_hstring(d_format_d) &
-                 "*2 + PC)", LogFile);
- 
 
              -- Should not check T flag here because it may not have been updated
              -- yet - need to delay until the ID stage.
@@ -1453,10 +1413,6 @@ begin
          -- BRA <label> (where label is disp*2 + PC)
          -- d12 format
          elsif std_match(IR, BRA) then
-
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded BRA (label=" & to_hstring(d12_format_d) &
-                 "*2 + PC)", LogFile);
 
             DelayedBranchTaken <= '1';
             PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
@@ -1473,9 +1429,6 @@ begin
              -- Note that the PMAU's register input is always RegB.
 
               RegBSel <= slv_to_uint(m_format_m);
-
-              LogWithTime(l,
-                  "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile); 
  
               DelayedBranchTaken <= '1';
               PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
@@ -1486,10 +1439,6 @@ begin
          -- BSR <label> (where label is disp*2)
          -- d12 format
          elsif std_match(IR, BSR) then
- 
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
-                 "*2 + PC)", LogFile);
  
              DelayedBranchTaken <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
@@ -1511,9 +1460,6 @@ begin
          -- PC -> PR, Rm + PC -> PC
          elsif std_match(IR, BSRF) then
 
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded BSRF R" & to_string(slv_to_uint(m_format_m)), LogFile);
-
             -- Basically BSR, but with a different target.
              DelayedBranchTaken <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
@@ -1531,9 +1477,6 @@ begin
          -- m format
          -- Delayed branch, Rm -> PC
          elsif std_match(IR, JMP) then
-             
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded JMP @R" & to_string(slv_to_uint(m_format_m)), LogFile);
 
              -- PMAU Register input is RegB.
              RegBSel <= slv_to_uint(m_format_m);
@@ -1548,9 +1491,6 @@ begin
          -- Delayed branch, PC -> PR, Rm -> PC
          elsif std_match(IR, JSR) then
 
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded JSR @R" & to_string(slv_to_uint(m_format_m)), LogFile);
-
              RegBSel <= slv_to_uint(m_format_m);
 
              DelayedBranchTaken <= '1';
@@ -1563,9 +1503,6 @@ begin
              SysRegCtrl <= SysRegCtrl_LOAD;
  
          elsif std_match(IR, RTS) then
-
-             LogWithTime(l,
-                 "sh2_control.vhd: Decoded RTS", LogFile);
  
              PCAddrMode         <= PCAddrMode_PR_DIRECT;
              DelayedBranchTaken <= '1';
@@ -1576,20 +1513,14 @@ begin
 
         elsif std_match(IR, CLRT) then
 
-            LogWithTime(l, "sh2_control.vhd: Decoded CLRT", LogFile);
-
             TFlagSel <= TFlagSel_CLEAR;     -- clear the T flag
 
         elsif std_match(IR, CLRMAC) then
-
-            LogWithTime(l, "sh2_control.vhd: Decoded CLRMAC", LogFile);
 
             SysRegCtrl <= SysRegCtrl_CLEAR;
             SysRegSel <= SysRegSel_MACL;
 
         elsif std_match(IR, SETT) then
-
-            LogWithTime(l, "sh2_control.vhd: Decoded SETT", LogFile);
 
             TFlagSel <= TFlagSel_SET;       -- set the T flag
 
@@ -1597,8 +1528,6 @@ begin
 
             -- STC {SR, GBR, VBR}, Rn
             -- Uses bit decoding to choose the system register to store
-
-            LogWithTime(l, "sh2_control.vhd: Decoded STC XXX, Rn", LogFile);
 
             RegInSel <= to_integer(unsigned(n_format_n));
 
@@ -1612,8 +1541,6 @@ begin
             -- STS {MACH, MACL, PR}, Rn
             -- Uses bit decoding to choose the system register to store
 
-            LogWithTime(l, "sh2_control.vhd: Decoded STS XXX, Rn", LogFile);
-
             RegInSel <= to_integer(unsigned(n_format_n));
 
             -- selects data source to store to a register through bit decoding
@@ -1625,7 +1552,6 @@ begin
 
             -- STC.L {SR, GBR, VBR}, @-Rn
             -- Uses bit decoding to choose the system register to store
-            LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
 
             -- Writes a byte to memory
             MemEnable <= '1';               -- Uses memory.
@@ -1650,7 +1576,6 @@ begin
 
             -- STC.L {MACH, MACL, PR}, @-Rn
             -- Uses bit decoding to choose the system register to store
-            LogWithTime(l, "sh2_control.vhd: Decoded STC.L XXX, @-Rn", LogFile);
 
             -- Writes a byte to memory
             MemEnable <= '1';               -- Uses memory.
@@ -1684,8 +1609,6 @@ begin
             -- LDC Rm, {SR, GBR, VBR}
             -- Uses bit decoding to choose the system register to load
 
-            LogWithTime(l, "sh2_control.vhd: Decoded LDC Rm, X", LogFile);
-
             RegBSel <= to_integer(unsigned(m_format_m));
             SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= "0" & IR(5 downto 4);      -- bit decode register to select
@@ -1698,8 +1621,6 @@ begin
             if (std_match(IR, LDC_L_AT_RM_PLUS_GBR)) then
                 GBRWriteEn <= '1';
             end if;
-
-            LogWithTime(l, "sh2_control.vhd: Decoded LDC.L @Rm+, X", LogFile);
 
             -- Reads a longword from memory
             MemEnable <= '1';             -- Uses memory.
@@ -1731,8 +1652,6 @@ begin
                 PRWriteEn <= '1'; 
             end if;
 
-            LogWithTime(l, "sh2_control.vhd: Decoded LDS Rm, X", LogFile);
-
             RegBSel <= to_integer(unsigned(m_format_m));
             SysRegCtrl <= SysRegCtrl_LOAD;
             SysRegSel <= "1" & IR(5 downto 4);  -- bit decode register to select
@@ -1745,8 +1664,6 @@ begin
             if (std_match(IR, LDS_L_AT_RM_PLUS_PR)) then
                 PRWriteEn <= '1';
             end if;
-
-            LogWithTime(l, "sh2_control.vhd: Decoded LDS.L @Rm+, X", LogFile);
 
             -- Reads a longword from memory
             MemEnable <= '1';             -- Uses memory.
@@ -1771,10 +1688,8 @@ begin
 
         elsif std_match(IR, NOP) then
 
-            LogWithTime(l, "sh2_control.vhd: Decoded NOP", LogFile);
-
         elsif not is_x(IR) then
-            report "Unrecognized instruction: " & to_hstring(IR);
+            -- report "Unrecognized instruction: " & to_hstring(IR);
         end if;
 
     end process decode_proc;
@@ -1832,7 +1747,13 @@ begin
                     if i = 0 then
                         -- First item in pipeline comes from decoded signals
                         pipeline(i) <= decoded_signals;
-                        pipeline_en(i) <= '0' when pipeline_in_en = '0' or ShouldBranch = '1' else '1';
+
+                        if (pipeline_in_en = '0' or ShouldBranch = '1') then
+                            pipeline_en(i) <= '0';
+                        else
+                            pipeline_en(i) <= '1';
+                        end if;
+
                     elsif i = 1 then
                         pipeline(i) <= pipeline(i - 1);
                         if ShouldBranch = '1' then
