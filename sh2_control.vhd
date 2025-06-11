@@ -370,10 +370,9 @@ begin
 
 
     -- Decode the current instruction combinatorially
-    decode_proc: process (state)
+    decode_proc: process (IR)
         variable l : line;
     begin
-        if state = execute then
 
         -- Default flag values are set here (these shouldn't change CPU state).
         -- This is so that not every control signal has to be set in every single
@@ -1681,8 +1680,6 @@ begin
 
         elsif not is_x(IR) then
             report "Unrecognized instruction: " & to_hstring(IR);
-        end if;
-
         end if;
 
     end process;
