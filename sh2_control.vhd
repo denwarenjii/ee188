@@ -2,6 +2,16 @@
 --                                                                                                 -
 --  Control Unit                                                                                   -
 --                                                                                                 -
+--  This entity implements the control unit for the SH2 CPU. This CPU is                           -
+--  pipelined, with 5 stages: instruction fetch (IF), instruction decode (ID),                     -
+--  execute (X), memory access (MA), and writeback (WR). Most instructions only                    -
+--  involve the IF, ID, and X stages, while instructions that read from memory                     -
+--  also require MA and WR. On each clock, there are five instructions in                          -
+--  flight, with one instructions being fetched from memory for maximum                            -
+--  throughput. Pipeline bubbles are inserted to deal with memory bus                              -
+--  contention between IF and MA. Additionally, branch instructions are                            -
+--  designed to discard the previous two instructions so that there is no                          -
+--  branch delay.                                                                                  -
 --                                                                                                 -
 --  Revision History:                                                                              -
 --     06 May 25  Zack Huang        Initial revision                                               -
@@ -16,21 +26,15 @@
 --     29 May 25  Chris M.          Add PCWriteCtrl and DelayedBranchTaken signals to control unit -
 --                                  output.                                                        -
 --     07 Jun 25  Zack Huang        Re-organized control signals and constants                     -
+--     08 Jun 25  Zack Huang        Implementing pipelining                                        -
+--                Chris M.                                                                         -
+--     09 Jun 25  Zack Huang        Non-delay branches working                                     -
 --                                                                                                 -
 -- Notes:                                                                                          -
 --  - When reading/writing to registers, RegB is always Rm and RegA is always Rn                   -
 --  - When reading/writing to addresses (in registers), RegA2 is always @(Rm) and                  -
 --    RegA2 is always @(Rn).                                                                       -
 --                                                                                                 -
--- TODO:                                                                                           -
---  - Remove redundant assignment of default signals.                                              -
---                                                                                                 -
---  - Generate DMAU signals with vectors.                                                          -
---  - Document register output conventions.                                                        -
---  - Document bit decoding.                                                                       -
---  - Add short instruction operation to std_match case.                                           -
---  - Use slv_to_uint more.                                                                        -
---  - DEAL WITH DOUBLE DELAYED BRANCHES - NOT POSSIBLE                                             -
 ----------------------------------------------------------------------------------------------------
 
 library ieee;
@@ -270,7 +274,6 @@ architecture dataflow of sh2control is
     signal IndexSel         : std_logic_vector(1 downto 0);     -- which index source to select
     signal OffScalarSel     : std_logic_vector(1 downto 0);     -- what to scale the offset by (1, 2, 4)
     signal IncDecSel        : std_logic_vector(1 downto 0);     -- post-increment or pre-decrement the base
-    signal DelayedBranchTaken  : std_logic;                     -- whether the delayed branch is taken
 
         -- PMAU signals
     signal PCAddrMode       : std_logic_vector(2 downto 0);     -- What PC addressing mode is desired.
@@ -384,20 +387,6 @@ begin
     -- MA stage requires memory access, a bubble needs to be inserted.
     BubbleIF <= pipeline(STAGE_MA).MemCtrl.Enable and pipeline_en(STAGE_MA);
 
-    -- detect_bubble: process(clock, reset)
-    -- begin
-    --     if reset = '0' then
-    --         BubbleIF <= '0';
-    --     elsif rising_edge(clock) then
-    --         -- If currently executing instruction will need MA access (and is enabled)
-    --         if pipeline(STAGE_X).MemCtrl.Enable and pipeline_en(STAGE_X) then
-    --             BubbleIF <= '1';
-    --         else
-    --             BubbleIF <= '0';
-    --         end if;
-    --     end if;
-    -- end process detect_bubble;
-
     mem_access: process(all)
     begin
         if BubbleIF = '1' and pipeline_en(STAGE_MA) = '1' then
@@ -416,21 +405,6 @@ begin
         end if ;
     end process mem_access;
 
-
-    -- should_branch: process(clock, reset)
-    -- begin
-    --     if reset = '0' then
-    --         ShouldBranch <= '0';
-    --     elsif rising_edge(clock) then
-    --         if pipeline(STAGE_ID).PMAUCtrl.ConditionalBranch = '1' and
-    --             pipeline(STAGE_ID).PMAUCtrl.Condition = TFlagIn then
-    --             ShouldBranch <= '1';
-    --         else
-    --             ShouldBranch <= '0';
-    --         end if;
-    --     end if;
-    -- end process should_branch;
-    --
     ShouldBranch <= '1' when pipeline(STAGE_ID).PMAUCtrl.ConditionalBranch = '1' and pipeline(STAGE_ID).PMAUCtrl.Condition = TFlagIn else '0';
 
     program_access: process(all)
@@ -524,9 +498,6 @@ begin
         PCAddrMode <= PCAddrMode_INC;
 
         PCWriteCtrl <= PCWriteCtrl_WRITE_CALC;  -- Write the calculated PC by default.
-
-        -- TODO: currently unused by zack
-        DelayedBranchTaken <= '0'; -- The delayed branch taken flag is set to not taken by default.
 
         ConditionalBranch  <= '0';  -- not performing a conditional branch
         Condition          <= '0';  -- not performing a conditional branch
@@ -1458,7 +1429,7 @@ begin
                  "sh2_control.vhd: Decoded BRA (label=" & to_hstring(d12_format_d) &
                  "*2 + PC)", LogFile);
 
-            DelayedBranchTaken <= '1';
+            DelayBranch <= '1';
             PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
             PCAddrMode <= PCAddrMode_RELATIVE_12;
@@ -1477,7 +1448,7 @@ begin
               LogWithTime(l,
                   "sh2_control.vhd: Decoded BRAF R" & to_string(slv_to_uint(m_format_m)), LogFile); 
  
-              DelayedBranchTaken <= '1';
+              DelayBranch <= '1';
               PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
               PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
@@ -1491,7 +1462,7 @@ begin
                  "sh2_control.vhd: Decoded BSR (label=" & to_hstring(d12_format_d) &
                  "*2 + PC)", LogFile);
  
-             DelayedBranchTaken <= '1';
+             DelayBranch <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
              PCAddrMode <= PCAddrMode_RELATIVE_12;
@@ -1515,7 +1486,7 @@ begin
                  "sh2_control.vhd: Decoded BSRF R" & to_string(slv_to_uint(m_format_m)), LogFile);
 
             -- Basically BSR, but with a different target.
-             DelayedBranchTaken <= '1';
+             DelayBranch <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
              PCAddrMode <= PCAddrMode_REG_DIRECT_RELATIVE;
@@ -1538,7 +1509,7 @@ begin
              -- PMAU Register input is RegB.
              RegBSel <= slv_to_uint(m_format_m);
 
-             DelayedBranchTaken <= '1';
+             DelayBranch <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
              PCAddrMode         <= PCAddrMode_REG_DIRECT;
  
@@ -1553,7 +1524,7 @@ begin
 
              RegBSel <= slv_to_uint(m_format_m);
 
-             DelayedBranchTaken <= '1';
+             DelayBranch <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
              PCAddrMode         <= PCAddrMode_REG_DIRECT;
 
@@ -1568,7 +1539,7 @@ begin
                  "sh2_control.vhd: Decoded RTS", LogFile);
  
              PCAddrMode         <= PCAddrMode_PR_DIRECT;
-             DelayedBranchTaken <= '1';
+             DelayBranch <= '1';
              PCWriteCtrl                    <= PCWriteCtrl_WRITE_CALC;
 
 
@@ -1811,23 +1782,6 @@ begin
                         pipeline(i) <= pipeline(i - 1);
                         pipeline_en(i) <= pipeline_en(i - 1);
                     end if;
-                -- elsif ShouldBranch = '1' then
-                --     -- TODO: for now, assumes not delayed branch
-                --     if i = 0 then
-                --         -- First item in pipeline comes from decoded signals
-                --         pipeline(i) <= decoded_signals;
-                --         pipeline_en(i) <= pipeline_in_en;
-                --     else
-                --         if i <= STAGE_X and pipeline(STAGE_X).PMAUCtrl.DelayBranch = '0' then
-                --             pipeline_en(i) <= '0';
-                --         elsif i <= STAGE_X and pipeline(STAGE_X).PMAUCtrl.DelayBranch = '1' then
-                --             pipeline_en(i) <= '0';
-                --         else
-                --             pipeline_en(i) <= pipeline_en(i - 1);
-                --         end if;
-                --         -- Next, simply pipe each set of signals into a new DFF
-                --         pipeline(i) <= pipeline(i - 1);
-                --     end if;
                 else
                     if i = 0 then
                         -- First item in pipeline comes from decoded signals

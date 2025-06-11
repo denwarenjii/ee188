@@ -31,7 +31,7 @@
 --                                  register manipulation. Also added this
 --                                  as possible input to RegDataIn.
 --     01 Jun 25  Zack Huang        Finishing documentation
---     07 Jun 25  Zack Huang        Move all control signals into record types for organization    -
+--     07 Jun 25  Zack Huang        Move all control signals into record types for organization
 --
 ----------------------------------------------------------------------------
 
