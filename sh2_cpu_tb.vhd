@@ -580,8 +580,8 @@ begin
         RunTest("asm/swap");                            -- Test SWAP.B Rm, Rn and SWAP.W Rm, Rn               (working)
         RunTest("asm/xtrct");                           -- Test XTRCT Rm, Rn                                  (working)
         RunTest("asm/branch");                          -- Test branch instructions.
-        RunTest("asm/branch_conditional");              -- Test conditional branch instructions (BT, BF)
-        RunTest("asm/branch_conditional_delay");        -- Test conditional branch instructions (BT, BF)
+        RunTest("asm/branch_conditional");              -- Test conditional branch instructions (BT, BF)      (working)
+        RunTest("asm/branch_conditional_delay");        -- Test conditional branch instructions (BT/S, BF/S)
 
         wait;
     end process;
